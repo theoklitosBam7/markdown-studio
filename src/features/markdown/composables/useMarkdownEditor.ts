@@ -1,15 +1,15 @@
 import type { ComputedRef, DeepReadonly, ShallowRef } from 'vue'
 
-import { marked, type Tokens } from 'marked'
 import mermaid from 'mermaid'
 import { computed, onUnmounted, readonly, shallowRef, watch } from 'vue'
 
 import { useTheme } from '@/composables/useTheme'
 import { escapeHtml } from '@/utils/escapeHtml'
 
-import type { EditorStats, Example, Theme, ViewMode } from '../types'
+import type { EditorStats, Example, MarkdownSourceMapEntry, Theme, ViewMode } from '../types'
 
 import { DEFAULT_EXAMPLE_INDEX, EXAMPLES } from './examples'
+import { renderMarkdownWithSourceMap } from './renderMarkdownWithSourceMap'
 
 interface UseMarkdownEditorOptions {
   initialContent?: string
@@ -26,6 +26,7 @@ interface UseMarkdownEditorReturn {
   renderMermaidDiagrams: (container: HTMLElement) => Promise<void>
   setTheme: (theme: Theme) => void
   setViewMode: (mode: ViewMode) => void
+  sourceMap: ComputedRef<MarkdownSourceMapEntry[]>
   stats: ComputedRef<EditorStats>
   theme: DeepReadonly<ShallowRef<Theme>>
   toggleTheme: () => void
@@ -65,20 +66,10 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
     }
   })
 
-  // Setup marked renderer to intercept mermaid code blocks
-  const renderer = new marked.Renderer()
-  renderer.code = function (token: Tokens.Code): string {
-    if (token.lang === 'mermaid') {
-      const source = escapeHtml(token.text)
-      return `<div class="mermaid-wrap"><div class="mermaid">${source}</div></div>`
-    }
-    return `<pre><code class="${escapeHtml(token.lang || '')}">${escapeHtml(token.text)}</code></pre>`
-  }
-
-  marked.setOptions({ breaks: false, gfm: true, renderer })
-
   // Computed
-  const renderedHtml = computed(() => marked.parse(_content.value) as string)
+  const renderedMarkdown = computed(() => renderMarkdownWithSourceMap(_content.value))
+  const renderedHtml = computed(() => renderedMarkdown.value.html)
+  const sourceMap = computed(() => renderedMarkdown.value.sourceMap)
 
   const stats = computed<EditorStats>(() => {
     const text = _content.value
@@ -162,6 +153,7 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
     renderMermaidDiagrams,
     setTheme,
     setViewMode,
+    sourceMap,
     stats,
     theme,
     toggleTheme,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { Example, Theme, ViewMode } from '@/features/markdown/types'
 
@@ -22,11 +22,20 @@ const {
   renderMermaidDiagrams,
   setTheme,
   setViewMode,
+  sourceMap,
   stats,
   theme,
   updateContent,
   viewMode,
 } = useMarkdownEditor()
+
+interface EditorScrollPayload {
+  clientHeight: number
+  contentLength: number
+  lineHeight: number
+  scrollHeight: number
+  scrollTop: number
+}
 
 interface ThemeChangeRequest {
   origin: { x: number; y: number }
@@ -40,6 +49,7 @@ const mobileBreakpoint = 700
 const isExamplesModalOpen = shallowRef(false)
 const isMobile = shallowRef(false)
 const editorPaneRef = useTemplateRef<InstanceType<typeof EditorPane>>('editorPane')
+const previewPaneRef = useTemplateRef<InstanceType<typeof PreviewPane>>('previewPane')
 const availableModes = computed<ViewMode[]>(() =>
   isMobile.value ? ['editor', 'preview'] : ['editor', 'split', 'preview'],
 )
@@ -65,8 +75,29 @@ function closeExamples(): void {
   isExamplesModalOpen.value = false
 }
 
+function getOffsetForLine(contentValue: string, lineNumber: number): number {
+  if (lineNumber <= 0) return 0
+
+  let currentLine = 0
+
+  for (let index = 0; index < contentValue.length; index += 1) {
+    if (contentValue[index] === '\n') {
+      currentLine += 1
+      if (currentLine === lineNumber) {
+        return index + 1
+      }
+    }
+  }
+
+  return contentValue.length
+}
+
 function handleContentUpdate(value: string): void {
   updateContent(value)
+}
+
+function handleEditorScroll(scrollState: EditorScrollPayload): void {
+  syncPreviewToEditorPosition(scrollState)
 }
 
 function handleExampleSelect(example: Example): void {
@@ -75,6 +106,12 @@ function handleExampleSelect(example: Example): void {
   setTimeout(() => {
     editorPaneRef.value?.focus()
   }, 0)
+}
+
+function handlePreviewJump(offset: number): void {
+  if (isMobile.value || viewMode.value !== 'split') return
+
+  void editorPaneRef.value?.focusAtOffset(offset)
 }
 
 function handleRenderDiagrams(container: HTMLElement): void {
@@ -98,6 +135,20 @@ function openExamples(): void {
   isExamplesModalOpen.value = true
 }
 
+function syncPreviewToEditorPosition(scrollState?: EditorScrollPayload | null): void {
+  if (isMobile.value || viewMode.value !== 'split') return
+
+  const effectiveScrollState = scrollState ?? editorPaneRef.value?.getScrollState()
+  if (!effectiveScrollState) return
+
+  const topLine = Math.max(
+    0,
+    Math.floor(effectiveScrollState.scrollTop / effectiveScrollState.lineHeight),
+  )
+  const sourceOffset = getOffsetForLine(content.value, topLine)
+  previewPaneRef.value?.scrollToSourceOffset(sourceOffset)
+}
+
 function syncViewport(): void {
   if (typeof window === 'undefined') return
 
@@ -117,6 +168,15 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', syncViewport)
 })
+
+watch(
+  () => [content.value, isMobile.value, sourceMap.value, viewMode.value],
+  async () => {
+    await nextTick()
+    syncPreviewToEditorPosition()
+  },
+  { deep: true },
+)
 </script>
 
 <template>
@@ -139,12 +199,16 @@ onUnmounted(() => {
         ref="editorPane"
         :content="content"
         :line-count="stats.lines"
+        @scroll="handleEditorScroll"
         @update:content="handleContentUpdate"
       />
       <PreviewPane
+        ref="previewPane"
         :html="renderedHtml"
+        :source-map="sourceMap"
         :theme="theme"
         :word-count="stats.words"
+        @jump-to-offset="handlePreviewJump"
         @render-diagrams="handleRenderDiagrams"
       />
     </main>

@@ -41,4 +41,46 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.toolbar__mobile-controls').contains('button', 'Editor').should('be.visible')
     cy.get('.toolbar__mobile-controls').contains('button', 'Preview').should('be.visible')
   })
+
+  it('syncs preview scrolling with the editor in split mode', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('textarea').then(($textarea) => {
+      const textarea = $textarea[0] as HTMLTextAreaElement
+      textarea.scrollTop = 240
+      textarea.dispatchEvent(new Event('scroll'))
+    })
+
+    cy.get('.preview-scroll').should(($preview) => {
+      expect(($preview[0] as HTMLDivElement).scrollTop).to.be.greaterThan(0)
+    })
+  })
+
+  it('focuses the editor at the clicked preview block in split mode', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.contains('.rendered-md h3[data-source-start]', 'Lists').dblclick()
+
+    cy.get('textarea').then(($textarea) => {
+      const textarea = $textarea[0] as HTMLTextAreaElement
+      const targetOffset = textarea.value.indexOf('### Lists')
+
+      expect(textarea.selectionStart).to.equal(targetOffset)
+      expect(textarea.selectionEnd).to.equal(targetOffset)
+      expect(textarea).to.equal(textarea.ownerDocument.activeElement)
+    })
+  })
+
+  it('does not jump back to the editor when preview is the only visible pane', () => {
+    cy.viewport('iphone-6')
+    cy.visit('/')
+    cy.get('.toolbar__mobile-controls').contains('button', 'Preview').click()
+
+    cy.get('.rendered-md [data-source-start]').first().dblclick()
+
+    cy.get('.preview-pane').should('be.visible')
+    cy.get('.editor-pane').should('not.be.visible')
+  })
 })

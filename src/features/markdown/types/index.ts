@@ -11,5 +11,12 @@ export interface Example {
   title: string
 }
 
+export interface MarkdownSourceMapEntry {
+  end: number
+  id: string
+  start: number
+  type: string
+}
+
 export type Theme = 'dark' | 'light'
 export type ViewMode = 'editor' | 'preview' | 'split'

@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { computed, nextTick, useTemplateRef } from 'vue'
+
+interface EditorScrollState {
+  clientHeight: number
+  contentLength: number
+  lineHeight: number
+  scrollHeight: number
+  scrollTop: number
+}
 
 interface Props {
   content: string
@@ -9,6 +17,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
+  scroll: [payload: EditorScrollState]
   'update:content': [value: string]
 }>()
 
@@ -20,9 +29,63 @@ const localContent = computed({
   set: (value: string) => emit('update:content', value),
 })
 
+function emitScroll(): void {
+  const scrollState = getScrollState()
+  if (!scrollState) return
+
+  emit('scroll', scrollState)
+}
+
 // Expose focus method
 function focus(): void {
   editorRef.value?.focus()
+}
+
+async function focusAtOffset(offset: number): Promise<void> {
+  const editor = editorRef.value
+  if (!editor) return
+
+  const clampedOffset = Math.max(0, Math.min(offset, props.content.length))
+  const lineIndex = getLineIndexForOffset(clampedOffset)
+  const lineHeight = getLineHeight(editor)
+
+  editor.focus()
+  await nextTick()
+  editor.setSelectionRange(clampedOffset, clampedOffset)
+  editor.scrollTop = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 2)
+}
+
+function getLineHeight(editor: HTMLTextAreaElement): number {
+  const computedStyle = window.getComputedStyle(editor)
+  const parsedLineHeight = Number.parseFloat(computedStyle.lineHeight)
+
+  return Number.isFinite(parsedLineHeight) ? parsedLineHeight : 22
+}
+
+function getLineIndexForOffset(offset: number): number {
+  const clampedOffset = Math.max(0, Math.min(offset, props.content.length))
+  let lineIndex = 0
+
+  for (let index = 0; index < clampedOffset; index += 1) {
+    if (props.content[index] === '\n') {
+      lineIndex += 1
+    }
+  }
+
+  return lineIndex
+}
+
+function getScrollState(): EditorScrollState | null {
+  const editor = editorRef.value
+  if (!editor) return null
+
+  return {
+    clientHeight: editor.clientHeight,
+    contentLength: props.content.length,
+    lineHeight: getLineHeight(editor),
+    scrollHeight: editor.scrollHeight,
+    scrollTop: editor.scrollTop,
+  }
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -42,7 +105,7 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
-defineExpose({ focus })
+defineExpose({ focus, focusAtOffset, getScrollState })
 </script>
 
 <template>
@@ -58,6 +121,7 @@ defineExpose({ focus })
       spellcheck="false"
       placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
       @keydown="handleKeydown"
+      @scroll="emitScroll"
     ></textarea>
   </div>
 </template>
