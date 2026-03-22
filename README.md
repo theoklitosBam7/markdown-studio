@@ -64,6 +64,17 @@ pnpm build:desktop
 pnpm dist:mac
 ```
 
+> [!IMPORTANT]
+> **⚠️ macOS Security Warning — Action Required**
+>
+> If macOS says `Markdown Studio.app` is **damaged and can't be opened**, you need to clear the quarantine flag after moving it to `/Applications`:
+>
+> ```sh
+> xattr -cr /Applications/Markdown\ Studio.app
+> ```
+>
+> **Alternative:** Open `System Settings` → `Privacy & Security` and allow the app to run from there.
+
 ## Usage
 
 ### Writing Markdown
