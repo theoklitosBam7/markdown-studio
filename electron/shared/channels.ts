@@ -1,0 +1,5 @@
+export const APP_COMMAND_CHANNEL = 'app:command'
+export const DOCUMENTS_OPEN_CHANNEL = 'documents:open'
+export const DOCUMENTS_SAVE_AS_CHANNEL = 'documents:saveAs'
+export const DOCUMENTS_SAVE_CHANNEL = 'documents:save'
+export const SHELL_OPEN_EXTERNAL_CHANNEL = 'shell:openExternal'

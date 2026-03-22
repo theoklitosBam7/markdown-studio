@@ -3,17 +3,18 @@ import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef,
 
 import type { Example, Theme, ViewMode } from '@/features/markdown/types'
 
+import { useDesktop } from '@/composables/useDesktop'
 import { useThemeTransition } from '@/composables/useThemeTransition'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
+import { useDocumentSession } from '@/features/markdown/composables/useDocumentSession'
 import { useMarkdownEditor } from '@/features/markdown/composables/useMarkdownEditor'
 
 // Use the composable
 const {
-  clearContent,
   content,
   copyContent,
   isCopied,
@@ -28,6 +29,20 @@ const {
   updateContent,
   viewMode,
 } = useMarkdownEditor()
+const desktop = useDesktop()
+const {
+  displayName,
+  handleAppCommand,
+  isDesktop,
+  isDirty,
+  openDocument,
+  saveDocument,
+  startNewDocument,
+  statusText,
+} = useDocumentSession({
+  content,
+  replaceContent: updateContent,
+})
 
 interface EditorScrollPayload {
   clientHeight: number
@@ -48,6 +63,7 @@ const mobileBreakpoint = 700
 // Local state
 const isExamplesModalOpen = shallowRef(false)
 const isMobile = shallowRef(false)
+let removeDesktopCommandListener: () => void = () => undefined
 const editorPaneRef = useTemplateRef<InstanceType<typeof EditorPane>>('editorPane')
 const previewPaneRef = useTemplateRef<InstanceType<typeof PreviewPane>>('previewPane')
 const availableModes = computed<ViewMode[]>(() =>
@@ -90,6 +106,12 @@ function getOffsetForLine(contentValue: string, lineNumber: number): number {
   }
 
   return contentValue.length
+}
+
+function handleClear(): void {
+  void startNewDocument().catch((error) => {
+    console.error('Failed to start new document:', error)
+  })
 }
 
 function handleContentUpdate(value: string): void {
@@ -163,10 +185,22 @@ function syncViewport(): void {
 onMounted(() => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
+
+  const onAppCommand = desktop.value?.commands?.onAppCommand
+  if (onAppCommand) {
+    removeDesktopCommandListener = onAppCommand((command) => {
+      void handleAppCommand(command).catch((err) => {
+        console.error('Failed to handle desktop app command:', err)
+      })
+    })
+  } else {
+    removeDesktopCommandListener = () => undefined
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', syncViewport)
+  removeDesktopCommandListener()
 })
 
 watch(
@@ -183,15 +217,18 @@ watch(
   <div class="markdown-studio" :class="bodyClasses">
     <Toolbar
       :available-modes="availableModes"
+      :is-desktop="isDesktop"
       :is-mobile="isMobile"
       :view-mode="viewMode"
       :theme="theme"
       :is-copied="isCopied"
+      @open-document="openDocument"
       @update:view-mode="handleViewModeChange"
       @update:theme="handleThemeChange"
       @open-examples="openExamples"
-      @clear="clearContent"
+      @clear="handleClear"
       @copy="copyContent"
+      @save-document="saveDocument"
     />
 
     <main class="main-content">
@@ -213,7 +250,13 @@ watch(
       />
     </main>
 
-    <StatusBar :chars="stats.chars" :diagrams="stats.diagrams" />
+    <StatusBar
+      :chars="stats.chars"
+      :diagrams="stats.diagrams"
+      :document-name="displayName"
+      :is-dirty="isDirty"
+      :status="statusText"
+    />
 
     <ExamplesModal
       :is-open="isExamplesModalOpen"

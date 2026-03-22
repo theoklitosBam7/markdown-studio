@@ -1,2 +1,5 @@
 allowBuilds:
   cypress: true
+  electron: true
+  electron-winstaller: false
+  esbuild: true

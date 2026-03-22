@@ -22,6 +22,9 @@ Markdown Studio is a Vue 3 + Vite app for writing Markdown with a live preview, 
 - DOMPurify
 - Marked
 - Mermaid
+- Electron
+- electron-vite
+- electron-builder
 
 ## Project Structure
 
@@ -47,10 +50,28 @@ Start the dev server:
 pnpm dev
 ```
 
+Start the Electron desktop shell in development:
+
+```sh
+pnpm dev:desktop
+```
+
 Build for production:
 
 ```sh
 pnpm build
+```
+
+Build the Electron bundles:
+
+```sh
+pnpm build:desktop
+```
+
+Create an unsigned macOS package:
+
+```sh
+pnpm dist:mac
 ```
 
 Preview the production build:

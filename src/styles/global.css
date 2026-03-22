@@ -61,6 +61,17 @@ body {
   height: 100%;
 }
 
+html[data-desktop='true'] body {
+  user-select: none;
+}
+
+html[data-desktop='true'] textarea,
+html[data-desktop='true'] input,
+html[data-desktop='true'] .rendered-md,
+html[data-desktop='true'] .rendered-md * {
+  user-select: text;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);

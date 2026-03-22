@@ -8,6 +8,7 @@ import type { Theme, ViewMode } from '../types'
 interface Props {
   availableModes?: ViewMode[]
   isCopied: boolean
+  isDesktop?: boolean
   isMobile?: boolean
   theme: Theme
   viewMode: ViewMode
@@ -26,7 +27,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   clear: []
   copy: []
+  openDocument: []
   openExamples: []
+  saveDocument: []
   'update:theme': [payload: ThemeChangeRequest]
   'update:viewMode': [mode: ViewMode]
 }>()
@@ -47,8 +50,16 @@ function handleViewModeChange(mode: ViewMode): void {
   emit('update:viewMode', mode)
 }
 
+function openDocument(): void {
+  emit('openDocument')
+}
+
 function openExamples(): void {
   emit('openExamples')
+}
+
+function saveDocument(): void {
+  emit('saveDocument')
 }
 </script>
 
@@ -61,6 +72,23 @@ function openExamples(): void {
       </div>
 
       <div class="toolbar__actions" aria-label="Document actions">
+        <ToolbarButton v-if="props.isDesktop" :compact="props.isMobile" @click="openDocument">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 5.5l6-3 6 3M2 5.5V13h12V5.5" />
+            <path d="M6 8h4" />
+          </svg>
+          <span>Open</span>
+        </ToolbarButton>
+
+        <ToolbarButton v-if="props.isDesktop" :compact="props.isMobile" @click="saveDocument">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 2.5h8l2 2V13a1 1 0 01-1 1H4a1 1 0 01-1-1v-9.5z" />
+            <path d="M5 2.5v4h5v-4" />
+            <path d="M5 11h6" />
+          </svg>
+          <span>Save</span>
+        </ToolbarButton>
+
         <ToolbarButton :compact="props.isMobile" @click="openExamples">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="2" y="2" width="5" height="5" rx="1" />
@@ -194,7 +222,7 @@ function openExamples(): void {
 
   .toolbar__actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     width: 100%;
   }
 

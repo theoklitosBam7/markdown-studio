@@ -2,6 +2,9 @@
 import DOMPurify from 'dompurify'
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
 
+import { useDesktop } from '@/composables/useDesktop'
+import { isSafeExternalUrl } from '@/utils/platform'
+
 import type { MarkdownSourceMapEntry, Theme } from '../types'
 
 interface Props {
@@ -12,6 +15,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const desktop = useDesktop()
 
 const emit = defineEmits<{
   jumpToOffset: [offset: number]
@@ -24,17 +28,11 @@ const renderKey = ref(0)
 
 const sanitizedHtml = computed(() =>
   DOMPurify.sanitize(props.html, {
-    ADD_ATTR: [
-      'allow',
-      'allowfullscreen',
-      'data-source-end',
-      'data-source-id',
-      'data-source-start',
-      'frameborder',
-      'id',
-      'scrolling',
-    ],
-    ADD_TAGS: ['iframe'],
+    ADD_ATTR: ['data-source-end', 'data-source-id', 'data-source-start', 'id'],
+    FORBID_ATTR: desktop.value.isDesktop
+      ? ['allow', 'allowfullscreen', 'frameborder', 'scrolling']
+      : [],
+    FORBID_TAGS: desktop.value.isDesktop ? ['iframe'] : [],
   }),
 )
 
@@ -67,6 +65,24 @@ function handleDoubleClick(event: MouseEvent): void {
   if (sourceStart === undefined) return
 
   emit('jumpToOffset', Number.parseInt(sourceStart, 10))
+}
+
+function handleLinkClick(event: MouseEvent): void {
+  if (!desktop.value.isDesktop) return
+
+  const target = event.target
+  const link =
+    target instanceof Element
+      ? target.closest<HTMLAnchorElement>('a[href]')
+      : target instanceof Node
+        ? target.parentElement?.closest<HTMLAnchorElement>('a[href]')
+        : null
+
+  const href = link?.href
+  if (!href || !isSafeExternalUrl(href)) return
+
+  event.preventDefault()
+  void desktop.value.shell.openExternal(href)
 }
 
 function hydrateSourceAnchors(): void {
@@ -218,6 +234,7 @@ defineExpose({ scrollToSourceOffset })
         :key="renderKey"
         ref="preview"
         class="rendered-md"
+        @click="handleLinkClick"
         @dblclick="handleDoubleClick"
         v-html="sanitizedHtml"
       ></div>

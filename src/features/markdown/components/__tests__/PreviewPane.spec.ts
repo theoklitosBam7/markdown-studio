@@ -1,10 +1,20 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import PreviewPane from '../PreviewPane.vue'
 
 describe('PreviewPane', () => {
+  const originalDesktop = window.desktop
+
+  beforeEach(() => {
+    window.desktop = undefined
+  })
+
+  afterEach(() => {
+    window.desktop = originalDesktop
+  })
+
   it('rerenders mermaid diagrams when the theme changes', async () => {
     const wrapper = mount(PreviewPane, {
       props: {
@@ -69,5 +79,38 @@ describe('PreviewPane', () => {
     sourceElement = wrapper.get('[data-source-id="block-1"]')
     expect(sourceElement.attributes('data-source-start')).toBe('0')
     expect(sourceElement.attributes('data-source-end')).toBe('5')
+  })
+
+  it('strips iframe embeds in desktop mode and opens safe external links via the shell bridge', async () => {
+    const openExternal = vi.fn(async () => undefined)
+    window.desktop = {
+      commands: {
+        onAppCommand: () => () => undefined,
+      },
+      documents: {
+        open: async () => null,
+        save: async () => null,
+        saveAs: async () => null,
+      },
+      isDesktop: true,
+      shell: {
+        openExternal,
+      },
+    }
+
+    const wrapper = mount(PreviewPane, {
+      props: {
+        html: '<iframe src="https://example.com"></iframe><p><a href="https://example.com">Read more</a></p>',
+        sourceMap: [],
+        theme: 'light',
+        wordCount: 2,
+      },
+    })
+
+    await nextTick()
+    expect(wrapper.html()).not.toContain('<iframe')
+
+    await wrapper.get('a').trigger('click')
+    expect(openExternal).toHaveBeenCalledWith('https://example.com/')
   })
 })

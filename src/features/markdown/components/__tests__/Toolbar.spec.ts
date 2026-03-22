@@ -9,6 +9,7 @@ describe('Toolbar', () => {
       props: {
         availableModes: ['editor', 'split', 'preview'],
         isCopied: false,
+        isDesktop: true,
         isMobile: false,
         theme: 'light',
         viewMode: 'split',
@@ -17,6 +18,8 @@ describe('Toolbar', () => {
 
     expect(wrapper.find('.toolbar__desktop-controls').exists()).toBe(true)
     expect(wrapper.find('.toolbar__mobile-controls').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Open')
+    expect(wrapper.text()).toContain('Save')
     expect(wrapper.get('[data-mode="split"]').text()).toBe('Split')
     expect(wrapper.find('button[aria-label="Switch to dark mode"]').exists()).toBe(true)
   })
@@ -26,6 +29,7 @@ describe('Toolbar', () => {
       props: {
         availableModes: ['editor', 'preview'],
         isCopied: false,
+        isDesktop: false,
         isMobile: true,
         theme: 'light',
         viewMode: 'editor',

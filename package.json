@@ -3,10 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "out/main/main.js",
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:desktop": "electron-vite build",
+    "dev:desktop": "electron-vite dev --watch",
+    "dist:mac": "pnpm build:desktop && electron-builder --mac --config.mac.identity=null",
     "preview": "vite preview",
+    "preview:desktop": "electron-vite preview",
     "test:unit": "vitest run",
     "prepare": "cypress install",
     "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
@@ -16,7 +21,7 @@
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "oxfmt src/"
+    "format": "oxfmt src electron *.config.ts env.d.ts"
   },
   "dependencies": {
     "dompurify": "^3.3.3",
@@ -31,11 +36,14 @@
     "@types/jsdom": "^28.0.1",
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
-    "@vitest/eslint-plugin": "^1.6.12",
+    "@vitest/eslint-plugin": "^1.6.13",
     "@vue/eslint-config-typescript": "^14.7.0",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.9.0",
     "cypress": "^15.12.0",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-boundaries": "^6.0.1",
@@ -54,6 +62,25 @@
     "vite-plugin-vue-devtools": "^8.1.0",
     "vitest": "^4.1.0",
     "vue-tsc": "^3.2.6"
+  },
+  "build": {
+    "appId": "com.markdownstudio.app",
+    "productName": "Markdown Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**",
+      "package.json"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    }
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

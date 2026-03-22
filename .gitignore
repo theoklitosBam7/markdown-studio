@@ -5,12 +5,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.pnpm-store
 lerna-debug.log*
 
 node_modules
 .DS_Store
 dist
 dist-ssr
+out
+release
 coverage
 *.local
 

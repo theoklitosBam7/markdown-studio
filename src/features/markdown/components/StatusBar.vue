@@ -2,10 +2,14 @@
 interface Props {
   chars: number
   diagrams: number
+  documentName?: string
+  isDirty?: boolean
   status?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  documentName: 'Untitled.md',
+  isDirty: false,
   status: 'Ready',
 })
 </script>
@@ -15,6 +19,9 @@ const props = withDefaults(defineProps<Props>(), {
     <div class="status-item">
       <span class="status-dot"></span>
       {{ props.status }}
+    </div>
+    <div class="status-item status-item--document">
+      {{ props.documentName }}<span v-if="props.isDirty"> • Unsaved</span>
     </div>
     <div class="status-item status-item--diagrams">
       Mermaid: {{ props.diagrams }} diagram{{ props.diagrams !== 1 ? 's' : '' }}
@@ -56,6 +63,7 @@ const props = withDefaults(defineProps<Props>(), {
     gap: 10px;
   }
 
+  .status-item--document,
   .status-item--diagrams {
     display: none;
   }
