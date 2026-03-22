@@ -3,6 +3,7 @@ import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { Example, Theme, ViewMode } from '@/features/markdown/types'
 
+import { useThemeTransition } from '@/composables/useThemeTransition'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
@@ -19,13 +20,20 @@ const {
   loadExample,
   renderedHtml,
   renderMermaidDiagrams,
+  setTheme,
   setViewMode,
   stats,
   theme,
-  toggleTheme,
   updateContent,
   viewMode,
 } = useMarkdownEditor()
+
+interface ThemeChangeRequest {
+  origin: { x: number; y: number }
+  theme: Theme
+}
+
+const { transitionTheme } = useThemeTransition()
 
 // Local state
 const isExamplesModalOpen = shallowRef(false)
@@ -67,12 +75,12 @@ function handleRenderDiagrams(container: HTMLElement): void {
   renderMermaidDiagrams(container)
 }
 
-function handleThemeChange(newTheme: Theme): void {
-  // The theme toggle emits the new theme value, but we need to toggle
-  // Since toggleTheme() toggles internally, we should sync the values
-  if (newTheme !== theme.value) {
-    toggleTheme()
-  }
+async function handleThemeChange(request: ThemeChangeRequest): Promise<void> {
+  if (request.theme === theme.value) return
+
+  await transitionTheme(request.theme, setTheme, {
+    origin: request.origin,
+  })
 }
 
 // Actions

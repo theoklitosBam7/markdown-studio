@@ -11,13 +11,18 @@ interface Props {
   viewMode: ViewMode
 }
 
+interface ThemeChangeRequest {
+  origin: { x: number; y: number }
+  theme: Theme
+}
+
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
   clear: []
   copy: []
   openExamples: []
-  'update:theme': [theme: Theme]
+  'update:theme': [payload: ThemeChangeRequest]
   'update:viewMode': [mode: ViewMode]
 }>()
 
@@ -29,8 +34,8 @@ function copy(): void {
   emit('copy')
 }
 
-function handleThemeChange(theme: Theme): void {
-  emit('update:theme', theme)
+function handleThemeChange(payload: ThemeChangeRequest): void {
+  emit('update:theme', payload)
 }
 
 function handleViewModeChange(mode: ViewMode): void {
@@ -75,7 +80,7 @@ function openExamples(): void {
     <div class="spacer"></div>
 
     <ViewToggle :model-value="props.viewMode" @update:model-value="handleViewModeChange" />
-    <ThemeToggle :model-value="props.theme" @update:model-value="handleThemeChange" />
+    <ThemeToggle :theme="props.theme" @toggle="handleThemeChange" />
   </header>
 </template>
 

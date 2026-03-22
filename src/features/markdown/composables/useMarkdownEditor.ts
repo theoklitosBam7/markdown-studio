@@ -24,6 +24,7 @@ interface UseMarkdownEditorReturn {
   loadExample: (example: Example) => void
   renderedHtml: ComputedRef<string>
   renderMermaidDiagrams: (container: HTMLElement) => Promise<void>
+  setTheme: (theme: Theme) => void
   setViewMode: (mode: ViewMode) => void
   stats: ComputedRef<EditorStats>
   theme: DeepReadonly<ShallowRef<Theme>>
@@ -34,7 +35,7 @@ interface UseMarkdownEditorReturn {
 
 export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMarkdownEditorReturn {
   // Use global theme composable for persistence
-  const { theme, toggleTheme } = useTheme()
+  const { setTheme, theme, toggleTheme } = useTheme()
 
   function configureMermaid(activeTheme: Theme): void {
     mermaid.initialize({
@@ -159,6 +160,7 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
     loadExample,
     renderedHtml,
     renderMermaidDiagrams,
+    setTheme,
     setViewMode,
     stats,
     theme,

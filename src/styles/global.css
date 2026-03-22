@@ -9,6 +9,8 @@
 }
 
 :root {
+  color-scheme: light;
+
   /* Colors */
   --bg: #f7f5f0;
   --surface: #ffffff;
@@ -32,6 +34,7 @@
 }
 
 [data-theme='dark'] {
+  color-scheme: dark;
   --bg: #141210;
   --surface: #1e1c19;
   --panel: #252320;
@@ -56,8 +59,44 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
 }
 
 #app {
   height: 100%;
+}
+
+:where(button, input, textarea, .toolbar, .editor-pane, .preview-pane, .status-bar, .modal) {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+.theme-transitioning {
+  overflow: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  :where(button, input, textarea, .toolbar, .editor-pane, .preview-pane, .status-bar, .modal) {
+    transition: none;
+  }
 }
