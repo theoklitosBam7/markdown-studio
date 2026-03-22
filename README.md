@@ -1,5 +1,7 @@
 # Markdown Studio
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/theoklitosBam7/markdown-studio)
+
 A beautiful, modern Markdown editor with live preview, Mermaid diagram support, and a clean writing experience. Available as both a web app and a desktop application.
 
 ## What is Markdown Studio?
