@@ -1,128 +1,189 @@
 # Markdown Studio
 
-Markdown Studio is a Vue 3 + Vite app for writing Markdown with a live preview, Mermaid diagram rendering, theme switching, and sample content presets.
+A beautiful, modern Markdown editor with live preview, Mermaid diagram support, and a clean writing experience. Available as both a web app and a desktop application.
+
+## What is Markdown Studio?
+
+Markdown Studio is a split-pane Markdown editor that lets you write on one side and see the rendered result instantly on the other. It supports the full CommonMark specification plus Mermaid diagrams for flowcharts, sequence diagrams, entity relationships, Gantt charts, and more.
+
+**Key highlights:**
+
+- Clean, distraction-free writing environment
+- Real-time preview as you type
+- Built-in diagram support via Mermaid
+- Dark and light themes
+- File management (open, save, save as)
+- Example templates to get you started
+- Available as a web app or desktop application
 
 ## Features
 
-- Split-pane editor and preview layout
-- Live Markdown rendering with `marked`
-- Safe HTML rendering with `DOMPurify`
-- Mermaid diagram support
-- Light and dark themes
-- Example document picker
-- Copy Markdown content to the clipboard
+### For Writers
 
-## Tech Stack
+- **Split-pane editor** — Write on the left, preview on the right
+- **Live Markdown rendering** — See changes instantly as you type
+- **Mermaid diagram support** — Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
+- **Theme switching** — Toggle between light and dark modes
+- **Word and character count** — Track your document stats in real-time
+- **Example documents** — Load pre-made templates to learn Markdown or Mermaid syntax
+- **Copy to clipboard** — Quickly copy your Markdown source
 
-- Vue 3
-- Vite
-- TypeScript
-- Vue Router
-- Pinia
-- DOMPurify
-- Marked
-- Mermaid
-- Electron
-- electron-vite
-- electron-builder
+### For Developers
 
-## Project Structure
-
-- [`src/main.ts`](./src/main.ts) bootstraps the app and installs Pinia and the router.
-- [`src/App.vue`](./src/App.vue) renders the routed view and loads global styles.
-- [`src/router/index.ts`](./src/router/index.ts) defines the single home route.
-- [`src/views/MarkdownStudioView.vue`](./src/views/MarkdownStudioView.vue) wires the editor, preview, toolbar, and status bar together.
-- [`src/features/markdown/composables/useMarkdownEditor.ts`](./src/features/markdown/composables/useMarkdownEditor.ts) contains the editor state and Markdown rendering logic.
-- [`src/features/markdown/components/`](./src/features/markdown/components) contains the editor UI.
-- [`src/utils/escapeHtml.ts`](./src/utils/escapeHtml.ts) provides HTML escaping for rendered output.
+- **Safe HTML rendering** — Content is sanitized with DOMPurify
+- **File operations** — Open, save, and manage `.md` files (desktop app)
+- **Responsive design** — Works on desktop and mobile devices
+- **Keyboard shortcuts** — Efficient editing with familiar shortcuts
 
 ## Getting Started
 
-Install dependencies:
+### Web App
+
+Visit the app in your browser (after running the dev server):
 
 ```sh
 pnpm install
-```
-
-Start the dev server:
-
-```sh
 pnpm dev
 ```
 
-Start the Electron desktop shell in development:
+### Desktop App
+
+Build and run the Electron desktop application:
 
 ```sh
+# Install dependencies
+pnpm install
+
+# Run in development mode
 pnpm dev:desktop
-```
 
-Build for production:
-
-```sh
-pnpm build
-```
-
-Build the Electron bundles:
-
-```sh
+# Build for production
 pnpm build:desktop
-```
 
-Create an unsigned macOS package:
-
-```sh
+# Create macOS distribution package (unsigned)
 pnpm dist:mac
 ```
 
-Preview the production build:
+## Usage
 
-```sh
-pnpm preview
+### Writing Markdown
+
+Simply start typing in the editor pane. The preview pane updates automatically as you write.
+
+### Creating Diagrams
+
+Use Mermaid syntax within fenced code blocks:
+
+~~~markdown
+```mermaid
+flowchart TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+```
+~~~
+
+Supported diagram types include:
+
+- Flowcharts
+- Sequence diagrams
+- Entity relationship diagrams
+- Gantt charts
+- And more
+
+### Switching Themes
+
+Click the theme toggle button in the toolbar to switch between light and dark modes. The transition includes a smooth animation effect.
+
+### Loading Examples
+
+Click the "Examples" button in the toolbar to browse and load pre-made documents demonstrating various Markdown and Mermaid features.
+
+### File Operations (Desktop)
+
+When running the desktop app:
+
+- **Open** — Load existing `.md` files
+- **Save** — Save your current document
+- **Save As** — Save with a new name or location
+- **New Document** — Start fresh with an empty editor
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── features/markdown/
+│   ├── components/        # UI components (EditorPane, PreviewPane, Toolbar, etc.)
+│   └── composables/       # Business logic (useMarkdownEditor, useDocumentSession)
+├── composables/           # Shared composables (useTheme, useDesktop)
+├── utils/                 # Utility functions
+├── views/                 # Page-level components
+├── router/                # Vue Router configuration
+├── App.vue               # Root component
+└── main.ts               # Application entry point
+
+electron/                  # Electron main process code
 ```
 
-## Testing
+### Tech Stack
 
-Run unit tests:
+- **Vue 3** — Progressive JavaScript framework with Composition API
+- **Vite** — Fast build tool and dev server
+- **TypeScript** — Type-safe development
+- **Pinia** — State management
+- **Vue Router** — Client-side routing
+- **Marked** — Markdown parser and compiler
+- **DOMPurify** — HTML sanitization
+- **Mermaid** — Diagram generation from text
+- **Electron** — Cross-platform desktop app framework
+- **electron-vite** — Vite integration for Electron
+- **electron-builder** — Packaging and distribution
 
-```sh
-pnpm test:unit
-```
-
-Run Cypress in development mode:
-
-```sh
-pnpm test:e2e:dev
-```
-
-Run Cypress against the production preview:
-
-```sh
-pnpm build
-pnpm test:e2e
-```
-
-## Quality Checks
-
-Type-check the project:
+### Available Scripts
 
 ```sh
-pnpm type-check
+# Development
+pnpm dev              # Start Vite dev server
+pnpm dev:desktop      # Start Electron in dev mode
+
+# Building
+pnpm build            # Build for production
+pnpm build:desktop    # Build Electron bundles
+pnpm dist:mac         # Create unsigned macOS package
+
+# Preview
+pnpm preview          # Preview production build
+pnpm preview:desktop  # Preview Electron build
+
+# Testing
+pnpm test:unit        # Run Vitest unit tests
+pnpm test:e2e:dev     # Run Cypress in dev mode
+pnpm test:e2e         # Run Cypress against production build
+
+# Quality
+pnpm type-check       # Run TypeScript type checking
+pnpm lint             # Run ESLint and oxlint
+pnpm format           # Format code with oxfmt
 ```
 
-Run linting:
+### Architecture Highlights
 
-```sh
-pnpm lint
-```
+- **Composables-based architecture** — Logic is organized into reusable Vue composables
+- **Feature-based folder structure** — Related components and logic live together
+- **Desktop/web abstraction** — Clean separation between web and Electron APIs
+- **Source map tracking** — Enables sync between editor scroll position and preview
 
-Format source files:
+## Browser Support
 
-```sh
-pnpm format
-```
+Markdown Studio works in all modern browsers that support:
 
-## Notes
+- ES2020+
+- CSS Grid and Flexbox
+- CSS Custom Properties
+- Clipboard API
 
-- The app is mounted through Vue Router, so `App.vue` only renders `<RouterView />`.
-- Unit tests live under `src/**/__tests__`.
-- Cypress end-to-end tests live under `cypress/e2e`.
+## License
+
+MIT
