@@ -60,7 +60,7 @@ pnpm dev:desktop
 # Build for production
 pnpm build:desktop
 
-# Create macOS distribution package (unsigned)
+# Create macOS distribution package (unsigned, no auto-publish)
 pnpm dist:mac
 ```
 

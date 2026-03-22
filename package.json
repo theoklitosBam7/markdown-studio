@@ -9,7 +9,7 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "build:desktop": "electron-vite build",
     "dev:desktop": "electron-vite dev --watch",
-    "dist:mac": "pnpm build:desktop && electron-builder --mac --config.mac.identity=null",
+    "dist:mac": "pnpm build:desktop && electron-builder --mac --config.mac.identity=null --publish never",
     "preview": "vite preview",
     "preview:desktop": "electron-vite preview",
     "test:unit": "vitest run",
