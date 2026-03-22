@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import DOMPurify from 'dompurify'
-import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
+
+import type { Theme } from '../types'
 
 interface Props {
   html: string
+  theme: Theme
   wordCount: number
 }
 
@@ -14,6 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const previewRef = useTemplateRef<HTMLDivElement>('preview')
+const renderKey = ref(0)
 
 const sanitizedHtml = computed(() =>
   DOMPurify.sanitize(props.html, {
@@ -21,6 +25,11 @@ const sanitizedHtml = computed(() =>
     ADD_TAGS: ['iframe'],
   }),
 )
+
+async function refreshPreview(): Promise<void> {
+  renderKey.value += 1
+  await renderDiagrams()
+}
 
 async function renderDiagrams(): Promise<void> {
   await nextTick()
@@ -33,11 +42,11 @@ onMounted(() => {
   void renderDiagrams()
 })
 
-// Watch for HTML changes and trigger mermaid rendering
+// Watch for HTML or theme changes and trigger mermaid rendering.
 watch(
-  () => props.html,
+  () => [props.html, props.theme],
   async () => {
-    await renderDiagrams()
+    await refreshPreview()
   },
 )
 </script>
@@ -50,7 +59,7 @@ watch(
     </div>
     <div class="preview-scroll">
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <div ref="preview" class="rendered-md" v-html="sanitizedHtml"></div>
+      <div :key="renderKey" ref="preview" class="rendered-md" v-html="sanitizedHtml"></div>
     </div>
   </div>
 </template>

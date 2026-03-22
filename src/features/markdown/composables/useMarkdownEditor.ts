@@ -36,13 +36,17 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
   // Use global theme composable for persistence
   const { theme, toggleTheme } = useTheme()
 
-  // Initialize mermaid with current theme
-  mermaid.initialize({
-    fontFamily: 'DM Sans, sans-serif',
-    securityLevel: 'strict',
-    startOnLoad: false,
-    theme: theme.value === 'dark' ? 'dark' : 'neutral',
-  })
+  function configureMermaid(activeTheme: Theme): void {
+    mermaid.initialize({
+      fontFamily: 'DM Sans, sans-serif',
+      securityLevel: 'strict',
+      startOnLoad: false,
+      theme: activeTheme === 'dark' ? 'dark' : 'neutral',
+    })
+  }
+
+  // Initialize Mermaid with the current theme and keep it in sync for future renders.
+  configureMermaid(theme.value)
 
   // State
   const defaultExample = EXAMPLES[DEFAULT_EXAMPLE_INDEX]
@@ -89,12 +93,7 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
 
   // Watchers - re-initialize mermaid when theme changes
   watch(theme, (newTheme) => {
-    mermaid.initialize({
-      fontFamily: 'DM Sans, sans-serif',
-      securityLevel: 'strict',
-      startOnLoad: false,
-      theme: newTheme === 'dark' ? 'dark' : 'neutral',
-    })
+    configureMermaid(newTheme)
   })
 
   // Actions
@@ -132,6 +131,8 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
   }
 
   async function renderMermaidDiagrams(container: HTMLElement): Promise<void> {
+    configureMermaid(theme.value)
+
     const diagrams = container.querySelectorAll('.mermaid')
 
     for (const el of diagrams) {

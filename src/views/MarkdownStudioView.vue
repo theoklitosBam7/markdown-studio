@@ -107,6 +107,7 @@ function openExamples(): void {
       />
       <PreviewPane
         :html="renderedHtml"
+        :theme="theme"
         :word-count="stats.words"
         @render-diagrams="handleRenderDiagrams"
       />
