@@ -1,0 +1,198 @@
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version like 1.2.3 or v1.2.3
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release_meta.outputs.version }}
+      tag: ${{ steps.release_meta.outputs.tag }}
+      is_prerelease: ${{ steps.release_meta.outputs.is_prerelease }}
+      make_latest: ${{ steps.release_meta.outputs.make_latest }}
+      ref: ${{ github.sha }}
+    steps:
+      - name: Resolve release version
+        id: release_meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            raw="${{ github.event.inputs.version }}"
+          else
+            raw="${GITHUB_REF_NAME}"
+          fi
+
+          version="${raw#v}"
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version: $raw" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "make_latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "make_latest=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: Build macOS release
+    needs: preflight
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preflight.outputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version-file: package.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format
+        run: pnpm format
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Run unit tests
+        run: pnpm test:unit
+
+      - name: Stamp release version
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFile, writeFile } from 'node:fs/promises'
+
+          const packageJsonPath = new URL('./package.json', `file://${process.cwd()}/`)
+          const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'))
+
+          packageJson.version = process.env.RELEASE_VERSION
+
+          await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+          EOF
+
+      - name: Build desktop artifacts
+        run: pnpm dist:mac
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: markdown-studio-macos
+          path: |
+            release/*.dmg
+            release/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: [preflight, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: markdown-studio-macos
+          path: release-assets
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.preflight.outputs.tag }}
+          target_commitish: ${{ needs.preflight.outputs.ref }}
+          name: Markdown Studio v${{ needs.preflight.outputs.version }}
+          generate_release_notes: true
+          prerelease: ${{ needs.preflight.outputs.is_prerelease }}
+          make_latest: ${{ needs.preflight.outputs.make_latest }}
+          files: |
+            release-assets/*.dmg
+            release-assets/*.zip
+          fail_on_unmatched_files: true
+
+  finalize:
+    name: Finalize release
+    needs: [preflight, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version-file: package.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update package version
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFile, writeFile } from 'node:fs/promises'
+
+          const packageJsonPath = new URL('./package.json', `file://${process.cwd()}/`)
+          const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'))
+
+          packageJson.version = process.env.RELEASE_VERSION
+
+          await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+          EOF
+
+      - name: Format package.json
+        run: pnpm format
+
+      - name: Create version bump pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          add-paths: package.json
+          base: main
+          branch: release/${{ needs.preflight.outputs.tag }}-version-bump
+          commit-message: 'chore(release): prepare ${{ needs.preflight.outputs.tag }}'
+          delete-branch: true
+          title: 'chore(release): prepare ${{ needs.preflight.outputs.tag }}'
+          body: |
+            Updates `package.json` to the released version after publishing `${{ needs.preflight.outputs.tag }}`.

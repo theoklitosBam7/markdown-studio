@@ -169,6 +169,16 @@ pnpm format           # Format code and Markdown with oxfmt
 pnpm format:check     # Check formatting without writing changes
 ```
 
+### Releases
+
+Desktop releases are published through GitHub Actions with the workflow at `.github/workflows/release.yml`.
+
+- Push a tag like `v1.2.3` to build and publish a stable GitHub release
+- Push a tag like `v1.2.3-beta.1` to build and publish a prerelease
+- Or run the workflow manually with a `version` input
+
+The workflow currently packages the macOS desktop app, uploads the generated `.dmg` and `.zip` assets to the GitHub release, and then opens a pull request to update `package.json` on `main` to match the released version.
+
 ### Architecture Highlights
 
 - **Composables-based architecture** — Logic is organized into reusable Vue composables
