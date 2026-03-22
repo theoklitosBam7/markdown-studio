@@ -4,10 +4,13 @@ import { computed, useTemplateRef } from 'vue'
 import type { Theme } from '@/features/markdown/types'
 
 interface Props {
+  compact?: boolean
   theme: Theme
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  compact: false,
+})
 
 const emit = defineEmits<{
   toggle: [payload: { origin: { x: number; y: number }; theme: Theme }]
@@ -35,9 +38,8 @@ function toggle(): void {
 <template>
   <button
     ref="button"
-    class="theme-toggle"
+    :class="['theme-toggle', { 'is-dark': isDark, compact: props.compact }]"
     type="button"
-    :class="{ 'is-dark': isDark }"
     :title="`Switch to ${nextTheme} mode`"
     :aria-label="`Switch to ${nextTheme} mode`"
     @click="toggle"
@@ -51,8 +53,8 @@ function toggle(): void {
 <style scoped>
 .theme-toggle {
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background:
@@ -72,6 +74,11 @@ function toggle(): void {
     box-shadow 0.35s ease,
     transform 0.35s ease,
     background-color 0.25s ease;
+}
+
+.theme-toggle.compact {
+  width: 36px;
+  height: 36px;
 }
 
 .theme-toggle:hover {
@@ -122,5 +129,12 @@ function toggle(): void {
 .theme-toggle.is-dark .theme-toggle__icon--moon {
   opacity: 0;
   transform: translateY(-10px) rotate(30deg) scale(0.6);
+}
+
+@media (max-width: 700px) {
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+  }
 }
 </style>

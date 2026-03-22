@@ -73,12 +73,12 @@ watch(
 }
 
 .pane-header {
-  height: 36px;
+  height: var(--pane-header-h);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 var(--app-gutter);
   gap: 8px;
   flex-shrink: 0;
 }
@@ -282,5 +282,32 @@ watch(
   background: #fdf0ef;
   border: 1px solid #f5c6c6;
   border-radius: 8px;
+}
+
+@media (max-width: 700px) {
+  .line-count {
+    display: none;
+  }
+
+  .preview-scroll {
+    padding: 20px var(--app-gutter) 32px;
+  }
+
+  .rendered-md {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .rendered-md :deep(h1) {
+    font-size: 1.9em;
+  }
+
+  .rendered-md :deep(h2) {
+    font-size: 1.45em;
+  }
+
+  .rendered-md :deep(pre) {
+    padding: 14px 16px;
+  }
 }
 </style>

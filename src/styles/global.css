@@ -30,6 +30,13 @@
 
   /* Layout */
   --toolbar-h: 52px;
+  --toolbar-h-compact: 88px;
+  --status-h: 24px;
+  --status-h-compact: 22px;
+  --app-gutter: 16px;
+  --app-gutter-compact: 12px;
+  --pane-header-h: 36px;
+  --pane-header-h-compact: 32px;
   --sidebar-w: 300px;
 }
 
@@ -68,6 +75,12 @@ body {
   height: 100%;
 }
 
+button,
+input,
+textarea {
+  font: inherit;
+}
+
 :where(button, input, textarea, .toolbar, .editor-pane, .preview-pane, .status-bar, .modal) {
   transition:
     background-color 0.35s ease,
@@ -98,5 +111,14 @@ body {
   body,
   :where(button, input, textarea, .toolbar, .editor-pane, .preview-pane, .status-bar, .modal) {
     transition: none;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --toolbar-h: var(--toolbar-h-compact);
+    --status-h: var(--status-h-compact);
+    --app-gutter: var(--app-gutter-compact);
+    --pane-header-h: var(--pane-header-h-compact);
   }
 }

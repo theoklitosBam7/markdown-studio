@@ -63,4 +63,10 @@ function handleKeyDown(event: KeyboardEvent): void {
   line-height: 1.4;
   margin: 0;
 }
+
+@media (max-width: 700px) {
+  .example-card {
+    padding: 14px;
+  }
+}
 </style>

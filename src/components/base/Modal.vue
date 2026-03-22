@@ -74,6 +74,7 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: 12px;
   width: 580px;
+  max-width: calc(100vw - 2 * var(--app-gutter));
   max-height: 75vh;
   display: flex;
   flex-direction: column;
@@ -121,5 +122,27 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+@media (max-width: 700px) {
+  .modal-overlay {
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(82dvh, 82vh);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(20px);
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-body {
+    padding: 14px 16px 18px;
+  }
 }
 </style>

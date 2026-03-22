@@ -1,55 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 
 import type { ViewMode } from '@/features/markdown/types'
 
 interface Props {
+  availableModes?: ViewMode[]
+  compact?: boolean
   modelValue: ViewMode
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  availableModes: () => ['editor', 'split', 'preview'],
+  compact: false,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [mode: ViewMode]
 }>()
 
-const modes: { label: string; value: ViewMode }[] = [
+const allModes: { label: string; value: ViewMode }[] = [
   { label: 'Editor', value: 'editor' },
   { label: 'Split', value: 'split' },
   { label: 'Preview', value: 'preview' },
 ]
-
-const mobileBreakpoint = 700
 
 const activeMode = computed({
   get: () => props.modelValue,
   set: (value: ViewMode) => emit('update:modelValue', value),
 })
 
+const modes = computed(() => allModes.filter((mode) => props.availableModes.includes(mode.value)))
+
 function setMode(mode: ViewMode): void {
   activeMode.value = mode
 }
-
-function syncMobileMode(): void {
-  if (typeof window === 'undefined') return
-
-  if (window.innerWidth <= mobileBreakpoint && props.modelValue === 'split') {
-    activeMode.value = 'preview'
-  }
-}
-
-onMounted(() => {
-  syncMobileMode()
-  window.addEventListener('resize', syncMobileMode)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', syncMobileMode)
-})
 </script>
 
 <template>
-  <div class="view-toggle">
+  <div :class="['view-toggle', { compact: props.compact }]">
     <button
       v-for="mode in modes"
       :key="mode.value"
@@ -71,8 +59,12 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.view-toggle.compact {
+  width: 100%;
+}
+
 .view-toggle button {
-  height: 28px;
+  height: 34px;
   padding: 0 10px;
   border: none;
   background: transparent;
@@ -84,6 +76,10 @@ onUnmounted(() => {
   transition: all 0.15s;
 }
 
+.view-toggle.compact button {
+  flex: 1;
+}
+
 .view-toggle button.active {
   background: var(--accent);
   color: white;
@@ -92,11 +88,5 @@ onUnmounted(() => {
 .view-toggle button:not(.active):hover {
   background: var(--panel);
   color: var(--text);
-}
-
-@media (max-width: 700px) {
-  .view-toggle button[data-mode='split'] {
-    display: none;
-  }
 }
 </style>

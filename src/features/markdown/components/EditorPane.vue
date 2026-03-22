@@ -72,12 +72,12 @@ defineExpose({ focus })
 }
 
 .pane-header {
-  height: 36px;
+  height: var(--pane-header-h);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 var(--app-gutter);
   gap: 8px;
   flex-shrink: 0;
 }
@@ -110,5 +110,17 @@ defineExpose({ focus })
   font-size: 13.5px;
   line-height: 1.7;
   tab-size: 2;
+}
+
+@media (max-width: 700px) {
+  .line-count {
+    display: none;
+  }
+
+  .editor {
+    padding: 16px var(--app-gutter) 24px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
 }
 </style>

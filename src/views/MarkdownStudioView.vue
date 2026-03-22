@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { Example, Theme, ViewMode } from '@/features/markdown/types'
 
@@ -34,13 +34,19 @@ interface ThemeChangeRequest {
 }
 
 const { transitionTheme } = useThemeTransition()
+const mobileBreakpoint = 700
 
 // Local state
 const isExamplesModalOpen = shallowRef(false)
+const isMobile = shallowRef(false)
 const editorPaneRef = useTemplateRef<InstanceType<typeof EditorPane>>('editorPane')
+const availableModes = computed<ViewMode[]>(() =>
+  isMobile.value ? ['editor', 'preview'] : ['editor', 'split', 'preview'],
+)
 
 // Computed body classes for view mode and theme
 const bodyClasses = computed(() => ({
+  'is-mobile': isMobile.value,
   'view-editor': viewMode.value === 'editor',
   'view-preview': viewMode.value === 'preview',
   'view-split': viewMode.value === 'split',
@@ -91,11 +97,33 @@ function handleViewModeChange(mode: ViewMode): void {
 function openExamples(): void {
   isExamplesModalOpen.value = true
 }
+
+function syncViewport(): void {
+  if (typeof window === 'undefined') return
+
+  const nextIsMobile = window.innerWidth <= mobileBreakpoint
+  isMobile.value = nextIsMobile
+
+  if (nextIsMobile && viewMode.value === 'split') {
+    setViewMode('editor')
+  }
+}
+
+onMounted(() => {
+  syncViewport()
+  window.addEventListener('resize', syncViewport)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncViewport)
+})
 </script>
 
 <template>
   <div class="markdown-studio" :class="bodyClasses">
     <Toolbar
+      :available-modes="availableModes"
+      :is-mobile="isMobile"
       :view-mode="viewMode"
       :theme="theme"
       :is-copied="isCopied"
@@ -135,7 +163,9 @@ function openExamples(): void {
 .markdown-studio {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -143,6 +173,7 @@ function openExamples(): void {
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* View mode styles */
@@ -163,12 +194,13 @@ function openExamples(): void {
 }
 
 @media (max-width: 700px) {
-  .markdown-studio.view-split :deep(.editor-pane) {
-    display: none;
+  .main-content {
+    flex-direction: column;
   }
 
-  .markdown-studio.view-split :deep(.preview-pane) {
-    display: flex;
+  .markdown-studio :deep(.editor-pane),
+  .markdown-studio :deep(.preview-pane) {
+    min-height: 0;
   }
 }
 </style>

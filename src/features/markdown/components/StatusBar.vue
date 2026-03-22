@@ -16,22 +16,23 @@ const props = withDefaults(defineProps<Props>(), {
       <span class="status-dot"></span>
       {{ props.status }}
     </div>
-    <div class="status-item">
+    <div class="status-item status-item--diagrams">
       Mermaid: {{ props.diagrams }} diagram{{ props.diagrams !== 1 ? 's' : '' }}
     </div>
-    <div class="status-item">{{ props.chars.toLocaleString() }} chars</div>
+    <div class="status-item status-item--chars">{{ props.chars.toLocaleString() }} chars</div>
   </div>
 </template>
 
 <style scoped>
 .status-bar {
-  height: 24px;
+  min-height: var(--status-h);
   background: var(--accent);
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 var(--app-gutter);
   gap: 16px;
   flex-shrink: 0;
+  overflow-x: auto;
 }
 
 .status-item {
@@ -48,5 +49,19 @@ const props = withDefaults(defineProps<Props>(), {
   height: 5px;
   border-radius: 50%;
   background: #5fe8b8;
+}
+
+@media (max-width: 700px) {
+  .status-bar {
+    gap: 10px;
+  }
+
+  .status-item--diagrams {
+    display: none;
+  }
+
+  .status-item--chars {
+    margin-left: auto;
+  }
 }
 </style>
