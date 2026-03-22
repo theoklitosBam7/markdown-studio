@@ -74,14 +74,14 @@ Simply start typing in the editor pane. The preview pane updates automatically a
 
 Use Mermaid syntax within fenced code blocks:
 
-~~~markdown
+````markdown
 ```mermaid
 flowchart TD
     A[Start] --> B{Decision}
     B -->|Yes| C[Action 1]
     B -->|No| D[Action 2]
 ```
-~~~
+````
 
 Supported diagram types include:
 
@@ -165,7 +165,8 @@ pnpm test:e2e         # Run Cypress against production build
 # Quality
 pnpm type-check       # Run TypeScript type checking
 pnpm lint             # Run ESLint and oxlint
-pnpm format           # Format code with oxfmt
+pnpm format           # Format code and Markdown with oxfmt
+pnpm format:check     # Check formatting without writing changes
 ```
 
 ### Architecture Highlights
