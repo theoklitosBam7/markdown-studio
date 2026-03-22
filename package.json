@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
-    "test:unit": "vitest",
+    "test:unit": "vitest run",
     "prepare": "cypress install",
     "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
     "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'",
@@ -19,6 +19,9 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "dompurify": "^3.3.3",
+    "marked": "^17.0.5",
+    "mermaid": "^11.13.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4"

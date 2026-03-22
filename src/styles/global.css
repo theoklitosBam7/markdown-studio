@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Colors */
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --panel: #f0ede6;
+  --border: #e2ddd5;
+  --border-dark: #c8c2b8;
+  --text: #1a1814;
+  --text-muted: #6b6560;
+  --text-faint: #9b958f;
+  --accent: #2a5f4f;
+  --accent-light: #e8f2ef;
+  --accent-mid: #4a8c78;
+  --code-bg: #f3f0eb;
+
+  /* Shadows */
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* Layout */
+  --toolbar-h: 52px;
+  --sidebar-w: 300px;
+}
+
+[data-theme='dark'] {
+  --bg: #141210;
+  --surface: #1e1c19;
+  --panel: #252320;
+  --border: #2e2b27;
+  --border-dark: #3d3a35;
+  --text: #f0ece4;
+  --text-muted: #8a8480;
+  --text-faint: #5a5550;
+  --accent: #5ab89a;
+  --accent-light: #1a2e28;
+  --accent-mid: #4a9a80;
+  --code-bg: #1a1814;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}

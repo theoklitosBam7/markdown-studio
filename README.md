@@ -1,70 +1,107 @@
-# .
+# Markdown Studio
 
-This template should help get you started developing with Vue 3 in Vite.
+Markdown Studio is a Vue 3 + Vite app for writing Markdown with a live preview, Mermaid diagram rendering, theme switching, and sample content presets.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- Split-pane editor and preview layout
+- Live Markdown rendering with `marked`
+- Safe HTML rendering with `DOMPurify`
+- Mermaid diagram support
+- Light and dark themes
+- Example document picker
+- Copy Markdown content to the clipboard
 
-## Recommended Browser Setup
+## Tech Stack
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- Vue 3
+- Vite
+- TypeScript
+- Vue Router
+- Pinia
+- DOMPurify
+- Marked
+- Mermaid
 
-## Type Support for `.vue` Imports in TS
+## Project Structure
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- [`src/main.ts`](./src/main.ts) bootstraps the app and installs Pinia and the router.
+- [`src/App.vue`](./src/App.vue) renders the routed view and loads global styles.
+- [`src/router/index.ts`](./src/router/index.ts) defines the single home route.
+- [`src/views/MarkdownStudioView.vue`](./src/views/MarkdownStudioView.vue) wires the editor, preview, toolbar, and status bar together.
+- [`src/features/markdown/composables/useMarkdownEditor.ts`](./src/features/markdown/composables/useMarkdownEditor.ts) contains the editor state and Markdown rendering logic.
+- [`src/features/markdown/components/`](./src/features/markdown/components) contains the editor UI.
+- [`src/utils/escapeHtml.ts`](./src/utils/escapeHtml.ts) provides HTML escaping for rendered output.
 
-## Customize configuration
+## Getting Started
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+Install dependencies:
 
 ```sh
 pnpm install
 ```
 
-### Compile and Hot-Reload for Development
+Start the dev server:
 
 ```sh
 pnpm dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Build for production:
 
 ```sh
 pnpm build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+Preview the production build:
+
+```sh
+pnpm preview
+```
+
+## Testing
+
+Run unit tests:
 
 ```sh
 pnpm test:unit
 ```
 
-### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
+Run Cypress in development mode:
 
 ```sh
 pnpm test:e2e:dev
 ```
 
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
-
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
+Run Cypress against the production preview:
 
 ```sh
 pnpm build
 pnpm test:e2e
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Quality Checks
+
+Type-check the project:
+
+```sh
+pnpm type-check
+```
+
+Run linting:
 
 ```sh
 pnpm lint
 ```
+
+Format source files:
+
+```sh
+pnpm format
+```
+
+## Notes
+
+- The app is mounted through Vue Router, so `App.vue` only renders `<RouterView />`.
+- Unit tests live under `src/**/__tests__`.
+- Cypress end-to-end tests live under `cypress/e2e`.
