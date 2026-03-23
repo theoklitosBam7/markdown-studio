@@ -1,8 +1,7 @@
+import type { AppCommand } from '@electron/shared/types'
+
+import { APP_COMMAND_CHANNEL } from '@electron/shared/channels'
 import { type BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron'
-
-import type { AppCommand } from '../shared/types'
-
-import { APP_COMMAND_CHANNEL } from '../shared/channels'
 
 export function buildAppMenu(mainWindow: BrowserWindow): Menu {
   const template: MenuItemConstructorOptions[] = [

@@ -8,8 +8,9 @@ describe('Toolbar', () => {
     const wrapper = mount(Toolbar, {
       props: {
         availableModes: ['editor', 'split', 'preview'],
+        canOpenDocuments: true,
+        canSaveDocuments: true,
         isCopied: false,
-        isDesktop: true,
         isMobile: false,
         theme: 'light',
         viewMode: 'split',
@@ -28,8 +29,9 @@ describe('Toolbar', () => {
     const wrapper = mount(Toolbar, {
       props: {
         availableModes: ['editor', 'preview'],
+        canOpenDocuments: true,
+        canSaveDocuments: true,
         isCopied: false,
-        isDesktop: false,
         isMobile: true,
         theme: 'light',
         viewMode: 'editor',
@@ -43,5 +45,22 @@ describe('Toolbar', () => {
     expect(
       wrapper.find('.toolbar__mobile-controls button[aria-label="Switch to dark mode"]').exists(),
     ).toBe(true)
+  })
+
+  it('hides open and save when document actions are unavailable', () => {
+    const wrapper = mount(Toolbar, {
+      props: {
+        availableModes: ['editor', 'preview'],
+        canOpenDocuments: false,
+        canSaveDocuments: false,
+        isCopied: false,
+        isMobile: false,
+        theme: 'light',
+        viewMode: 'editor',
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('Open')
+    expect(wrapper.text()).not.toContain('Save')
   })
 })

@@ -7,8 +7,9 @@ import type { Theme, ViewMode } from '../types'
 
 interface Props {
   availableModes?: ViewMode[]
+  canOpenDocuments?: boolean
+  canSaveDocuments?: boolean
   isCopied: boolean
-  isDesktop?: boolean
   isMobile?: boolean
   theme: Theme
   viewMode: ViewMode
@@ -21,6 +22,8 @@ interface ThemeChangeRequest {
 
 const props = withDefaults(defineProps<Props>(), {
   availableModes: () => ['editor', 'split', 'preview'],
+  canOpenDocuments: false,
+  canSaveDocuments: false,
   isMobile: false,
 })
 
@@ -72,7 +75,11 @@ function saveDocument(): void {
       </div>
 
       <div class="toolbar__actions" aria-label="Document actions">
-        <ToolbarButton v-if="props.isDesktop" :compact="props.isMobile" @click="openDocument">
+        <ToolbarButton
+          v-if="props.canOpenDocuments"
+          :compact="props.isMobile"
+          @click="openDocument"
+        >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M2 5.5l6-3 6 3M2 5.5V13h12V5.5" />
             <path d="M6 8h4" />
@@ -80,7 +87,11 @@ function saveDocument(): void {
           <span>Open</span>
         </ToolbarButton>
 
-        <ToolbarButton v-if="props.isDesktop" :compact="props.isMobile" @click="saveDocument">
+        <ToolbarButton
+          v-if="props.canSaveDocuments"
+          :compact="props.isMobile"
+          @click="saveDocument"
+        >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M3 2.5h8l2 2V13a1 1 0 01-1 1H4a1 1 0 01-1-1v-9.5z" />
             <path d="M5 2.5v4h5v-4" />

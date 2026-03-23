@@ -1,13 +1,12 @@
 // @vitest-environment node
 
-import { describe, expect, it } from 'vitest'
-
 import {
   assertExternalUrl,
   assertSaveAsInput,
   assertSaveInput,
   getDefaultMarkdownPath,
-} from '../shared/validation'
+} from '@electron/shared/validation'
+import { describe, expect, it } from 'vitest'
 
 describe('desktop validation', () => {
   it('normalizes valid save input', () => {

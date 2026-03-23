@@ -1,3 +1,5 @@
+import type { AppCommand } from '@electron/shared/types'
+
 import {
   computed,
   type ComputedRef,
@@ -8,9 +10,7 @@ import {
   watch,
 } from 'vue'
 
-import { useDesktop } from '@/composables/useDesktop'
-
-import type { AppCommand } from '../../../../electron/shared/types'
+import { useDocumentActions } from './useDocumentActions'
 
 interface UseDocumentSessionOptions {
   content: DeepReadonly<ShallowRef<string>>
@@ -18,6 +18,8 @@ interface UseDocumentSessionOptions {
 }
 
 interface UseDocumentSessionReturn {
+  canOpenDocuments: ComputedRef<boolean>
+  canSaveDocuments: ComputedRef<boolean>
   currentPath: DeepReadonly<ShallowRef<null | string>>
   displayName: ComputedRef<string>
   handleAppCommand: (command: AppCommand) => Promise<void>
@@ -31,12 +33,12 @@ interface UseDocumentSessionReturn {
 }
 
 export function useDocumentSession(options: UseDocumentSessionOptions): UseDocumentSessionReturn {
-  const desktop = useDesktop()
+  const documents = useDocumentActions()
   const currentPath = shallowRef<null | string>(null)
   const lastAction = shallowRef('Ready')
   const savedContent = shallowRef(options.content.value)
 
-  const isDesktop = computed(() => desktop.value.isDesktop)
+  const { canOpenDocuments, canSaveDocuments, isDesktop } = documents
   const isDirty = computed(() => options.content.value !== savedContent.value)
   const displayName = computed(() =>
     currentPath.value ? getFileName(currentPath.value) : 'Untitled.md',
@@ -66,7 +68,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   async function openDocument(): Promise<void> {
     if (!(await confirmDiscardChanges())) return
 
-    const opened = await desktop.value.documents.open()
+    const opened = await documents.open()
     if (!opened) return
 
     options.replaceContent(opened.content)
@@ -77,7 +79,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   async function saveDocument(): Promise<void> {
-    const saved = await desktop.value.documents.save({
+    const saved = await documents.save({
       content: options.content.value,
       path: currentPath.value,
     })
@@ -91,7 +93,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   async function saveDocumentAs(): Promise<void> {
-    const saved = await desktop.value.documents.saveAs({
+    const saved = await documents.saveAs({
       content: options.content.value,
       suggestedPath: currentPath.value ?? displayName.value,
     })
@@ -107,6 +109,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   async function startNewDocument(): Promise<void> {
     if (!(await confirmDiscardChanges())) return
 
+    documents.clearCurrentDocumentReference()
     options.replaceContent('')
     currentPath.value = null
     savedContent.value = ''
@@ -134,6 +137,8 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   watch([displayName, isDirty, isDesktop], syncDocumentTitle, { immediate: true })
 
   return {
+    canOpenDocuments,
+    canSaveDocuments,
     currentPath: readonly(currentPath),
     displayName,
     handleAppCommand,
