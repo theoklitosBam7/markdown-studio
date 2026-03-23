@@ -23,19 +23,22 @@ Markdown Studio is a split-pane Markdown editor that lets you write on one side 
 ### For Writers
 
 - **Split-pane editor** — Write on the left, preview on the right
+- **View modes** — Toggle between split view, editor-only, or preview-only modes
 - **Live Markdown rendering** — See changes instantly as you type
 - **Mermaid diagram support** — Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
-- **Theme switching** — Toggle between light and dark modes
-- **Word and character count** — Track your document stats in real-time
+- **Theme switching** — Toggle between light and dark modes with smooth animated transitions
+- **Document statistics** — Track word, character, line, and diagram counts in real-time
 - **Example documents** — Load pre-made templates to learn Markdown or Mermaid syntax
-- **Copy to clipboard** — Quickly copy your Markdown source
+- **Copy to clipboard** — Quickly copy your Markdown source with visual feedback
 
 ### For Developers
 
 - **Safe HTML rendering** — Content is sanitized with DOMPurify
-- **File operations** — Open, save, and manage `.md` files (desktop app)
+- **File System Access API** — Open and save files directly in supported browsers
+- **Desktop file operations** — Full file management in the Electron app
 - **Responsive design** — Works on desktop and mobile devices
 - **Keyboard shortcuts** — Efficient editing with familiar shortcuts
+- **Scroll synchronization** — Source map tracking enables editor-preview sync
 
 ## Getting Started
 
@@ -83,6 +86,16 @@ pnpm dist:mac
 
 Simply start typing in the editor pane. The preview pane updates automatically as you write.
 
+### Switching View Modes
+
+Click the view toggle buttons to switch between:
+
+- **Editor** — Write without distractions
+- **Split** — Side-by-side editing and preview (default)
+- **Preview** — Focus on the rendered output
+
+The editor automatically adapts to your preferred layout.
+
 ### Creating Diagrams
 
 Use Mermaid syntax within fenced code blocks:
@@ -106,20 +119,34 @@ Supported diagram types include:
 
 ### Switching Themes
 
-Click the theme toggle button in the toolbar to switch between light and dark modes. The transition includes a smooth animation effect.
+Click the theme toggle button in the toolbar to switch between light and dark modes. The transition includes a smooth circular reveal animation that emanates from the toggle button.
 
 ### Loading Examples
 
-Click the "Examples" button in the toolbar to browse and load pre-made documents demonstrating various Markdown and Mermaid features.
+Click the "Examples" button in the toolbar to browse and load pre-made templates. Choose from:
 
-### File Operations (Desktop)
+- **Flowchart diagram** — Git feature branch workflow
+- **Sequence diagram** — JWT authentication flow
+- **Entity relationship diagram** — Blog platform database schema
+- **Gantt chart** — Product launch timeline
+- **Full kitchen-sink** — Complete Markdown feature demonstration
 
-When running the desktop app:
+The kitchen-sink example loads by default on first visit.
 
-- **Open** — Load existing `.md` files
+### File Operations
+
+**Desktop App:**
+
+- **Open** — Load existing `.md` files via native dialogs
 - **Save** — Save your current document
 - **Save As** — Save with a new name or location
-- **New Document** — Start fresh with an empty editor
+- **Clear** — Start fresh with an empty editor
+
+**Web App:**
+
+- **Open** — Load `.md` files using the File System Access API (Chrome/Edge) or file picker
+- **Save** — Save to previously opened file, or download if using the fallback
+- **Save As** — Save with a new name (uses File System Access API when available, otherwise downloads)
 
 ## Development
 
@@ -129,15 +156,22 @@ When running the desktop app:
 src/
 ├── features/markdown/
 │   ├── components/        # UI components (EditorPane, PreviewPane, Toolbar, etc.)
-│   └── composables/       # Business logic (useMarkdownEditor, useDocumentSession)
-├── composables/           # Shared composables (useTheme, useDesktop)
-├── utils/                 # Utility functions
+│   ├── composables/       # Business logic (useMarkdownEditor, useDocumentSession, useDocumentActions)
+│   └── types/             # TypeScript types for the markdown feature
+├── components/            # Shared UI components (ThemeToggle, ViewToggle, Modal, ToolbarButton)
+├── composables/           # Shared composables (useTheme, useThemeTransition, useDesktop)
+├── utils/                 # Utility functions (escapeHtml, platform detection)
 ├── views/                 # Page-level components
 ├── router/                # Vue Router configuration
-├── App.vue               # Root component
-└── main.ts               # Application entry point
+├── App.vue                # Root component
+└── main.ts                # Application entry point
 
 electron/                  # Electron main process code
+├── ipc/                   # IPC handlers for documents and shell
+├── menu/                  # Application menu configuration
+├── shared/                # Shared types and validation
+├── main.ts                # Electron entry point
+└── preload.ts             # Preload script for secure IPC
 ```
 
 ### Tech Stack
@@ -145,7 +179,6 @@ electron/                  # Electron main process code
 - **Vue 3** — Progressive JavaScript framework with Composition API
 - **Vite** — Fast build tool and dev server
 - **TypeScript** — Type-safe development
-- **Pinia** — State management
 - **Vue Router** — Client-side routing
 - **Marked** — Markdown parser and compiler
 - **DOMPurify** — HTML sanitization
@@ -153,6 +186,10 @@ electron/                  # Electron main process code
 - **Electron** — Cross-platform desktop app framework
 - **electron-vite** — Vite integration for Electron
 - **electron-builder** — Packaging and distribution
+- **Vitest** — Unit testing framework
+- **Cypress** — End-to-end testing
+- **ESLint + oxlint** — Linting and code quality
+- **oxfmt** — Code formatting
 
 ### Available Scripts
 
@@ -194,10 +231,11 @@ The workflow currently packages the macOS desktop app, uploads the generated `.d
 
 ### Architecture Highlights
 
-- **Composables-based architecture** — Logic is organized into reusable Vue composables
-- **Feature-based folder structure** — Related components and logic live together
-- **Desktop/web abstraction** — Clean separation between web and Electron APIs
-- **Source map tracking** — Enables sync between editor scroll position and preview
+- **Composables-based architecture** — Logic is organized into reusable Vue composables (useTheme, useMarkdownEditor, useDocumentActions, useDocumentSession)
+- **Feature-based folder structure** — Related components and logic live together in `src/features/`
+- **Desktop/web abstraction** — Clean separation between web and Electron APIs via useDesktop composable
+- **Source map tracking** — Line-level mapping enables scroll synchronization between editor and preview
+- **Theme transition system** — Smooth animated theme switches with useThemeTransition
 
 ## Browser Support
 

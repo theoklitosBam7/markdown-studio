@@ -1,6 +1,6 @@
-import { computed } from 'vue'
+import type { DesktopApi } from '@electron/shared/types'
 
-import type { DesktopApi } from '../../electron/shared/types'
+import { computed } from 'vue'
 
 const fallbackDesktopApi: DesktopApi = {
   commands: {

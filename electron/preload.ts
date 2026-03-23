@@ -1,6 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
-
-import type { DesktopApi } from './shared/types'
+import type { DesktopApi } from '@electron/shared/types'
 
 import {
   APP_COMMAND_CHANNEL,
@@ -8,7 +6,8 @@ import {
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
-} from './shared/channels'
+} from '@electron/shared/channels'
+import { contextBridge, ipcRenderer } from 'electron'
 
 function createDesktopApi(): DesktopApi {
   return {

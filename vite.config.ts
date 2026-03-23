@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@electron': fileURLToPath(new URL('./electron', import.meta.url)),
     },
   },
 })

@@ -31,9 +31,10 @@ const {
 } = useMarkdownEditor()
 const desktop = useDesktop()
 const {
+  canOpenDocuments,
+  canSaveDocuments,
   displayName,
   handleAppCommand,
-  isDesktop,
   isDirty,
   openDocument,
   saveDocument,
@@ -217,7 +218,8 @@ watch(
   <div class="markdown-studio" :class="bodyClasses">
     <Toolbar
       :available-modes="availableModes"
-      :is-desktop="isDesktop"
+      :can-open-documents="canOpenDocuments"
+      :can-save-documents="canSaveDocuments"
       :is-mobile="isMobile"
       :view-mode="viewMode"
       :theme="theme"

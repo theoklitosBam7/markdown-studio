@@ -1,20 +1,23 @@
-import { type BrowserWindow, dialog, ipcMain } from 'electron'
-import { readFile, writeFile } from 'node:fs/promises'
-
-import type { DesktopDocumentHandle, DesktopSaveAsInput, DesktopSaveInput } from '../shared/types'
+import type {
+  DesktopDocumentHandle,
+  DesktopSaveAsInput,
+  DesktopSaveInput,
+} from '@electron/shared/types'
 
 import {
   DOCUMENTS_OPEN_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
-} from '../shared/channels'
+} from '@electron/shared/channels'
 import {
   assertExternalUrl,
   assertSaveAsInput,
   assertSaveInput,
   getDefaultMarkdownPath,
-} from '../shared/validation'
+} from '@electron/shared/validation'
+import { type BrowserWindow, dialog, ipcMain } from 'electron'
+import { readFile, writeFile } from 'node:fs/promises'
 
 const MARKDOWN_FILTERS = [
   { extensions: ['md', 'markdown', 'mdown'], name: 'Markdown Files' },

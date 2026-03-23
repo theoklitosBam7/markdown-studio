@@ -12,6 +12,9 @@
     },
     {
       "path": "./tsconfig.electron.json"
+    },
+    {
+      "path": "./cypress/tsconfig.json"
     }
   ]
 }
