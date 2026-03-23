@@ -71,7 +71,10 @@ export function useDocumentActions(): DocumentActions {
       return { path }
     }
 
-    return saveAs(input)
+    return saveAs({
+      content: input.content,
+      suggestedPath: input.path,
+    })
   }
 
   async function saveAs(input: SaveDocumentAsInput): Promise<{ path: string } | null> {
@@ -148,6 +151,11 @@ function isAbortError(error: unknown): boolean {
 }
 
 async function openBrowserDocument(): Promise<BrowserOpenResult | null> {
+  const openedWithHandle = await showBrowserOpenPicker()
+  if (openedWithHandle !== undefined) {
+    return openedWithHandle
+  }
+
   if (typeof document === 'undefined') return null
 
   const input = document.createElement('input')
@@ -226,6 +234,43 @@ async function readFileAsText(file: Blob): Promise<string> {
 
     reader.readAsText(file)
   })
+}
+
+async function showBrowserOpenPicker(): Promise<BrowserOpenResult | null | undefined> {
+  if (typeof window === 'undefined' || typeof window.showOpenFilePicker !== 'function') {
+    return undefined
+  }
+
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      excludeAcceptAllOption: false,
+      multiple: false,
+      types: [
+        {
+          accept: {
+            'text/markdown': ['.md', '.markdown', '.mdown'],
+            'text/plain': ['.txt'],
+          },
+          description: 'Markdown Files',
+        },
+      ],
+    })
+
+    if (!handle) {
+      return null
+    }
+
+    return {
+      file: await handle.getFile(),
+      handle,
+    }
+  } catch (error) {
+    if (isAbortError(error)) {
+      return null
+    }
+
+    throw error
+  }
 }
 
 async function showBrowserSavePicker(

@@ -19,6 +19,7 @@ const desktopMock = {
 
 describe('useDocumentActions', () => {
   const originalDesktop = window.desktop
+  const originalShowOpenFilePicker = window.showOpenFilePicker
   const originalCreateObjectURL = URL.createObjectURL
   const originalRevokeObjectURL = URL.revokeObjectURL
   const originalShowSaveFilePicker = window.showSaveFilePicker
@@ -26,18 +27,40 @@ describe('useDocumentActions', () => {
   beforeEach(() => {
     resetBrowserDocumentSessionForTests()
     window.desktop = undefined
-    window.showSaveFilePicker = originalShowSaveFilePicker
+    restoreOpenFilePicker()
+    restoreSaveFilePicker()
     vi.clearAllMocks()
   })
 
   afterEach(() => {
     resetBrowserDocumentSessionForTests()
     window.desktop = originalDesktop
-    window.showSaveFilePicker = originalShowSaveFilePicker
+    restoreOpenFilePicker()
+    restoreSaveFilePicker()
     URL.createObjectURL = originalCreateObjectURL
     URL.revokeObjectURL = originalRevokeObjectURL
     vi.restoreAllMocks()
   })
+
+  function restoreOpenFilePicker(): void {
+    const descriptor = {
+      configurable: true,
+      value: originalShowOpenFilePicker,
+      writable: true,
+    }
+    Object.defineProperty(window, 'showOpenFilePicker', descriptor)
+    Object.defineProperty(globalThis, 'showOpenFilePicker', descriptor)
+  }
+
+  function restoreSaveFilePicker(): void {
+    const descriptor = {
+      configurable: true,
+      value: originalShowSaveFilePicker,
+      writable: true,
+    }
+    Object.defineProperty(window, 'showSaveFilePicker', descriptor)
+    Object.defineProperty(globalThis, 'showSaveFilePicker', descriptor)
+  }
 
   it('reports document actions as available in the browser without the desktop bridge', () => {
     const actions = useDocumentActions()
@@ -100,77 +123,82 @@ describe('useDocumentActions', () => {
   })
 
   it('returns null when the browser open picker is canceled', async () => {
-    const actions = useDocumentActions()
-
-    const openPromise = actions.open()
-    const input = document.querySelector('input[type="file"]')
-
-    expect(input).toBeInstanceOf(HTMLInputElement)
-    input?.dispatchEvent(new Event('cancel'))
-
-    await expect(openPromise).resolves.toBe(null)
-    expect(document.querySelector('input[type="file"]')).toBeNull()
-  })
-
-  it('returns null when focus returns without a selected file', async () => {
-    const actions = useDocumentActions()
-
-    const openPromise = actions.open()
-    const input = document.querySelector('input[type="file"]')
-
-    expect(input).toBeInstanceOf(HTMLInputElement)
-    window.dispatchEvent(new Event('blur'))
-    window.dispatchEvent(new Event('focus'))
-
-    await expect(openPromise).resolves.toBe(null)
-    expect(document.querySelector('input[type="file"]')).toBeNull()
-  })
-
-  it('opens the selected browser file and cleans up the temporary input', async () => {
-    const actions = useDocumentActions()
-    const file = new File(['# Loaded'], 'loaded.md', { type: 'text/markdown' })
-
-    const openPromise = actions.open()
-    const input = document.querySelector('input[type="file"]')
-
-    expect(input).toBeInstanceOf(HTMLInputElement)
-    Object.defineProperty(input, 'files', {
-      configurable: true,
-      get: () => [file],
+    window.showOpenFilePicker = vi.fn(async () => {
+      throw new DOMException('Canceled', 'AbortError')
     })
-    input?.dispatchEvent(new Event('change'))
 
-    await expect(openPromise).resolves.toEqual({
+    const actions = useDocumentActions()
+
+    await expect(actions.open()).resolves.toBe(null)
+  })
+
+  it('reuses the browser file handle after opening with the file system access picker', async () => {
+    const actions = useDocumentActions()
+    const writes: string[] = []
+    const handle = {
+      createWritable: vi.fn(async () => ({
+        close: async () => undefined,
+        write: async (value: string) => {
+          writes.push(value)
+        },
+      })),
+      getFile: vi.fn(async () => new File(['# Loaded'], 'loaded.md', { type: 'text/markdown' })),
+      kind: 'file',
+      name: 'loaded.md',
+    } as unknown as FileSystemFileHandle
+
+    window.showOpenFilePicker = vi.fn(async () => [handle])
+    const showSaveFilePickerSpy = vi.fn()
+    window.showSaveFilePicker = showSaveFilePickerSpy
+
+    await expect(actions.open()).resolves.toEqual({
       content: '# Loaded',
       path: 'loaded.md',
     })
-    expect(document.querySelector('input[type="file"]')).toBeNull()
+
+    await expect(actions.save({ content: '# Updated', path: 'loaded.md' })).resolves.toEqual({
+      path: 'loaded.md',
+    })
+
+    expect(showSaveFilePickerSpy).not.toHaveBeenCalled()
+    expect(writes).toEqual(['# Updated'])
   })
 
-  it('returns null when reading the selected browser file fails', async () => {
+  it('returns null when reading a selected browser file fails', async () => {
     const actions = useDocumentActions()
-    const file = new File(['binary'], 'broken.md', { type: 'text/markdown' })
+    const handle = {
+      getFile: vi.fn(async () => new File(['binary'], 'broken.md', { type: 'text/markdown' })),
+      kind: 'file',
+      name: 'broken.md',
+    } as unknown as FileSystemFileHandle
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const readAsTextSpy = vi.spyOn(FileReader.prototype, 'readAsText').mockImplementation(() => {
       throw new DOMException('Denied', 'NotReadableError')
     })
 
-    const openPromise = actions.open()
-    const input = document.querySelector('input[type="file"]')
+    window.showOpenFilePicker = vi.fn(async () => [handle])
 
-    expect(input).toBeInstanceOf(HTMLInputElement)
-    Object.defineProperty(input, 'files', {
-      configurable: true,
-      get: () => [file],
-    })
-    input?.dispatchEvent(new Event('change'))
-
-    await expect(openPromise).resolves.toBe(null)
+    await expect(actions.open()).resolves.toBe(null)
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to open the selected file:',
       expect.any(DOMException),
     )
     expect(readAsTextSpy).toHaveBeenCalled()
-    expect(document.querySelector('input[type="file"]')).toBeNull()
+  })
+
+  it('preserves the current document name when save falls back to download', async () => {
+    window.showSaveFilePicker = undefined
+
+    const actions = useDocumentActions()
+    const anchorClickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined)
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:actions')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+
+    const saved = await actions.save({ content: '# Saved', path: 'notes.md' })
+
+    expect(saved).toEqual({ path: 'notes.md' })
+    expect(anchorClickSpy).toHaveBeenCalled()
   })
 })

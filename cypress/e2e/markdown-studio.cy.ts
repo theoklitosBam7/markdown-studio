@@ -1,4 +1,9 @@
-function stubBrowserDownload(win: Window, downloads: { href: string; name: string }[]): void {
+type BrowserWindow = typeof globalThis & Window
+
+function stubBrowserDownload(
+  win: BrowserWindow,
+  downloads: { href: string; name: string }[],
+): void {
   const originalCreateElement = win.document.createElement.bind(win.document)
 
   win.URL.createObjectURL = () => 'blob:markdown-studio'
@@ -22,31 +27,18 @@ function stubBrowserDownload(win: Window, downloads: { href: string; name: strin
   }) as typeof win.document.createElement
 }
 
-function stubBrowserOpen(win: Window, fileName: string, content: string): void {
-  const originalCreateElement = win.document.createElement.bind(win.document)
-
-  win.document.createElement = ((tagName: string, options?: ElementCreationOptions) => {
-    const element = originalCreateElement(tagName, options)
-
-    if (tagName.toLowerCase() === 'input') {
-      const input = element as HTMLInputElement
-      input.click = () => {
-        const file = new win.File([content], fileName, { type: 'text/markdown' })
-
-        Object.defineProperty(input, 'files', {
-          configurable: true,
-          value: [file],
-        })
-
-        input.dispatchEvent(new win.Event('change'))
-      }
-    }
-
-    return element
-  }) as typeof win.document.createElement
+function stubBrowserOpen(win: BrowserWindow, fileName: string, content: string): void {
+  win.showOpenFilePicker = async () =>
+    [
+      {
+        getFile: async () => new win.File([content], fileName, { type: 'text/markdown' }),
+        kind: 'file',
+        name: fileName,
+      } as FileSystemFileHandle,
+    ] satisfies FileSystemFileHandle[]
 }
 
-function stubBrowserSavePicker(win: Window, writes: string[], fileName: string): void {
+function stubBrowserSavePicker(win: BrowserWindow, writes: string[], fileName: string): void {
   win.showSaveFilePicker = async () =>
     ({
       createWritable: async () =>

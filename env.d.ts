@@ -11,6 +11,7 @@ declare global {
   interface FilePickerOptions {
     excludeAcceptAllOption?: boolean
     id?: string
+    multiple?: boolean
     startIn?: string
     suggestedName?: string
     types?: FilePickerAcceptType[]
@@ -50,6 +51,7 @@ declare global {
 
   interface Window {
     desktop?: DesktopApi
+    showOpenFilePicker?: (options?: FilePickerOptions) => Promise<FileSystemFileHandle[]>
     showSaveFilePicker?: (options?: FilePickerOptions) => Promise<FileSystemFileHandle>
   }
 }
