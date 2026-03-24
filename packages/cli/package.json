@@ -10,9 +10,23 @@
     "vite",
     "vue"
   ],
+  "homepage": "https://github.com/theoklitosBam7/markdown-studio#readme",
+  "bugs": {
+    "url": "https://github.com/theoklitosBam7/markdown-studio/issues"
+  },
   "license": "MIT",
+  "author": {
+    "name": "Theoklitos Bampouris",
+    "email": "th.bampouris@gmail.com",
+    "url": "https://github.com/theoklitosBam7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theoklitosBam7/markdown-studio",
+    "directory": "packages/cli"
+  },
   "bin": {
-    "markdown-studio": "./dist/cli.mjs"
+    "markdown-studio": "dist/cli.mjs"
   },
   "files": [
     "dist",
