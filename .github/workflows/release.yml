@@ -1,4 +1,4 @@
-name: Release Desktop
+name: Release Desktop + npm
 
 on:
   push:
@@ -14,12 +14,13 @@ on:
 
 permissions:
   contents: write
+  id-token: write
   pull-requests: write
 
 jobs:
   preflight:
     name: Preflight
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.release_meta.outputs.version }}
       tag: ${{ steps.release_meta.outputs.tag }}
@@ -71,7 +72,7 @@ jobs:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version-file: package.json
@@ -91,26 +92,14 @@ jobs:
       - name: Run unit tests
         run: pnpm test:unit
 
-      - name: Stamp release version
-        env:
-          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
-        run: |
-          node --input-type=module <<'EOF'
-          import { readFile, writeFile } from 'node:fs/promises'
-
-          const packageJsonPath = new URL('./package.json', `file://${process.cwd()}/`)
-          const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'))
-
-          packageJson.version = process.env.RELEASE_VERSION
-
-          await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
-          EOF
+      - name: Align package versions to release version
+        run: node ./scripts/update-release-package-versions.mjs "${{ needs.preflight.outputs.version }}"
 
       - name: Build desktop artifacts
         run: pnpm dist:mac
 
       - name: Upload release assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: markdown-studio-macos
           path: |
@@ -118,13 +107,59 @@ jobs:
             release/*.zip
           if-no-files-found: error
 
+  publish_npm:
+    name: Publish npm package
+    needs: [preflight, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preflight.outputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Align package versions to release version
+        run: node ./scripts/update-release-package-versions.mjs "${{ needs.preflight.outputs.version }}"
+
+      - name: Build npm package
+        run: pnpm build:npm
+
+      - name: Verify npm package contents
+        run: pnpm --dir packages/cli pack:check
+
+      - name: Publish npm package
+        shell: bash
+        working-directory: packages/cli
+        run: |
+          npm_tag=latest
+
+          if [[ "${{ needs.preflight.outputs.is_prerelease }}" == "true" ]]; then
+            npm_tag=next
+          fi
+
+          npm publish --provenance --tag "$npm_tag"
+
   release:
     name: Publish GitHub release
-    needs: [preflight, build]
-    runs-on: ubuntu-latest
+    needs: [preflight, build, publish_npm]
+    runs-on: ubuntu-24.04
     steps:
       - name: Download release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: markdown-studio-macos
           path: release-assets
@@ -146,7 +181,7 @@ jobs:
   finalize:
     name: Finalize release
     needs: [preflight, release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout main
         uses: actions/checkout@v6
@@ -159,7 +194,7 @@ jobs:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version-file: package.json
@@ -167,32 +202,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Update package version
-        env:
-          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
-        run: |
-          node --input-type=module <<'EOF'
-          import { readFile, writeFile } from 'node:fs/promises'
+      - name: Update package versions
+        run: node ./scripts/update-release-package-versions.mjs "${{ needs.preflight.outputs.version }}"
 
-          const packageJsonPath = new URL('./package.json', `file://${process.cwd()}/`)
-          const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'))
-
-          packageJson.version = process.env.RELEASE_VERSION
-
-          await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
-          EOF
-
-      - name: Format package.json
+      - name: Format package manifests
         run: pnpm format
 
       - name: Create version bump pull request
         uses: peter-evans/create-pull-request@v8
         with:
-          add-paths: package.json
+          add-paths: |
+            package.json
+            packages/cli/package.json
           base: main
           branch: release/${{ needs.preflight.outputs.tag }}-version-bump
           commit-message: 'chore(release): prepare ${{ needs.preflight.outputs.tag }}'
           delete-branch: true
           title: 'chore(release): prepare ${{ needs.preflight.outputs.tag }}'
           body: |
-            Updates `package.json` to the released version after publishing `${{ needs.preflight.outputs.tag }}`.
+            Updates the package manifests to the released version after publishing `${{ needs.preflight.outputs.tag }}`.

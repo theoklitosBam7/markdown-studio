@@ -15,6 +15,7 @@ dist-ssr
 out
 release
 coverage
+.tmp
 *.local
 
 # Editor directories and files
@@ -40,3 +41,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Packaged npm launcher outputs
+packages/cli/dist
+packages/cli/public

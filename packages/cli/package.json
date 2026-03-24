@@ -1,0 +1,35 @@
+{
+  "name": "markdown-studio",
+  "version": "0.1.0",
+  "description": "Launch Markdown Studio locally in your browser from an npm package.",
+  "keywords": [
+    "editor",
+    "markdown",
+    "mermaid",
+    "npx",
+    "vite",
+    "vue"
+  ],
+  "license": "MIT",
+  "bin": {
+    "markdown-studio": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "public",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "pnpm exec tsc -p ./tsconfig.build.json && node ./scripts/finalize-dist.mjs",
+    "prepack": "node ./scripts/verify-package.mjs && pnpm build",
+    "pack:check": "pnpm pack --pack-destination ../../.tmp/npm-pack"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

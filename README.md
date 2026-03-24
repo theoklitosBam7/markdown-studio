@@ -18,33 +18,33 @@ Markdown Studio is a split-pane Markdown editor that lets you write on one side 
 - Example templates to get you started
 - Available as a web app or desktop application
 
-## Features
+## Quick Start
 
-### For Writers
+### Run via NPX (No installation required)
 
-- **Split-pane editor** — Write on the left, preview on the right
-- **View modes** — Toggle between split view, editor-only, or preview-only modes
-- **Live Markdown rendering** — See changes instantly as you type
-- **Mermaid diagram support** — Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
-- **Theme switching** — Toggle between light and dark modes with smooth animated transitions
-- **Document statistics** — Track word, character, line, and diagram counts in real-time
-- **Example documents** — Load pre-made templates to learn Markdown or Mermaid syntax
-- **Copy to clipboard** — Quickly copy your Markdown source with visual feedback
+```sh
+npx markdown-studio@latest
+```
 
-### For Developers
+With optional flags:
 
-- **Safe HTML rendering** — Content is sanitized with DOMPurify
-- **File System Access API** — Open and save files directly in supported browsers
-- **Desktop file operations** — Full file management in the Electron app
-- **Responsive design** — Works on desktop and mobile devices
-- **Keyboard shortcuts** — Efficient editing with familiar shortcuts
-- **Scroll synchronization** — Source map tracking enables editor-preview sync
+```sh
+npx markdown-studio@latest --port 4173
+npx markdown-studio@latest --host 127.0.0.1 --no-open
+npx markdown-studio@latest --version
+```
 
-## Getting Started
+The launcher serves the production web build over `http://127.0.0.1` and opens your browser automatically. This is the web experience, not the Electron app, so browser file APIs and fallbacks still apply.
 
-### Web App
+**Browser behavior:**
 
-Visit the app in your browser (after running the dev server):
+- Chromium browsers can use the File System Access API on `localhost`
+- Other browsers fall back to the existing picker and download flows
+- The server is local-only by default because it binds to `127.0.0.1`
+
+### Web App (Development)
+
+Visit the app in your browser by running the dev server:
 
 ```sh
 pnpm install
@@ -79,6 +79,28 @@ pnpm dist:mac
 > ```
 >
 > **Alternative:** Open `System Settings` → `Privacy & Security` and allow the app to run from there.
+
+## Features
+
+### For Writers
+
+- **Split-pane editor** — Write on the left, preview on the right
+- **View modes** — Toggle between split view, editor-only, or preview-only modes
+- **Live Markdown rendering** — See changes instantly as you type
+- **Mermaid diagram support** — Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
+- **Theme switching** — Toggle between light and dark modes with smooth animated transitions
+- **Document statistics** — Track word, character, line, and diagram counts in real-time
+- **Example documents** — Load pre-made templates to learn Markdown or Mermaid syntax
+- **Copy to clipboard** — Quickly copy your Markdown source with visual feedback
+
+### For Developers
+
+- **Safe HTML rendering** — Content is sanitized with DOMPurify
+- **File System Access API** — Open and save files directly in supported browsers
+- **Desktop file operations** — Full file management in the Electron app
+- **Responsive design** — Works on desktop and mobile devices
+- **Keyboard shortcuts** — Efficient editing with familiar shortcuts
+- **Scroll synchronization** — Source map tracking enables editor-preview sync
 
 ## Usage
 
@@ -172,6 +194,11 @@ electron/                  # Electron main process code
 ├── shared/                # Shared types and validation
 ├── main.ts                # Electron entry point
 └── preload.ts             # Preload script for secure IPC
+
+packages/cli/              # NPX launcher package
+├── src/                   # CLI source code
+├── public/                # Packaged web assets
+└── dist/                  # Built CLI output
 ```
 
 ### Tech Stack
@@ -200,6 +227,7 @@ pnpm dev:desktop      # Start Electron in dev mode
 
 # Building
 pnpm build            # Build for production
+pnpm build:npm        # Build and stage the npm launcher package
 pnpm build:desktop    # Build Electron bundles
 pnpm dist:mac         # Create unsigned macOS package
 

@@ -14,6 +14,9 @@
       "path": "./tsconfig.electron.json"
     },
     {
+      "path": "./packages/cli/tsconfig.json"
+    },
+    {
       "path": "./cypress/tsconfig.json"
     }
   ]

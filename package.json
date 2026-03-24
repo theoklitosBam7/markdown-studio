@@ -1,5 +1,5 @@
 {
-  "name": "markdown-studio",
+  "name": "markdown-studio-monorepo",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:web": "pnpm build-only",
+    "build:npm": "pnpm build:web && node ./scripts/stage-cli-package.mjs && pnpm --dir packages/cli build",
     "build:desktop": "electron-vite build",
     "dev:desktop": "electron-vite dev --watch",
     "dist:mac": "pnpm build:desktop && electron-builder --mac --config.mac.identity=null --publish never",
@@ -21,6 +23,7 @@
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
+    "pack:npm": "pnpm build:npm && pnpm --dir packages/cli pack:check",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },
