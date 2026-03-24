@@ -71,8 +71,49 @@ describe('parseArgs', () => {
 })
 
 describe('assertFreshPackagedAssets', () => {
-  it('passes for the current staged build', async () => {
-    await expect(assertFreshPackagedAssets()).resolves.toBeUndefined()
+  it('passes when packaged assets match the source build', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'markdown-studio-cli-'))
+    const sourceDir = path.join(tempRoot, 'dist')
+    const packagedDir = path.join(tempRoot, 'packages/cli/public')
+
+    try {
+      await mkdir(sourceDir, { recursive: true })
+      await mkdir(packagedDir, { recursive: true })
+
+      await Promise.all([
+        writeFile(path.join(sourceDir, 'index.html'), '<html>same</html>', 'utf8'),
+        writeFile(path.join(packagedDir, 'index.html'), '<html>same</html>', 'utf8'),
+      ])
+
+      await expect(
+        assertFreshPackagedAssets({
+          assetsDir: packagedDir,
+          sourceBuildDir: sourceDir,
+        }),
+      ).resolves.toBeUndefined()
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true })
+    }
+  })
+
+  it('fails when packaged assets are missing', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'markdown-studio-cli-'))
+    const sourceDir = path.join(tempRoot, 'dist')
+    const packagedDir = path.join(tempRoot, 'packages/cli/public')
+
+    try {
+      await mkdir(sourceDir, { recursive: true })
+      await writeFile(path.join(sourceDir, 'index.html'), '<html>source</html>', 'utf8')
+
+      await expect(
+        assertFreshPackagedAssets({
+          assetsDir: packagedDir,
+          sourceBuildDir: sourceDir,
+        }),
+      ).rejects.toThrow('Missing packaged web assets')
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true })
+    }
   })
 
   it('detects stale packaged assets relative to the source build', async () => {

@@ -107,6 +107,25 @@ jobs:
             release/*.zip
           if-no-files-found: error
 
+  prerelease_placeholder:
+    name: Create prerelease placeholder
+    if: needs.preflight.outputs.is_prerelease == 'true'
+    needs: preflight
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create visible prerelease entry
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.preflight.outputs.tag }}
+          target_commitish: ${{ needs.preflight.outputs.ref }}
+          name: Markdown Studio v${{ needs.preflight.outputs.version }}
+          prerelease: true
+          make_latest: false
+          body: |
+            Prerelease publishing is in progress.
+
+            This entry is created before build and npm publish complete so failed prerelease runs remain visible in the Releases page.
+
   publish_npm:
     name: Publish npm package
     needs: [preflight, build]
