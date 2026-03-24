@@ -2,6 +2,19 @@
   "name": "markdown-studio-monorepo",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://github.com/theoklitosBam7/markdown-studio#readme",
+  "bugs": {
+    "url": "https://github.com/theoklitosBam7/markdown-studio/issues"
+  },
+  "author": {
+    "name": "Theoklitos Bampouris",
+    "email": "th.bampouris@gmail.com",
+    "url": "https://github.com/theoklitosBam7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theoklitosBam7/markdown-studio"
+  },
   "type": "module",
   "main": "out/main/main.js",
   "scripts": {
