@@ -45,6 +45,7 @@ export default defineConfigWithVueTs(
     '**/out/**',
     '**/release/**',
     '**/coverage/**',
+    'packages/cli/public/**',
     '**/node_modules/**',
     'eslint.config.ts',
   ]),
@@ -65,7 +66,7 @@ export default defineConfigWithVueTs(
 
   {
     ...pluginVitest.configs.recommended,
-    files: ['src/**/__tests__/*'],
+    files: ['src/**/__tests__/*', 'packages/**/__tests__/*'],
   },
 
   {
