@@ -18,6 +18,9 @@
     },
     {
       "path": "./cypress/tsconfig.json"
+    },
+    {
+      "path": "./apps/landing-page/tsconfig.json"
     }
   ]
 }
