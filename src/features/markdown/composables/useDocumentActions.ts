@@ -151,9 +151,13 @@ function isAbortError(error: unknown): boolean {
 }
 
 async function openBrowserDocument(): Promise<BrowserOpenResult | null> {
-  const openedWithHandle = await showBrowserOpenPicker()
-  if (openedWithHandle !== undefined) {
-    return openedWithHandle
+  try {
+    const openedWithHandle = await showBrowserOpenPicker()
+    if (openedWithHandle !== undefined) {
+      return openedWithHandle
+    }
+  } catch (error) {
+    console.warn('Falling back to the browser file input after picker failure:', error)
   }
 
   if (typeof document === 'undefined') return null
@@ -166,6 +170,7 @@ async function openBrowserDocument(): Promise<BrowserOpenResult | null> {
   let resolveFile: (value: File | null) => void = () => undefined
   let settled = false
   let windowBlurred = false
+  let focusTimeoutId: null | number = null
 
   const finish = (file: File | null): void => {
     if (settled) return
@@ -175,6 +180,11 @@ async function openBrowserDocument(): Promise<BrowserOpenResult | null> {
   }
 
   const cleanup = (): void => {
+    if (focusTimeoutId !== null) {
+      window.clearTimeout(focusTimeoutId)
+      focusTimeoutId = null
+    }
+
     input.removeEventListener('change', onChange)
     input.removeEventListener('cancel', onCancel)
     window.removeEventListener('blur', onWindowBlur)
@@ -196,7 +206,15 @@ async function openBrowserDocument(): Promise<BrowserOpenResult | null> {
 
   const onWindowFocus = (): void => {
     if (!windowBlurred) return
-    finish(input.files?.[0] ?? null)
+
+    if (focusTimeoutId !== null) {
+      window.clearTimeout(focusTimeoutId)
+    }
+
+    focusTimeoutId = window.setTimeout(() => {
+      focusTimeoutId = null
+      finish(input.files?.[0] ?? null)
+    }, 300)
   }
 
   const file = await new Promise<File | null>((resolve) => {

@@ -38,6 +38,50 @@ function stubBrowserOpen(win: BrowserWindow, fileName: string, content: string):
     ] satisfies FileSystemFileHandle[]
 }
 
+function stubBrowserOpenFallbackInput(
+  win: BrowserWindow,
+  fileName: string,
+  content: string,
+  options?: { delayMs?: number; pickerError?: DOMException },
+): void {
+  const originalCreateElement = win.document.createElement.bind(win.document)
+  const selectedFile = new win.File([content], fileName, { type: 'text/markdown' })
+
+  if (options?.pickerError) {
+    win.showOpenFilePicker = async () => {
+      throw options.pickerError
+    }
+  } else {
+    win.showOpenFilePicker = undefined
+  }
+
+  win.document.createElement = ((tagName: string, elementOptions?: ElementCreationOptions) => {
+    const element = originalCreateElement(tagName, elementOptions)
+
+    if (tagName.toLowerCase() === 'input') {
+      const input = element as HTMLInputElement
+      const originalClick = input.click.bind(input)
+
+      input.click = () => {
+        originalClick()
+        win.dispatchEvent(new win.Event('blur'))
+        win.dispatchEvent(new win.Event('focus'))
+
+        win.setTimeout(() => {
+          Object.defineProperty(input, 'files', {
+            configurable: true,
+            value: [selectedFile],
+          })
+
+          input.dispatchEvent(new win.Event('change'))
+        }, options?.delayMs ?? 0)
+      }
+    }
+
+    return element
+  }) as typeof win.document.createElement
+}
+
 function stubBrowserSavePicker(win: BrowserWindow, writes: string[], fileName: string): void {
   win.showSaveFilePicker = async () =>
     ({
@@ -114,6 +158,40 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('textarea').should('have.value', '# Imported from Cypress')
     cy.get('.status-item--document').should('contain', 'web-notes.md')
     cy.get('.status-bar').should('contain', 'Opened web-notes.md')
+  })
+
+  it('opens a markdown file when the browser file input change arrives after focus returns', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        stubBrowserOpenFallbackInput(win, 'brave-delayed.md', '# Loaded via fallback', {
+          delayMs: 50,
+        })
+      },
+    })
+
+    cy.get('.toolbar__actions').contains('button', 'Open').click()
+
+    cy.get('textarea').should('have.value', '# Loaded via fallback')
+    cy.get('.status-item--document').should('contain', 'brave-delayed.md')
+    cy.get('.status-bar').should('contain', 'Opened brave-delayed.md')
+  })
+
+  it('falls back to the browser file input when showOpenFilePicker fails', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        stubBrowserOpenFallbackInput(win, 'picker-fallback.md', '# Recovered from picker error', {
+          pickerError: new win.DOMException('Denied', 'SecurityError'),
+        })
+      },
+    })
+
+    cy.get('.toolbar__actions').contains('button', 'Open').click()
+
+    cy.get('textarea').should('have.value', '# Recovered from picker error')
+    cy.get('.status-item--document').should('contain', 'picker-fallback.md')
+    cy.get('.status-bar').should('contain', 'Opened picker-fallback.md')
   })
 
   it('downloads markdown from the web toolbar when no persistent file handle exists', () => {
