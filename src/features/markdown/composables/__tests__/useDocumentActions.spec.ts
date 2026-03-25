@@ -39,6 +39,7 @@ describe('useDocumentActions', () => {
     restoreSaveFilePicker()
     URL.createObjectURL = originalCreateObjectURL
     URL.revokeObjectURL = originalRevokeObjectURL
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -130,6 +131,76 @@ describe('useDocumentActions', () => {
     const actions = useDocumentActions()
 
     await expect(actions.open()).resolves.toBe(null)
+  })
+
+  it('waits for a delayed file input change event after the window regains focus', async () => {
+    window.showOpenFilePicker = undefined
+
+    const actions = useDocumentActions()
+    vi.useFakeTimers()
+
+    const selectedFile = new File(['# Loaded from fallback'], 'fallback.md', {
+      type: 'text/markdown',
+    })
+    const clickSpy = vi
+      .spyOn(HTMLInputElement.prototype, 'click')
+      .mockImplementation(function mockClick(this: HTMLInputElement) {
+        window.dispatchEvent(new Event('blur'))
+        window.dispatchEvent(new Event('focus'))
+
+        window.setTimeout(() => {
+          Object.defineProperty(this, 'files', {
+            configurable: true,
+            value: [selectedFile],
+          })
+
+          this.dispatchEvent(new Event('change'))
+        }, 50)
+      })
+
+    const openPromise = actions.open()
+    await vi.runAllTimersAsync()
+
+    await expect(openPromise).resolves.toEqual({
+      content: '# Loaded from fallback',
+      path: 'fallback.md',
+    })
+    expect(clickSpy).toHaveBeenCalled()
+  })
+
+  it('falls back to the file input when the browser open picker fails', async () => {
+    const pickerError = new DOMException('Denied', 'SecurityError')
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const selectedFile = new File(['# Fallback file'], 'fallback-from-picker.md', {
+      type: 'text/markdown',
+    })
+
+    window.showOpenFilePicker = vi.fn(async () => {
+      throw pickerError
+    })
+
+    const clickSpy = vi
+      .spyOn(HTMLInputElement.prototype, 'click')
+      .mockImplementation(function mockClick(this: HTMLInputElement) {
+        Object.defineProperty(this, 'files', {
+          configurable: true,
+          value: [selectedFile],
+        })
+
+        this.dispatchEvent(new Event('change'))
+      })
+
+    const actions = useDocumentActions()
+
+    await expect(actions.open()).resolves.toEqual({
+      content: '# Fallback file',
+      path: 'fallback-from-picker.md',
+    })
+    expect(clickSpy).toHaveBeenCalled()
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Falling back to the browser file input after picker failure:',
+      pickerError,
+    )
   })
 
   it('reuses the browser file handle after opening with the file system access picker', async () => {
