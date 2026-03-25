@@ -1,6 +1,6 @@
 {
   "name": "markdown-studio",
-  "version": "0.2.0-next.0",
+  "version": "0.2.0",
   "description": "Launch Markdown Studio locally in your browser from an npm package.",
   "keywords": [
     "editor",
