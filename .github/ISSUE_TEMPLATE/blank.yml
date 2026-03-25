@@ -1,0 +1,19 @@
+name: Blank Issue
+description: Use this for anything that doesn't fit the other templates
+title: ''
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the issue or request in detail.
+
+  - type: textarea
+    id: body
+    attributes:
+      label: Description
+      description: Detailed description
+      placeholder: Describe your issue or feature request...
+    validations:
+      required: true

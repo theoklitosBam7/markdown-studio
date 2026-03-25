@@ -1,5 +1,5 @@
 {
-  "name": "markdown-studio-landing",
+  "name": "@markdown-studio/landing",
   "version": "0.2.0",
   "private": true,
   "type": "module",

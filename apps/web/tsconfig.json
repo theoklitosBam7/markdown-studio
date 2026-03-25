@@ -1,0 +1,13 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["env.d.ts", "src/**/*.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../packages/app/src/*"]
+    },
+    "noEmit": true,
+    "tsBuildInfoFile": "../../node_modules/.tmp/apps-web.tsbuildinfo"
+  }
+}

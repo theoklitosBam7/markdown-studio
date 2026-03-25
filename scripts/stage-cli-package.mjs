@@ -3,7 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
-const webDistDir = path.join(rootDir, 'dist')
+const webDistDir = path.join(rootDir, 'apps/web/dist')
 const cliPublicDir = path.join(rootDir, 'packages/cli/public')
 
 await rm(cliPublicDir, { force: true, recursive: true })

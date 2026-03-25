@@ -16,51 +16,38 @@
     "url": "https://github.com/theoklitosBam7/markdown-studio"
   },
   "type": "module",
-  "main": "out/main/main.js",
   "scripts": {
-    "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
-    "build:web": "pnpm build-only",
-    "build:npm": "pnpm build:web && node ./scripts/stage-cli-package.mjs && pnpm --dir packages/cli build",
-    "build:desktop": "electron-vite build",
-    "dev:desktop": "electron-vite dev --watch",
-    "dist:mac": "pnpm build:desktop && electron-builder --mac --config.mac.identity=null --publish never",
-    "preview": "vite preview",
-    "preview:desktop": "electron-vite preview",
-    "test:unit": "vitest run",
+    "dev": "pnpm --filter @markdown-studio/web dev",
+    "build": "pnpm type-check && run-p build:web build:desktop build:landing build:cli",
+    "build:web": "pnpm --filter @markdown-studio/web build",
+    "build:landing": "pnpm --filter @markdown-studio/landing build",
+    "build:cli": "pnpm --filter markdown-studio build",
+    "build:npm": "pnpm build:web && node ./scripts/stage-cli-package.mjs && pnpm --filter markdown-studio build",
+    "build:desktop": "pnpm --filter @markdown-studio/desktop build",
+    "dev:desktop": "pnpm --filter @markdown-studio/desktop dev",
+    "dist:mac": "pnpm --filter @markdown-studio/desktop dist:mac",
+    "preview": "pnpm --filter @markdown-studio/web preview",
+    "preview:desktop": "pnpm --filter @markdown-studio/desktop preview",
+    "test:unit": "pnpm -r test",
     "prepare": "cypress install",
     "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
-    "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'",
-    "build-only": "vite build",
+    "test:e2e:dev": "start-server-and-test 'pnpm --filter @markdown-studio/web dev -- --port 4173' http://localhost:4173 'cypress open --e2e'",
     "type-check": "vue-tsc --build",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "pack:npm": "pnpm build:npm && pnpm --dir packages/cli pack:check",
+    "pack:npm": "pnpm build:npm && pnpm --filter markdown-studio pack:check",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },
-  "dependencies": {
-    "dompurify": "^3.3.3",
-    "marked": "^17.0.5",
-    "mermaid": "^11.13.0",
-    "pinia": "^3.0.4",
-    "vue": "^3.5.31",
-    "vue-router": "^5.0.4"
-  },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
-    "@types/jsdom": "^28.0.1",
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vitest/eslint-plugin": "^1.6.13",
     "@vue/eslint-config-typescript": "^14.7.0",
-    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.9.1",
     "cypress": "^15.13.0",
-    "electron": "^41.0.4",
-    "electron-builder": "^26.8.1",
-    "electron-vite": "^5.0.0",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-boundaries": "^6.0.1",
@@ -69,38 +56,15 @@
     "eslint-plugin-perfectionist": "^5.7.0",
     "eslint-plugin-vue": "~10.8.0",
     "jiti": "^2.6.1",
-    "jsdom": "^28.1.0",
     "npm-run-all2": "^8.0.4",
     "oxfmt": "^0.41.0",
     "oxlint": "~1.56.0",
     "start-server-and-test": "^2.1.5",
     "typescript": "~5.9.3",
-    "vite": "^8.0.2",
-    "vite-plugin-vue-devtools": "^8.1.1",
-    "vitest": "^4.1.1",
     "vue-tsc": "^3.2.6"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
-  "build": {
-    "appId": "com.markdownstudio.app",
-    "productName": "Markdown Studio",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "out/**",
-      "package.json"
-    ],
-    "asar": true,
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": [
-        "dmg",
-        "zip"
-      ]
-    }
-  }
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }

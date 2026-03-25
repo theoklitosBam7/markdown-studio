@@ -41,7 +41,13 @@
   "scripts": {
     "build": "pnpm exec tsc -p ./tsconfig.build.json && node ./scripts/finalize-dist.mjs",
     "prepack": "node ./scripts/verify-package.mjs && pnpm build",
-    "pack:check": "pnpm pack --pack-destination ../../.tmp/npm-pack"
+    "pack:check": "pnpm pack --pack-destination ../../.tmp/npm-pack",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.1"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

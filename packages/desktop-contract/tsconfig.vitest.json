@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "__tests__/**/*.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "lib": [],
+    "types": ["node"],
+    "tsBuildInfoFile": "../../node_modules/.tmp/packages-desktop-contract-vitest.tsbuildinfo"
+  }
+}

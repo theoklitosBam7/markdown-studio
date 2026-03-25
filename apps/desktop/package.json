@@ -1,0 +1,60 @@
+{
+  "name": "@markdown-studio/desktop",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Markdown Studio desktop application workspace.",
+  "license": "MIT",
+  "author": {
+    "name": "Theoklitos Bampouris",
+    "email": "th.bampouris@gmail.com",
+    "url": "https://github.com/theoklitosBam7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theoklitosBam7/markdown-studio",
+    "directory": "apps/desktop"
+  },
+  "type": "module",
+  "main": "out/main/main.js",
+  "scripts": {
+    "build": "electron-vite build",
+    "dev": "electron-vite dev --watch",
+    "dist:mac": "pnpm build && electron-builder --mac --config.mac.identity=null --publish never",
+    "preview": "electron-vite preview"
+  },
+  "dependencies": {
+    "@markdown-studio/app": "workspace:*",
+    "@markdown-studio/desktop-contract": "workspace:*"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^24.12.0",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "electron": "^41.0.4",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.2",
+    "vite-plugin-vue-devtools": "^8.1.1",
+    "vue-tsc": "^3.2.6"
+  },
+  "build": {
+    "appId": "com.markdownstudio.app",
+    "productName": "Markdown Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**",
+      "package.json"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    }
+  }
+}

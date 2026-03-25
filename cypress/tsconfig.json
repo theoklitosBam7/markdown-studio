@@ -1,9 +1,11 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["../env.d.ts", "./e2e/**/*", "./support/**/*"],
+  "include": ["../packages/app/src/browser-globals.d.ts", "./e2e/**/*", "./support/**/*"],
   "exclude": ["./support/component.*"],
   "compilerOptions": {
     "isolatedModules": false,
+    "noEmit": true,
+    "tsBuildInfoFile": "../node_modules/.tmp/cypress-tsconfig.tsbuildinfo",
     "types": ["cypress"]
   }
 }

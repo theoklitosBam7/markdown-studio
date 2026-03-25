@@ -45,7 +45,7 @@ const assetsDir = fileURLToPath(new URL('../public', import.meta.url))
 /**
  * Path to the source build directory.
  */
-const sourceBuildDir = fileURLToPath(new URL('../../../dist', import.meta.url))
+const sourceBuildDir = fileURLToPath(new URL('../../../apps/web/dist', import.meta.url))
 
 /**
  * Cached version string to avoid repeated file reads.
