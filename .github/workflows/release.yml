@@ -103,8 +103,8 @@ jobs:
         with:
           name: markdown-studio-macos
           path: |
-            release/*.dmg
-            release/*.zip
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
           if-no-files-found: error
 
   prerelease_placeholder:
@@ -158,7 +158,7 @@ jobs:
         run: pnpm build:npm
 
       - name: Verify npm package contents
-        run: pnpm --dir packages/cli pack:check
+        run: pnpm --filter markdown-studio pack:check
 
       - name: Publish npm package
         shell: bash
@@ -231,8 +231,12 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           add-paths: |
-            package.json
+            apps/desktop/package.json
+            apps/landing-page/package.json
+            apps/web/package.json
+            packages/app/package.json
             packages/cli/package.json
+            packages/desktop-contract/package.json
           base: main
           branch: release/${{ needs.preflight.outputs.tag }}-version-bump
           commit-message: 'chore(release): prepare ${{ needs.preflight.outputs.tag }}'

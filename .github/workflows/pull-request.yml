@@ -73,7 +73,7 @@ jobs:
         run: pnpm build:npm
 
       - name: Verify npm package contents
-        run: pnpm --dir packages/cli pack:check
+        run: pnpm --filter markdown-studio pack:check
 
   desktop_build:
     name: Build macOS desktop release

@@ -1,0 +1,16 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"],
+  "exclude": ["src/**/__tests__/*"],
+  "compilerOptions": {
+    "composite": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": "./src",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["*"]
+    },
+    "tsBuildInfoFile": "../../node_modules/.tmp/packages-app.tsbuildinfo"
+  }
+}

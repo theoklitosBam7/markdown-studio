@@ -1,0 +1,35 @@
+{
+  "name": "@markdown-studio/app",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@markdown-studio/desktop-contract": "workspace:*",
+    "dompurify": "^3.3.3",
+    "marked": "^17.0.5",
+    "mermaid": "^11.13.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.31",
+    "vue-router": "^5.0.4"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^28.0.1",
+    "@types/node": "^24.12.0",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.9.1",
+    "jsdom": "^28.1.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.2",
+    "vite-plugin-vue-devtools": "^8.1.1",
+    "vitest": "^4.1.1",
+    "vue-tsc": "^3.2.6"
+  }
+}

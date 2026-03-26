@@ -175,26 +175,34 @@ The kitchen-sink example loads by default on first visit.
 ### Project Structure
 
 ```
-src/
-├── features/markdown/
-│   ├── components/        # UI components (EditorPane, PreviewPane, Toolbar, etc.)
-│   ├── composables/       # Business logic (useMarkdownEditor, useDocumentSession, useDocumentActions)
-│   └── types/             # TypeScript types for the markdown feature
-├── components/            # Shared UI components (ThemeToggle, ViewToggle, Modal, ToolbarButton)
-├── composables/           # Shared composables (useTheme, useThemeTransition, useDesktop)
-├── utils/                 # Utility functions (escapeHtml, platform detection)
-├── views/                 # Page-level components
-├── router/                # Vue Router configuration
-├── App.vue                # Root component
-└── main.ts                # Application entry point
+apps/
+├── web/                   # Browser app workspace
+│   ├── src/main.ts        # Web entry point
+│   └── vite.config.ts     # Web Vite configuration
+├── desktop/               # Electron desktop workspace
+│   ├── src/main.ts        # Desktop renderer entry point
+│   ├── electron/          # Electron main process code
+│   │   ├── ipc/           # IPC handlers for documents and shell
+│   │   ├── menu/          # Application menu configuration
+│   │   ├── main.ts        # Electron entry point
+│   │   └── preload.ts     # Preload script for secure IPC
+│   └── electron.vite.config.ts
+└── landing-page/          # Marketing site workspace
 
-electron/                  # Electron main process code
-├── ipc/                   # IPC handlers for documents and shell
-├── menu/                  # Application menu configuration
-├── shared/                # Shared types and validation
-├── main.ts                # Electron entry point
-└── preload.ts             # Preload script for secure IPC
+packages/app/              # Shared Vue application package
+├── src/
+│   ├── features/markdown/
+│   │   ├── components/    # UI components (EditorPane, PreviewPane, Toolbar, etc.)
+│   │   ├── composables/   # Business logic (useMarkdownEditor, useDocumentSession, useDocumentActions)
+│   │   └── types/         # TypeScript types for the markdown feature
+│   ├── components/        # Shared UI components (ThemeToggle, ViewToggle, Modal, ToolbarButton)
+│   ├── composables/       # Shared composables (useTheme, useThemeTransition, useDesktop)
+│   ├── router/            # Vue Router configuration
+│   ├── utils/             # Utility functions (escapeHtml, platform detection)
+│   ├── App.vue            # Root component
+│   └── createMarkdownStudioApp.ts
 
+packages/desktop-contract/ # Shared desktop channel/types/validation contract
 packages/cli/              # NPX launcher package
 ├── src/                   # CLI source code
 ├── public/                # Packaged web assets
@@ -226,7 +234,7 @@ pnpm dev              # Start Vite dev server
 pnpm dev:desktop      # Start Electron in dev mode
 
 # Building
-pnpm build            # Build for production
+pnpm build            # Type-check and build all buildable workspace apps/packages
 pnpm build:npm        # Build and stage the npm launcher package
 pnpm build:desktop    # Build Electron bundles
 pnpm dist:mac         # Create unsigned macOS package
@@ -255,12 +263,12 @@ Desktop releases are published through GitHub Actions with the workflow at `.git
 - Push a tag like `v1.2.3-beta.1` to build and publish a prerelease
 - Or run the workflow manually with a `version` input
 
-The workflow currently packages the macOS desktop app, uploads the generated `.dmg` and `.zip` assets to the GitHub release, and then opens a pull request to update `package.json` on `main` to match the released version.
+The workflow currently packages the macOS desktop app, uploads the generated `.dmg` and `.zip` assets to the GitHub release, and then opens a pull request to update the workspace package manifests on `main` to match the released version.
 
 ### Architecture Highlights
 
 - **Composables-based architecture** — Logic is organized into reusable Vue composables (useTheme, useMarkdownEditor, useDocumentActions, useDocumentSession)
-- **Feature-based folder structure** — Related components and logic live together in `src/features/`
+- **Feature-based folder structure** — Related components and logic live together in `packages/app/src/features/`
 - **Desktop/web abstraction** — Clean separation between web and Electron APIs via useDesktop composable
 - **Source map tracking** — Line-level mapping enables scroll synchronization between editor and preview
 - **Theme transition system** — Smooth animated theme switches with useThemeTransition

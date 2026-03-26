@@ -9,7 +9,14 @@ if (!version) {
   process.exit(1)
 }
 
-const packageJsonPaths = ['./package.json', './packages/cli/package.json']
+const packageJsonPaths = [
+  './apps/desktop/package.json',
+  './apps/landing-page/package.json',
+  './apps/web/package.json',
+  './packages/app/package.json',
+  './packages/cli/package.json',
+  './packages/desktop-contract/package.json',
+]
 
 await Promise.all(
   packageJsonPaths.map(async (packageJsonPath) => {

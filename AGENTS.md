@@ -3,9 +3,9 @@
 ## Task Completion Requirements
 
 - Run `pnpm format`, `pnpm lint`, and `pnpm type-check` before considering a task complete.
-- Before running a script command that uses `vite preview`, don't forget to build the app first.
+- Before running a script command that uses `vite preview` or `electron-vite preview`, don't forget to build the corresponding app first.
 - If tests are relevant to the change, run the smallest targeted suite first, then expand only if needed. Prefer `pnpm test:unit`, `pnpm test:e2e:dev`, or `pnpm test:e2e` over ad hoc commands.
-- When running a specific single test file in Vitest, use the `pnpm exec vitest run` command; e.g.: `pnpm exec vitest run src/__tests__/App.spec.ts`.
+- When running a specific single test file in Vitest, use the `pnpm exec vitest run` command; e.g.: `pnpm exec vitest run packages/app/src/__tests__/App.spec.ts`.
 - Do not use outdated or redundant scripts when a repo-specific command already exists.
 
 ## Project Snapshot
@@ -30,17 +30,18 @@ Do not take shortcuts by putting framework-specific logic in places that are mea
 
 ## Project Areas
 
-- `src`: Vue application code for the editor, preview, routing, stores, composables, and shared UI.
-- `src/features/markdown`: Markdown-specific UI and behavior, including editor, preview, toolbar, examples, and status surfaces.
-- `src/components`: Shared UI components used across the app.
-- `src/composables`: Reusable Vue logic shared across features and views.
-- `src/router`: Vue Router setup and route definitions.
-- `src/stores`: Pinia stores and app state.
-- `src/utils`: Pure utility functions. Keep this layer framework-free.
-- `electron`: Electron main-process, preload, and IPC code for desktop-only behavior.
+- `packages/app/src`: Shared Vue application code for the editor, preview, routing, composables, and shared UI.
+- `packages/app/src/features/markdown`: Markdown-specific UI and behavior, including editor, preview, toolbar, examples, and status surfaces.
+- `packages/app/src/components`: Shared UI components used across the app.
+- `packages/app/src/composables`: Reusable Vue logic shared across features and views.
+- `packages/app/src/router`: Vue Router setup and route definitions.
+- `packages/app/src/utils`: Pure utility functions. Keep this layer framework-free.
+- `apps/web`: Browser app workspace and Vite entrypoint.
+- `apps/desktop`: Electron desktop workspace, including the renderer entrypoint and Electron main/preload/ipc code.
+- `packages/desktop-contract`: Shared desktop channel/types/validation contract used by the renderer and Electron shell.
 - `cypress`: End-to-end tests and support files.
 
-Keep framework boundaries clean. Vue-specific state and behavior should live in components, composables, or stores. Electron-only code should stay in `electron/`. Pure helpers should remain free of Vue, Pinia, and router dependencies.
+Keep framework boundaries clean. Vue-specific state and behavior should live in `packages/app`. Electron-only code should stay in `apps/desktop/electron/`. Pure helpers should remain free of Vue, Pinia, and router dependencies.
 
 ## App Architecture
 
@@ -48,12 +49,14 @@ Markdown Studio is split between the browser renderer and the Electron desktop s
 
 How the codebase is organized:
 
-- `src/main.ts` bootstraps the Vue app.
-- `src/App.vue` stays lean and delegates real behavior to the app and feature layers.
-- `src/router/index.ts` owns route setup and environment-specific history selection.
-- `electron/main.ts` and `electron/preload.ts` own desktop integration and IPC exposure.
-- `electron/ipc/*` contains IPC handlers for file and shell operations.
-- `src/features/markdown/*` contains the main writing experience and should own most Markdown-specific logic.
+- `packages/app/src/createMarkdownStudioApp.ts` bootstraps the shared Vue app.
+- `packages/app/src/App.vue` stays lean and delegates real behavior to the app and feature layers.
+- `packages/app/src/router/index.ts` owns route setup and environment-specific history selection.
+- `apps/web/src/main.ts` and `apps/desktop/src/main.ts` are thin runtime entrypoints that mount the shared app.
+- `apps/desktop/electron/main.ts` and `apps/desktop/electron/preload.ts` own desktop integration and IPC exposure.
+- `apps/desktop/electron/ipc/*` contains IPC handlers for file and shell operations.
+- `packages/desktop-contract/src/*` contains the shared desktop IPC contract.
+- `packages/app/src/features/markdown/*` contains the main writing experience and should own most Markdown-specific logic.
 
 Docs:
 

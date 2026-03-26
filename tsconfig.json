@@ -2,22 +2,34 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.node.json"
+      "path": "./tsconfig.tools.json"
     },
     {
-      "path": "./tsconfig.app.json"
+      "path": "./packages/app/tsconfig.json"
     },
     {
-      "path": "./tsconfig.vitest.json"
+      "path": "./packages/app/tsconfig.vitest.json"
     },
     {
-      "path": "./tsconfig.electron.json"
+      "path": "./packages/desktop-contract/tsconfig.json"
+    },
+    {
+      "path": "./packages/desktop-contract/tsconfig.vitest.json"
     },
     {
       "path": "./packages/cli/tsconfig.json"
     },
     {
+      "path": "./packages/cli/tsconfig.vitest.json"
+    },
+    {
       "path": "./cypress/tsconfig.json"
+    },
+    {
+      "path": "./apps/web/tsconfig.json"
+    },
+    {
+      "path": "./apps/desktop/tsconfig.json"
     },
     {
       "path": "./apps/landing-page/tsconfig.json"

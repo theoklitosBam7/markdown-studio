@@ -1,4 +1,8 @@
-type BrowserWindow = typeof globalThis & Window
+type BrowserWindow = {
+  showOpenFilePicker?: (options?: unknown) => Promise<FileSystemFileHandle[]>
+  showSaveFilePicker?: (options?: unknown) => Promise<FileSystemFileHandle>
+} & typeof globalThis &
+  Window
 
 function stubBrowserDownload(
   win: BrowserWindow,

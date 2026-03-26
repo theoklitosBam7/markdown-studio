@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "tsBuildInfoFile": "../../node_modules/.tmp/packages-cli-vitest.tsbuildinfo"
+  }
+}

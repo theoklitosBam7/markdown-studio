@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build landing page
-        run: pnpm --dir apps/landing-page build
+        run: pnpm --filter @markdown-studio/landing build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
