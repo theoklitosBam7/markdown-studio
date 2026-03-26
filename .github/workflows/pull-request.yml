@@ -8,15 +8,57 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: pull-request-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-24.04
+    outputs:
+      run_full_workflow: ${{ steps.compute.outputs.run_full_workflow }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Filter changed paths
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            meaningful_changes:
+              - 'apps/**/*.{ts,vue,js,json}'
+              - 'packages/**/*.{ts,vue,js,json}'
+              - 'cypress/**/*'
+              - '**/__tests__/**'
+              - '**/*.spec.ts'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - '**/vite.config.ts'
+              - '**/tsconfig.json'
+              - '.github/workflows/*.yml'
+
+      - name: Compute workflow scope
+        id: compute
+        env:
+          MEANINGFUL_CHANGED: ${{ steps.filter.outputs.meaningful_changes }}
+        run: |
+          run_full_workflow=false
+
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$MEANINGFUL_CHANGED" = "true" ]; then
+            run_full_workflow=true
+          fi
+
+          echo "run_full_workflow=$run_full_workflow" >> "$GITHUB_OUTPUT"
+
   quality:
     name: Quality and unit tests
     runs-on: ubuntu-24.04
+    needs: changes
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -50,7 +92,8 @@ jobs:
   npm_package:
     name: Build and verify npm package
     runs-on: ubuntu-24.04
-    needs: quality
+    if: needs.changes.outputs.run_full_workflow == 'true'
+    needs: [changes, quality]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -78,7 +121,8 @@ jobs:
   desktop_build:
     name: Build macOS desktop release
     runs-on: macos-latest
-    needs: quality
+    if: needs.changes.outputs.run_full_workflow == 'true'
+    needs: [changes, quality]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
