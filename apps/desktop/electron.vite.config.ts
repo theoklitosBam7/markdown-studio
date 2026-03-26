@@ -13,10 +13,16 @@ const electronRuntimeExternals = [
 export default defineConfig({
   main: {
     build: {
+      externalizeDeps: {
+        include: ['electron'],
+      },
       lib: {
         entry: 'electron/main.ts',
         fileName: () => 'index.js',
         formats: ['es'],
+      },
+      rollupOptions: {
+        external: electronRuntimeExternals,
       },
     },
     resolve: {
