@@ -257,13 +257,44 @@ pnpm format:check     # Check formatting without writing changes
 
 ### Releases
 
-Desktop releases are published through GitHub Actions with the workflow at `.github/workflows/release.yml`.
+Release intent is tracked with Changesets, and only the shipped artifacts carry release versions:
 
-- Push a tag like `v1.2.3` to build and publish a stable GitHub release
-- Push a tag like `v1.2.3-beta.1` to build and publish a prerelease
-- Or run the workflow manually with a `version` input
+- `@markdown-studio/desktop` for the macOS desktop app
+- `markdown-studio` for the published npm package
 
-The workflow currently packages the macOS desktop app, uploads the generated `.dmg` and `.zip` assets to the GitHub release, and then opens a pull request to update the workspace package manifests on `main` to match the released version.
+Internal workspaces such as `@markdown-studio/app`, `@markdown-studio/web`, `@markdown-studio/desktop-contract`, and `@markdown-studio/landing` are implementation details and stay on `0.0.0`.
+
+Maintainer flow:
+
+1. Add a changeset in the pull request when the change affects a shipped artifact.
+2. Merge the pull request to `main`.
+3. GitHub Actions opens or updates a version pull request through `.github/workflows/version-packages.yml`.
+4. Merge the version pull request once the release versions and changelog entries look correct.
+5. Optionally run `.github/workflows/release-desktop.yml` and/or `.github/workflows/publish-npm.yml` with `dry_run=true` to validate the path without publishing.
+6. Run the same workflow with `dry_run=false` from the ref you want to ship.
+
+Scope changesets by user-visible impact:
+
+- Use `@markdown-studio/desktop` for native desktop behavior, packaging, and Electron-only changes.
+- Use `markdown-studio` for the browser launcher package and web experience published to npm.
+- Use both package names when shared changes affect both shipped artifacts.
+
+Artifact tags are created by the publish workflows:
+
+- Desktop releases use `desktop-v<version>`
+- npm publishes use `npm-v<version>`
+
+Prereleases should be prepared through Changesets prerelease mode. The manual publish workflows read the existing manifest versions and publish prereleases to the appropriate channels automatically.
+
+Convenience commands for prerelease mode:
+
+- `pnpm changeset:pre:enter` enters prerelease mode using the `next` tag
+- `pnpm changeset:pre:exit` exits prerelease mode and returns future version PRs to stable releases
+
+Dry-run behavior:
+
+- `release-desktop.yml` still installs dependencies, runs quality checks, and builds artifacts, but skips tag creation and GitHub release publishing
+- `publish-npm.yml` still builds and verifies the npm package, but skips `npm publish` and skips tag creation
 
 ### Architecture Highlights
 

@@ -1,0 +1,123 @@
+name: Release Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and validate without creating tags or a GitHub release
+        required: true
+        default: false
+        type: boolean
+      ref:
+        description: Git ref to release from
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish desktop release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version-file: package.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          version="$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const pkg = JSON.parse(readFileSync('apps/desktop/package.json', 'utf8')); process.stdout.write(pkg.version)")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid desktop version: $version" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=desktop-v$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "make_latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "make_latest=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Run unit tests
+        run: pnpm test:unit
+
+      - name: Build desktop artifacts
+        run: pnpm dist:mac
+
+      - name: Ensure release tag exists
+        if: ${{ !inputs.dry_run }}
+        env:
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
+        shell: bash
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          remote_sha="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+
+          if [[ -n "$remote_sha" && "$remote_sha" != "$head_sha" ]]; then
+            echo "Tag $RELEASE_TAG already exists on a different commit: $remote_sha" >&2
+            exit 1
+          fi
+
+          if [[ -z "$remote_sha" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag "$RELEASE_TAG"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+
+      - name: Publish GitHub release
+        if: ${{ !inputs.dry_run }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          target_commitish: ${{ steps.release_meta.outputs.sha }}
+          name: Markdown Studio Desktop v${{ steps.release_meta.outputs.version }}
+          generate_release_notes: true
+          prerelease: ${{ steps.release_meta.outputs.is_prerelease }}
+          make_latest: ${{ steps.release_meta.outputs.make_latest }}
+          files: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+          fail_on_unmatched_files: true
+
+      - name: Report dry run result
+        if: ${{ inputs.dry_run }}
+        shell: bash
+        run: |
+          echo "Dry run completed for desktop version ${{ steps.release_meta.outputs.version }}."
+          echo "Skipped creating tag ${{ steps.release_meta.outputs.tag }} and skipped publishing the GitHub release."

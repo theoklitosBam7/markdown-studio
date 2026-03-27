@@ -19,6 +19,7 @@ jobs:
     name: Detect changed areas
     runs-on: ubuntu-24.04
     outputs:
+      run_changeset_check: ${{ steps.compute.outputs.run_changeset_check }}
       run_full_workflow: ${{ steps.compute.outputs.run_full_workflow }}
     steps:
       - name: Checkout
@@ -41,19 +42,81 @@ jobs:
               - '**/vite.config.ts'
               - '**/tsconfig.json'
               - '.github/workflows/*.yml'
+            release_changes:
+              # These source workspaces feed the shipped desktop app or npm package,
+              # even when their own package names are ignored by Changesets.
+              - 'apps/desktop/**/*'
+              - 'apps/web/**/*'
+              - 'packages/cli/**/*'
+              - 'packages/app/**/*'
+              - 'packages/desktop-contract/**/*'
+              - '!**/__tests__/**'
+              - '!**/*.spec.ts'
+              - '!**/*.md'
 
       - name: Compute workflow scope
         id: compute
         env:
           MEANINGFUL_CHANGED: ${{ steps.filter.outputs.meaningful_changes }}
+          RELEASE_CHANGED: ${{ steps.filter.outputs.release_changes }}
         run: |
+          run_changeset_check=false
           run_full_workflow=false
 
           if [ "${{ github.event_name }}" = "pull_request" ] && [ "$MEANINGFUL_CHANGED" = "true" ]; then
             run_full_workflow=true
           fi
 
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$RELEASE_CHANGED" = "true" ]; then
+            run_changeset_check=true
+          fi
+
+          echo "run_changeset_check=$run_changeset_check" >> "$GITHUB_OUTPUT"
           echo "run_full_workflow=$run_full_workflow" >> "$GITHUB_OUTPUT"
+
+  changeset_check:
+    name: Changeset validation
+    runs-on: ubuntu-24.04
+    if: needs.changes.outputs.run_changeset_check == 'true'
+    needs: changes
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version-file: package.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require changeset file
+        shell: bash
+        run: |
+          changeset_files="$(git diff --name-only origin/main...HEAD -- '.changeset/*.md' || true)"
+          changeset_files="$(printf '%s\n' "$changeset_files" | grep -Ev '^\.changeset/README\.md$' || true)"
+
+          if [[ -z "$changeset_files" ]]; then
+            echo "Release-affecting changes require at least one .changeset/*.md file." >&2
+            exit 1
+          fi
+
+          printf '%s\n' "$changeset_files"
+
+      - name: Validate changeset scopes
+        run: pnpm changeset:validate-scopes
+
+      - name: Check release plan
+        run: pnpm exec changeset status --since origin/main
 
   quality:
     name: Quality and unit tests
@@ -78,7 +141,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Format
-        run: pnpm format
+        run: pnpm format:check
 
       - name: Lint
         run: pnpm lint
