@@ -1,6 +1,6 @@
 {
   "name": "markdown-studio-monorepo",
-  "version": "0.2.0",
+  "version": "0.0.0",
   "private": true,
   "homepage": "https://github.com/theoklitosBam7/markdown-studio#readme",
   "bugs": {
@@ -17,6 +17,12 @@
   },
   "type": "module",
   "scripts": {
+    "changeset": "changeset",
+    "changeset:pre:enter": "changeset pre enter next",
+    "changeset:pre:exit": "changeset pre exit",
+    "changeset:status": "changeset status",
+    "changeset:validate-scopes": "node ./scripts/validate-changeset-scopes.mjs",
+    "changeset:version": "changeset version",
     "dev": "pnpm --filter @markdown-studio/web dev",
     "build": "pnpm type-check && run-p build:web build:desktop build:landing build:cli",
     "build:web": "pnpm --filter @markdown-studio/web build",
@@ -41,6 +47,7 @@
     "format:check": "oxfmt --check"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.7",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",

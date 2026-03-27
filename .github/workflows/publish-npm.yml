@@ -1,0 +1,105 @@
+name: Publish npm Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and validate without publishing to npm or creating tags
+        required: true
+        default: false
+        type: boolean
+      ref:
+        description: Git ref to publish from
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Build and publish npm package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve publish metadata
+        id: publish_meta
+        shell: bash
+        run: |
+          version="$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const pkg = JSON.parse(readFileSync('packages/cli/package.json', 'utf8')); process.stdout.write(pkg.version)")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid npm package version: $version" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=npm-v$version" >> "$GITHUB_OUTPUT"
+
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "npm_tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "npm_tag=next" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build npm package
+        run: pnpm build:npm
+
+      - name: Verify npm package contents
+        run: pnpm --filter markdown-studio pack:check
+
+      - name: Publish npm package
+        if: ${{ !inputs.dry_run }}
+        working-directory: packages/cli
+        run: npm publish --provenance --tag "${{ steps.publish_meta.outputs.npm_tag }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Ensure publish tag exists
+        if: ${{ !inputs.dry_run }}
+        env:
+          RELEASE_TAG: ${{ steps.publish_meta.outputs.tag }}
+        shell: bash
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          remote_sha="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+
+          if [[ -n "$remote_sha" && "$remote_sha" != "$head_sha" ]]; then
+            echo "Tag $RELEASE_TAG already exists on a different commit: $remote_sha" >&2
+            exit 1
+          fi
+
+          if [[ -z "$remote_sha" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag "$RELEASE_TAG"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+
+      - name: Report dry run result
+        if: ${{ inputs.dry_run }}
+        shell: bash
+        run: |
+          echo "Dry run completed for npm package version ${{ steps.publish_meta.outputs.version }}."
+          echo "Skipped npm publish with tag ${{ steps.publish_meta.outputs.npm_tag }} and skipped creating tag ${{ steps.publish_meta.outputs.tag }}."
