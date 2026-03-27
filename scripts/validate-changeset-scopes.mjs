@@ -6,19 +6,39 @@ import { fileURLToPath } from 'node:url'
 
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
 const changesetDir = path.join(rootDir, '.changeset')
-const allowedPackages = new Set(['@markdown-studio/desktop', 'markdown-studio'])
+export const allowedPackages = new Set(['@markdown-studio/desktop', 'markdown-studio'])
 
-const entries = await readdir(changesetDir, { withFileTypes: true })
-const changesetFiles = entries
-  .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md')
-  .map((entry) => path.join(changesetDir, entry.name))
+export function parseReleaseLine(releaseLine) {
+  const match = releaseLine.match(/^(['"]?)([^'"]+?)\1\s*:\s*(major|minor|patch)\s*$/)
 
-for (const changesetFile of changesetFiles) {
-  const source = await readFile(changesetFile, 'utf8')
+  if (!match) {
+    throw new Error(`Unsupported changeset entry "${releaseLine}".`)
+  }
+
+  const [, , packageName, releaseType] = match
+
+  return { packageName, releaseType }
+}
+
+export async function validateChangesetScopes() {
+  const entries = await readdir(changesetDir, { withFileTypes: true })
+  const changesetFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md')
+    .map((entry) => path.join(changesetDir, entry.name))
+
+  for (const changesetFile of changesetFiles) {
+    const source = await readFile(changesetFile, 'utf8')
+    validateChangesetSource(source, path.relative(rootDir, changesetFile))
+  }
+
+  return changesetFiles.length
+}
+
+export function validateChangesetSource(source, relativePath) {
   const frontmatterMatch = source.match(/^---\n([\s\S]*?)\n---/)
 
   if (!frontmatterMatch) {
-    throw new Error(`Missing frontmatter in ${path.relative(rootDir, changesetFile)}.`)
+    throw new Error(`Missing frontmatter in ${relativePath}.`)
   }
 
   const releaseLines = frontmatterMatch[1]
@@ -27,26 +47,27 @@ for (const changesetFile of changesetFiles) {
     .filter(Boolean)
 
   if (releaseLines.length === 0) {
-    throw new Error(`No package releases declared in ${path.relative(rootDir, changesetFile)}.`)
+    throw new Error(`No package releases declared in ${relativePath}.`)
   }
 
   for (const releaseLine of releaseLines) {
-    const match = releaseLine.match(/^"?([^"]+?)"?\s*:\s*(major|minor|patch)\s*$/)
+    let packageName
 
-    if (!match) {
-      throw new Error(
-        `Unsupported changeset entry "${releaseLine}" in ${path.relative(rootDir, changesetFile)}.`,
-      )
+    try {
+      ;({ packageName } = parseReleaseLine(releaseLine))
+    } catch {
+      throw new Error(`Unsupported changeset entry "${releaseLine}" in ${relativePath}.`)
     }
-
-    const [, packageName] = match
 
     if (!allowedPackages.has(packageName)) {
       throw new Error(
-        `Disallowed package "${packageName}" in ${path.relative(rootDir, changesetFile)}. Allowed packages: ${[...allowedPackages].join(', ')}.`,
+        `Disallowed package "${packageName}" in ${relativePath}. Allowed packages: ${[...allowedPackages].join(', ')}.`,
       )
     }
   }
 }
 
-console.log(`Validated ${changesetFiles.length} changeset file(s).`)
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const validatedFileCount = await validateChangesetScopes()
+  console.log(`Validated ${validatedFileCount} changeset file(s).`)
+}
