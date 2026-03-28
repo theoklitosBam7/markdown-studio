@@ -1,4 +1,4 @@
-export type AppCommand = 'document:open' | 'document:save' | 'document:saveAs'
+export type AppCommand = 'document:open' | 'document:save' | 'document:saveAs' | 'update:check'
 
 export interface DesktopApi {
   commands: DesktopCommandsApi

@@ -7,11 +7,13 @@ import type { Example, Theme, ViewMode } from '@/features/markdown/types'
 
 import { useDesktop } from '@/composables/useDesktop'
 import { useThemeTransition } from '@/composables/useThemeTransition'
+import { useUpdateChecker } from '@/composables/useUpdateChecker'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
+import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
 import { useDocumentSession } from '@/features/markdown/composables/useDocumentSession'
 import { useMarkdownEditor } from '@/features/markdown/composables/useMarkdownEditor'
 
@@ -61,7 +63,21 @@ interface ThemeChangeRequest {
 }
 
 const { transitionTheme } = useThemeTransition()
+const {
+  checkNow,
+  dismiss: dismissUpdateBanner,
+  download: downloadUpdate,
+  showBanner,
+  startChecking: startUpdateChecks,
+  stopChecking: stopUpdateChecks,
+  updateAvailable,
+  updateInfo,
+} = useUpdateChecker()
 const mobileBreakpoint = 700
+
+const bannerStatus = computed(() =>
+  updateAvailable.value ? ('update-available' as const) : ('up-to-date' as const),
+)
 
 // Local state
 const isExamplesModalOpen = shallowRef(false)
@@ -188,10 +204,15 @@ function syncViewport(): void {
 onMounted(() => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
+  startUpdateChecks()
 
   const onAppCommand = desktop.value?.commands?.onAppCommand
   if (onAppCommand) {
     removeDesktopCommandListener = onAppCommand((command: AppCommand) => {
+      if (command === 'update:check') {
+        void checkNow()
+        return
+      }
       void handleAppCommand(command).catch((err: unknown) => {
         console.error('Failed to handle desktop app command:', err)
       })
@@ -204,6 +225,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', syncViewport)
   removeDesktopCommandListener()
+  stopUpdateChecks()
 })
 
 watch(
@@ -234,6 +256,17 @@ watch(
       @copy="copyContent"
       @save-document="saveDocument"
     />
+
+    <Transition name="banner-slide">
+      <UpdateBanner
+        v-if="showBanner"
+        :status="bannerStatus"
+        :current-version="updateInfo?.currentVersion"
+        :latest-version="updateInfo?.latestVersion"
+        @dismiss="dismissUpdateBanner"
+        @download="downloadUpdate"
+      />
+    </Transition>
 
     <main class="main-content">
       <EditorPane
@@ -313,5 +346,29 @@ watch(
   .markdown-studio :deep(.preview-pane) {
     min-height: 0;
   }
+}
+
+.banner-slide-enter-active,
+.banner-slide-leave-active {
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    padding-top 0.3s ease,
+    padding-bottom 0.3s ease;
+  overflow: hidden;
+}
+
+.banner-slide-enter-from,
+.banner-slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.banner-slide-enter-to,
+.banner-slide-leave-from {
+  max-height: 60px;
+  opacity: 1;
 }
 </style>

@@ -1,8 +1,11 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'electron-vite'
 import { builtinModules } from 'node:module'
+import { createRequire } from 'node:module'
 import { fileURLToPath, URL } from 'node:url'
 import vueDevTools from 'vite-plugin-vue-devtools'
+
+const desktopPackage = createRequire(import.meta.url)('./package.json')
 
 const electronRuntimeExternals = [
   'electron',
@@ -60,6 +63,9 @@ export default defineConfig({
       rollupOptions: {
         input: 'index.html',
       },
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(desktopPackage.version),
     },
     plugins: [vue(), vueDevTools()],
     resolve: {

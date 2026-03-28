@@ -9,6 +9,7 @@ export function buildAppMenu(mainWindow: BrowserWindow): Menu {
       label: 'Markdown Studio',
       submenu: [
         { role: 'about' },
+        createCommandMenuItem(mainWindow, 'Check for Updates…', '', 'update:check'),
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
