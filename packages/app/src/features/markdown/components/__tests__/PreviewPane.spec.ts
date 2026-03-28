@@ -95,6 +95,10 @@ describe('PreviewPane', () => {
         save: async () => null,
         saveAs: async () => null,
       },
+      exports: {
+        exportHtml: async () => null,
+        exportPdf: async () => null,
+      },
       isDesktop: true,
       shell: {
         openExternal,

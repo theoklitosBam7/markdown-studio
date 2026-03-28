@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { shallowRef, useTemplateRef } from 'vue'
+
 import ThemeToggle from '@/components/base/ThemeToggle.vue'
 import ToolbarButton from '@/components/base/ToolbarButton.vue'
 import ViewToggle from '@/components/base/ViewToggle.vue'
@@ -30,6 +32,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   clear: []
   copy: []
+  exportHtml: []
+  exportPdf: []
   openDocument: []
   openExamples: []
   saveDocument: []
@@ -63,6 +67,36 @@ function openExamples(): void {
 
 function saveDocument(): void {
   emit('saveDocument')
+}
+
+const exportMenuRef = useTemplateRef<HTMLDetailsElement>('exportMenu')
+const isExportMenuOpen = shallowRef(false)
+
+function closeExportMenu(): void {
+  isExportMenuOpen.value = false
+  if (exportMenuRef.value) {
+    exportMenuRef.value.open = false
+  }
+}
+
+function exportHtml(): void {
+  emit('exportHtml')
+  closeExportMenu()
+}
+
+function exportPdf(): void {
+  emit('exportPdf')
+  closeExportMenu()
+}
+
+function handleExportMenuToggle(event: Event): void {
+  if (event.currentTarget instanceof HTMLDetailsElement) {
+    toggleExportMenu(event.currentTarget.open)
+  }
+}
+
+function toggleExportMenu(nextOpen: boolean): void {
+  isExportMenuOpen.value = nextOpen
 }
 </script>
 
@@ -124,6 +158,34 @@ function saveDocument(): void {
           </svg>
           <span>{{ isCopied ? 'Copied' : 'Copy MD' }}</span>
         </ToolbarButton>
+
+        <details
+          ref="exportMenu"
+          class="export-menu"
+          :open="isExportMenuOpen"
+          @toggle="handleExportMenuToggle"
+        >
+          <summary
+            :class="['toolbar-btn', 'export-menu__trigger', { compact: props.isMobile }]"
+            aria-label="Export document"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M8 2.5v7" />
+              <path d="M5.5 7 8 9.5 10.5 7" />
+              <path d="M2.5 11.5h11" />
+            </svg>
+            <span>Export</span>
+          </summary>
+
+          <div class="export-menu__popover" role="menu" aria-label="Export options">
+            <button class="export-menu__item" type="button" role="menuitem" @click="exportHtml">
+              Export HTML
+            </button>
+            <button class="export-menu__item" type="button" role="menuitem" @click="exportPdf">
+              Export PDF
+            </button>
+          </div>
+        </details>
       </div>
 
       <div class="toolbar__desktop-controls">
@@ -214,6 +276,86 @@ function saveDocument(): void {
   display: none;
 }
 
+.export-menu {
+  position: relative;
+}
+
+.export-menu summary {
+  list-style: none;
+}
+
+.export-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.export-menu__trigger {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.export-menu__trigger.compact {
+  padding: 0 9px;
+}
+
+.export-menu__trigger:hover,
+.export-menu[open] .export-menu__trigger {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--border-dark);
+}
+
+.export-menu__trigger svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.export-menu__popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 148px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 14px 30px rgba(17, 15, 12, 0.12);
+  display: grid;
+  gap: 4px;
+  z-index: 20;
+}
+
+.export-menu__item {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  border-radius: 6px;
+  text-align: left;
+  padding: 8px 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.export-menu__item:hover {
+  background: var(--panel);
+}
+
 @media (max-width: 700px) {
   .toolbar {
     gap: 8px;
@@ -239,6 +381,23 @@ function saveDocument(): void {
 
   .toolbar__actions :deep(.toolbar-btn) {
     justify-content: center;
+  }
+
+  .export-menu {
+    width: 100%;
+  }
+
+  .export-menu__trigger {
+    height: 36px;
+    min-width: 36px;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  .export-menu__popover {
+    left: 0;
+    right: auto;
+    width: 100%;
   }
 
   .toolbar__desktop-controls {

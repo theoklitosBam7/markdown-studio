@@ -13,6 +13,10 @@ const desktopMock = {
     save: vi.fn(async () => ({ path: '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
   },
+  exports: {
+    exportHtml: vi.fn(async () => ({ path: '/tmp/exported.html' })),
+    exportPdf: vi.fn(async () => ({ path: '/tmp/exported.pdf' })),
+  },
   isDesktop: true,
   shell: {
     openExternal: vi.fn(async () => undefined),
@@ -102,12 +106,21 @@ describe('useDocumentActions', () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:actions')
     const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
 
-    const saved = await actions.saveAs({ content: '# Saved', suggestedPath: 'browser-note' })
+    vi.useFakeTimers()
+    try {
+      const saved = await actions.saveAs({ content: '# Saved', suggestedPath: 'browser-note' })
 
-    expect(saved).toEqual({ path: 'browser-note.md' })
-    expect(createObjectUrlSpy).toHaveBeenCalled()
-    expect(anchorClickSpy).toHaveBeenCalled()
-    expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:actions')
+      expect(saved).toEqual({ path: 'browser-note.md' })
+      expect(createObjectUrlSpy).toHaveBeenCalled()
+      expect(anchorClickSpy).toHaveBeenCalled()
+      expect(revokeObjectUrlSpy).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:actions')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('returns null when the browser save picker is canceled', async () => {

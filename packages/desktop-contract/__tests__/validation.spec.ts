@@ -3,9 +3,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  assertExportInput,
   assertExternalUrl,
   assertSaveAsInput,
   assertSaveInput,
+  getDefaultExportPath,
   getDefaultMarkdownPath,
 } from '../src/validation'
 
@@ -28,5 +30,21 @@ describe('desktop validation', () => {
     })
     expect(getDefaultMarkdownPath('notes')).toBe('notes.md')
     expect(getDefaultMarkdownPath()).toBe('Untitled.md')
+  })
+
+  it('normalizes export payloads and paths', () => {
+    expect(
+      assertExportInput({
+        documentHtml: '<html></html>',
+        documentTitle: ' Demo ',
+        suggestedPath: 'notes.md',
+      }),
+    ).toEqual({
+      documentHtml: '<html></html>',
+      documentTitle: 'Demo',
+      suggestedPath: 'notes.md',
+    })
+    expect(getDefaultExportPath('html', 'notes.md')).toBe('notes.html')
+    expect(getDefaultExportPath('pdf')).toBe('Untitled.pdf')
   })
 })

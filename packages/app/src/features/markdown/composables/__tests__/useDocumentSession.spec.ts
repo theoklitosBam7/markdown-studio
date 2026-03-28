@@ -15,6 +15,10 @@ const desktopMock = {
     save: vi.fn(async ({ path }: { path: null | string }) => ({ path: path ?? '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
   },
+  exports: {
+    exportHtml: vi.fn(async () => ({ path: '/tmp/exported.html' })),
+    exportPdf: vi.fn(async () => ({ path: '/tmp/exported.pdf' })),
+  },
   isDesktop: true,
   shell: {
     openExternal: vi.fn(async () => undefined),
@@ -150,13 +154,22 @@ describe('useDocumentSession', () => {
       .mockReturnValue('blob:markdown-studio')
     const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
 
-    await session.saveDocument()
+    vi.useFakeTimers()
+    try {
+      await session.saveDocument()
 
-    expect(createObjectUrlSpy).toHaveBeenCalled()
-    expect(anchorClickSpy).toHaveBeenCalled()
-    expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:markdown-studio')
-    expect(session.currentPath.value).toBe('Untitled.md')
-    expect(session.isDirty.value).toBe(false)
+      expect(createObjectUrlSpy).toHaveBeenCalled()
+      expect(anchorClickSpy).toHaveBeenCalled()
+      expect(revokeObjectUrlSpy).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:markdown-studio')
+      expect(session.currentPath.value).toBe('Untitled.md')
+      expect(session.isDirty.value).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('writes in place on the web after a persistent file handle is acquired', async () => {
