@@ -14,6 +14,7 @@ import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
+import { useDocumentExport } from '@/features/markdown/composables/useDocumentExport'
 import { useDocumentSession } from '@/features/markdown/composables/useDocumentSession'
 import { useMarkdownEditor } from '@/features/markdown/composables/useMarkdownEditor'
 
@@ -37,6 +38,7 @@ const desktop = useDesktop()
 const {
   canOpenDocuments,
   canSaveDocuments,
+  currentPath,
   displayName,
   handleAppCommand,
   isDirty,
@@ -47,6 +49,11 @@ const {
 } = useDocumentSession({
   content,
   replaceContent: updateContent,
+})
+const { exportHtml, exportPdf } = useDocumentExport({
+  content,
+  currentPath,
+  displayName,
 })
 
 interface EditorScrollPayload {
@@ -149,6 +156,18 @@ function handleExampleSelect(example: Example): void {
   }, 0)
 }
 
+function handleExportHtml(): void {
+  void exportHtml().catch((error: unknown) => {
+    console.error('Failed to export HTML:', error)
+  })
+}
+
+function handleExportPdf(): void {
+  void exportPdf().catch((error: unknown) => {
+    console.error('Failed to export PDF:', error)
+  })
+}
+
 function handlePreviewJump(offset: number): void {
   if (isMobile.value || viewMode.value !== 'split') return
 
@@ -209,12 +228,8 @@ onMounted(() => {
   const onAppCommand = desktop.value?.commands?.onAppCommand
   if (onAppCommand) {
     removeDesktopCommandListener = onAppCommand((command: AppCommand) => {
-      if (command === 'update:check') {
-        void checkNow()
-        return
-      }
-      void handleAppCommand(command).catch((err: unknown) => {
-        console.error('Failed to handle desktop app command:', err)
+      void handleDesktopCommand(command).catch((error: unknown) => {
+        console.error('Failed to handle desktop app command:', error)
       })
     })
   } else {
@@ -236,6 +251,22 @@ watch(
   },
   { deep: true },
 )
+
+async function handleDesktopCommand(command: AppCommand): Promise<void> {
+  switch (command) {
+    case 'document:exportHtml':
+      await exportHtml()
+      return
+    case 'document:exportPdf':
+      await exportPdf()
+      return
+    case 'update:check':
+      await checkNow()
+      return
+    default:
+      await handleAppCommand(command)
+  }
+}
 </script>
 
 <template>
@@ -254,6 +285,8 @@ watch(
       @open-examples="openExamples"
       @clear="handleClear"
       @copy="copyContent"
+      @export-html="handleExportHtml"
+      @export-pdf="handleExportPdf"
       @save-document="saveDocument"
     />
 

@@ -13,6 +13,10 @@ const fallbackDesktopApi: DesktopApi = {
     save: async () => null,
     saveAs: async () => null,
   },
+  exports: {
+    exportHtml: async () => null,
+    exportPdf: async () => null,
+  },
   isDesktop: false,
   shell: {
     openExternal: async () => undefined,

@@ -1,0 +1,257 @@
+.markdown-document {
+  --md-doc-bg: #ffffff;
+  --md-doc-panel: #f0ede6;
+  --md-doc-border: #e2ddd5;
+  --md-doc-text: #1a1814;
+  --md-doc-text-muted: #6b6560;
+  --md-doc-accent: #2a5f4f;
+  --md-doc-accent-light: #e8f2ef;
+  --md-doc-accent-mid: #4a8c78;
+  --md-doc-code-bg: #f3f0eb;
+  --md-doc-error-bg: #fdf0ef;
+  --md-doc-error-border: #f5c6c6;
+  --md-doc-error-text: #c0392b;
+  max-width: 720px;
+  margin: 0 auto;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--md-doc-text);
+}
+
+.markdown-document-theme--app {
+  --md-doc-bg: var(--surface);
+  --md-doc-panel: var(--panel);
+  --md-doc-border: var(--border);
+  --md-doc-text: var(--text);
+  --md-doc-text-muted: var(--text-muted);
+  --md-doc-accent: var(--accent);
+  --md-doc-accent-light: var(--accent-light);
+  --md-doc-accent-mid: var(--accent-mid);
+  --md-doc-code-bg: var(--code-bg);
+  --md-doc-error-bg: var(--error-bg);
+  --md-doc-error-border: var(--error-border);
+  --md-doc-error-text: var(--error-text);
+}
+
+.markdown-document-theme--light {
+  --md-doc-bg: #ffffff;
+  --md-doc-panel: #f0ede6;
+  --md-doc-border: #e2ddd5;
+  --md-doc-text: #1a1814;
+  --md-doc-text-muted: #6b6560;
+  --md-doc-accent: #2a5f4f;
+  --md-doc-accent-light: #e8f2ef;
+  --md-doc-accent-mid: #4a8c78;
+  --md-doc-code-bg: #f3f0eb;
+  --md-doc-error-bg: #fdf0ef;
+  --md-doc-error-border: #f5c6c6;
+  --md-doc-error-text: #c0392b;
+}
+
+.markdown-document > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-document h1,
+.markdown-document h2,
+.markdown-document h3,
+.markdown-document h4,
+.markdown-document h5,
+.markdown-document h6 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: var(--md-doc-text);
+  margin: 1.8em 0 0.5em;
+  line-height: 1.25;
+}
+
+.markdown-document h1 {
+  font-size: 2.2em;
+}
+
+.markdown-document h2 {
+  font-size: 1.6em;
+  border-bottom: 1px solid var(--md-doc-border);
+  padding-bottom: 0.3em;
+}
+
+.markdown-document h3 {
+  font-size: 1.25em;
+}
+
+.markdown-document h4 {
+  font-size: 1.05em;
+  font-style: italic;
+}
+
+.markdown-document p {
+  margin: 0.9em 0;
+}
+
+.markdown-document a {
+  color: var(--md-doc-accent);
+  text-decoration: underline;
+  text-decoration-color: var(--md-doc-accent-mid);
+}
+
+.markdown-document strong {
+  font-weight: 500;
+}
+
+.markdown-document em {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+}
+
+.markdown-document ul,
+.markdown-document ol {
+  padding-left: 1.5em;
+  margin: 0.7em 0;
+}
+
+.markdown-document li {
+  margin: 0.35em 0;
+}
+
+.markdown-document li > p {
+  margin: 0.2em 0;
+}
+
+.markdown-document blockquote {
+  margin: 1.2em 0;
+  padding: 0.6em 1.2em;
+  border-left: 3px solid var(--md-doc-accent-mid);
+  background: var(--md-doc-accent-light);
+  border-radius: 0 6px 6px 0;
+  color: var(--md-doc-text-muted);
+}
+
+.markdown-document blockquote p {
+  margin: 0;
+}
+
+.markdown-document code {
+  font-family: 'DM Mono', 'SFMono-Regular', monospace;
+  font-size: 0.85em;
+  background: var(--md-doc-code-bg);
+  border: 1px solid var(--md-doc-border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+}
+
+.markdown-document pre {
+  background: var(--md-doc-code-bg);
+  border: 1px solid var(--md-doc-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 1.2em 0;
+}
+
+.markdown-document pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.markdown-document table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: 14px;
+}
+
+.markdown-document th {
+  background: var(--md-doc-panel);
+  font-weight: 500;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--md-doc-border);
+}
+
+.markdown-document td {
+  padding: 7px 12px;
+  border: 1px solid var(--md-doc-border);
+}
+
+.markdown-document tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--md-doc-bg) 96%, black 4%);
+}
+
+.markdown-document hr {
+  border: none;
+  border-top: 1px solid var(--md-doc-border);
+  margin: 2em 0;
+}
+
+.markdown-document img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.markdown-document .mermaid-wrap {
+  margin: 1.4em 0;
+  background: color-mix(in srgb, var(--md-doc-bg) 96%, black 4%);
+  border: 1px solid var(--md-doc-border);
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.markdown-document .mermaid-wrap svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-document .mermaid-error {
+  color: var(--md-doc-error-text);
+  font-family: 'DM Mono', 'SFMono-Regular', monospace;
+  font-size: 12px;
+  padding: 12px;
+  background: var(--md-doc-error-bg);
+  border: 1px solid var(--md-doc-error-border);
+  border-radius: 8px;
+}
+
+@media (max-width: 700px) {
+  .markdown-document {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .markdown-document h1 {
+    font-size: 1.9em;
+  }
+
+  .markdown-document h2 {
+    font-size: 1.45em;
+  }
+
+  .markdown-document pre {
+    padding: 14px 16px;
+  }
+}
+
+@media print {
+  .markdown-document,
+  .markdown-document * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .markdown-document pre,
+  .markdown-document code,
+  .markdown-document th,
+  .markdown-document td,
+  .markdown-document tr:nth-child(even) td,
+  .markdown-document .mermaid-wrap,
+  .markdown-document blockquote {
+    break-inside: avoid;
+  }
+}

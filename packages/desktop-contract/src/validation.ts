@@ -1,4 +1,21 @@
-import type { DesktopSaveAsInput, DesktopSaveInput } from './types'
+import type { DesktopExportInput, DesktopSaveAsInput, DesktopSaveInput } from './types'
+
+export function assertExportInput(value: unknown): DesktopExportInput {
+  assertObject(value, 'Export payload must be an object.')
+  const input = value as Record<string, unknown>
+
+  return {
+    documentHtml: assertTextContent(input.documentHtml),
+    documentTitle:
+      input.documentTitle === undefined || input.documentTitle === null
+        ? null
+        : assertTextContent(input.documentTitle).trim() || null,
+    suggestedPath:
+      input.suggestedPath === undefined || input.suggestedPath === null
+        ? null
+        : assertNonEmptyPath(input.suggestedPath),
+  }
+}
 
 export function assertExternalUrl(value: string): string {
   const url = new URL(value)
@@ -10,21 +27,38 @@ export function assertExternalUrl(value: string): string {
   return url.toString()
 }
 
-export function assertSaveAsInput(value: DesktopSaveAsInput): DesktopSaveAsInput {
+export function assertSaveAsInput(value: unknown): DesktopSaveAsInput {
+  assertObject(value, 'Save-as payload must be an object.')
+  const input = value as Record<string, unknown>
+
   return {
-    content: assertTextContent(value.content),
+    content: assertTextContent(input.content),
     suggestedPath:
-      value.suggestedPath === undefined || value.suggestedPath === null
+      input.suggestedPath === undefined || input.suggestedPath === null
         ? null
-        : assertNonEmptyPath(value.suggestedPath),
+        : assertNonEmptyPath(input.suggestedPath),
   }
 }
 
-export function assertSaveInput(value: DesktopSaveInput): DesktopSaveInput {
+export function assertSaveInput(value: unknown): DesktopSaveInput {
+  assertObject(value, 'Save payload must be an object.')
+  const input = value as Record<string, unknown>
+
   return {
-    content: assertTextContent(value.content),
-    path: value.path === null ? null : assertNonEmptyPath(value.path),
+    content: assertTextContent(input.content),
+    path: input.path === null ? null : assertNonEmptyPath(input.path),
   }
+}
+
+export function getDefaultExportPath(extension: 'html' | 'pdf', inputPath?: null | string): string {
+  const normalizedExtension = `.${extension}`
+
+  if (!inputPath) {
+    return `Untitled${normalizedExtension}`
+  }
+
+  const withoutExtension = inputPath.replace(/\.[^./\\]+$/, '')
+  return `${withoutExtension}${normalizedExtension}`
 }
 
 export function getDefaultMarkdownPath(inputPath?: null | string): string {
@@ -35,7 +69,11 @@ export function getDefaultMarkdownPath(inputPath?: null | string): string {
   return inputPath.toLowerCase().endsWith('.md') ? inputPath : `${inputPath}.md`
 }
 
-function assertNonEmptyPath(value: string): string {
+function assertNonEmptyPath(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new TypeError('A non-empty file path is required.')
+  }
+
   const normalized = value.trim()
 
   if (!normalized) {
@@ -45,7 +83,13 @@ function assertNonEmptyPath(value: string): string {
   return normalized
 }
 
-function assertTextContent(value: string): string {
+function assertObject(value: unknown, message: string): asserts value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    throw new TypeError(message)
+  }
+}
+
+function assertTextContent(value: unknown): string {
   if (typeof value !== 'string') {
     throw new TypeError('Markdown content must be a string.')
   }

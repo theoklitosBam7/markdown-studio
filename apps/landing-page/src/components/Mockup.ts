@@ -17,6 +17,7 @@ export function Mockup(): string {
               <div class="mockup-toolbar">
                 <div class="mockup-toolbar-btn">📝</div>
                 <div class="mockup-toolbar-btn">👁</div>
+                <div class="mockup-toolbar-btn">⇩</div>
                 <div style="flex: 1;"></div>
                 <div class="mockup-toolbar-btn">☀</div>
               </div>
@@ -35,6 +36,7 @@ export function Mockup(): string {
               <div class="mockup-toolbar">
                 <div class="mockup-toolbar-btn">📝</div>
                 <div class="mockup-toolbar-btn">👁</div>
+                <div class="mockup-toolbar-btn">⇩</div>
                 <div style="flex: 1;"></div>
                 <div class="mockup-toolbar-btn">🌙</div>
               </div>

@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
-
 *,
 *::before,
 *::after {
@@ -24,6 +23,11 @@
   --accent-light: #e8f2ef;
   --accent-mid: #4a8c78;
   --code-bg: #f3f0eb;
+
+  /* Error */
+  --error-bg: #fdf0ef;
+  --error-border: #f5c6c6;
+  --error-text: #c0392b;
 
   /* Shadows */
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -54,6 +58,11 @@
   --accent-light: #1a2e28;
   --accent-mid: #4a9a80;
   --code-bg: #1a1814;
+
+  /* Error */
+  --error-bg: #3b1a18;
+  --error-border: #5c2a27;
+  --error-text: #f5a3a3;
 }
 
 html,

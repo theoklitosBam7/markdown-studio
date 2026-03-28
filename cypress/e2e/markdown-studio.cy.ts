@@ -4,6 +4,15 @@ type BrowserWindow = {
 } & typeof globalThis &
   Window
 
+interface PopupCapture {
+  locationHref: string
+  name: string
+}
+
+function openExportMenu(): void {
+  cy.get('.export-menu summary').click()
+}
+
 function stubBrowserDownload(
   win: BrowserWindow,
   downloads: { href: string; name: string }[],
@@ -84,6 +93,35 @@ function stubBrowserOpenFallbackInput(
 
     return element
   }) as typeof win.document.createElement
+}
+
+function stubBrowserPopup(win: BrowserWindow, popupCapture: PopupCapture): void {
+  win.open = ((url?: string | URL, _target?: string) => {
+    const popupWindow = {
+      location: {
+        get href() {
+          return popupCapture.locationHref
+        },
+        set href(value: string) {
+          popupCapture.locationHref = value
+        },
+      },
+      name: '',
+    }
+
+    popupCapture.locationHref = typeof url === 'string' ? url : (url?.toString() ?? '')
+
+    return new Proxy(popupWindow, {
+      set(targetWindow, property, value) {
+        if (property === 'name' && typeof value === 'string') {
+          popupCapture.name = value
+        }
+
+        Reflect.set(targetWindow, property, value)
+        return true
+      },
+    }) as unknown as Window
+  }) as typeof win.open
 }
 
 function stubBrowserSavePicker(win: BrowserWindow, writes: string[], fileName: string): void {
@@ -246,6 +284,74 @@ describe('Markdown Studio responsive shell', () => {
       expect(writes).to.deep.equal(['# First save', '# Second save'])
     })
     cy.get('.status-bar').should('contain', 'Saved picked-from-browser.md')
+  })
+
+  it('downloads standalone html from the export menu in the browser', () => {
+    cy.viewport(1280, 900)
+    const downloads: { href: string; name: string }[] = []
+
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        stubBrowserDownload(win, downloads)
+      },
+    })
+
+    cy.get('textarea').clear()
+    cy.get('textarea').type('# Exported as HTML')
+    openExportMenu()
+    cy.contains('.export-menu__item', 'Export HTML').click()
+
+    cy.wrap(null).then(() => {
+      expect(downloads).to.have.length(1)
+      expect(downloads[0]).to.deep.equal({
+        href: 'blob:markdown-studio',
+        name: 'Untitled.html',
+      })
+    })
+  })
+
+  it('opens the print export route and renders the pdf document without the fallback error state', () => {
+    cy.viewport(1280, 900)
+    const popupCapture: PopupCapture = {
+      locationHref: '',
+      name: '',
+    }
+
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        stubBrowserPopup(win as BrowserWindow, popupCapture)
+        cy.stub(win, 'print').as('appPrint')
+      },
+    })
+
+    cy.get('textarea').clear()
+    cy.get('textarea').type('# Exported as PDF')
+    openExportMenu()
+    cy.contains('.export-menu__item', 'Export PDF').click()
+
+    cy.wrap(null).then(() => {
+      expect(popupCapture.locationHref).to.match(/^\/export\/print\?job=/)
+      expect(popupCapture.name).to.contain('"title":"Untitled"')
+      expect(popupCapture.name).to.contain('<h1>Exported as PDF</h1>')
+    })
+
+    cy.then(() => {
+      const printJobId = popupCapture.locationHref.split('job=')[1]
+      if (!printJobId) {
+        throw new Error('Missing print job id in captured popup URL')
+      }
+
+      cy.visit(popupCapture.locationHref, {
+        onBeforeLoad(win) {
+          win.localStorage.setItem(`markdown-studio:print-export:${printJobId}`, popupCapture.name)
+          cy.stub(win, 'print').as('printExport')
+        },
+      })
+    })
+
+    cy.contains('.print-view__error', 'The export job is no longer available.').should('not.exist')
+    cy.get('.print-view__document').should('contain', 'Exported as PDF')
+    cy.get('@printExport').should('have.been.calledOnce')
   })
 
   it('syncs preview scrolling with the editor in split mode', () => {

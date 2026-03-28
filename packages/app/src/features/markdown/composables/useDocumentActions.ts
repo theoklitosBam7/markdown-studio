@@ -3,6 +3,7 @@ import { computed, type ComputedRef } from 'vue'
 import type { AppWindow } from '@/browser-window'
 
 import { useDesktop } from '@/composables/useDesktop'
+import { revokeObjectUrlLater } from '@/utils/objectUrl'
 
 interface BrowserOpenResult {
   file: File
@@ -137,7 +138,7 @@ function downloadDocument(content: string, fileName: string): void {
   document.body.append(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  revokeObjectUrlLater(url)
 }
 
 function getSuggestedPath(inputPath?: null | string): string {

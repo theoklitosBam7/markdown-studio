@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 
 import { isDesktopEnvironment } from '@/utils/platform'
+import MarkdownExportPrintView from '@/views/MarkdownExportPrintView.vue'
 import MarkdownStudioView from '@/views/MarkdownStudioView.vue'
 
 const router = createRouter({
@@ -12,6 +13,11 @@ const router = createRouter({
       component: MarkdownStudioView,
       name: 'home',
       path: '/',
+    },
+    {
+      component: MarkdownExportPrintView,
+      name: 'print-export',
+      path: '/export/print',
     },
   ],
 })

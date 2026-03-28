@@ -26,6 +26,12 @@ const features: Feature[] = [
   },
   {
     description:
+      'Export polished standalone HTML files or print-ready PDFs from both the web app and the desktop app.',
+    icon: '📄',
+    title: 'HTML & PDF Export',
+  },
+  {
+    description:
       'Toggle between light and dark modes with smooth animated transitions that match your preference.',
     icon: '🎨',
     title: 'Theme Switching',
@@ -62,7 +68,7 @@ export function Features(): string {
         <div class="features-header">
           <h2 class="features-title">Everything you need to write</h2>
           <p class="features-subtitle">
-            A focused, distraction-free environment with powerful features for modern Markdown editing.
+            A focused, distraction-free environment for writing, diagramming, and exporting polished Markdown documents.
           </p>
         </div>
 
