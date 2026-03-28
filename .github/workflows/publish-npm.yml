@@ -73,8 +73,6 @@ jobs:
         if: ${{ !inputs.dry_run }}
         working-directory: packages/cli
         run: npm publish --provenance --tag "${{ steps.publish_meta.outputs.npm_tag }}"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Ensure publish tag exists
         if: ${{ !inputs.dry_run }}
