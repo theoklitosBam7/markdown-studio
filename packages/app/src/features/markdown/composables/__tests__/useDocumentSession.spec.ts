@@ -15,6 +15,9 @@ const desktopMock = {
     save: vi.fn(async ({ path }: { path: null | string }) => ({ path: path ?? '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
   },
+  editing: {
+    insertText: vi.fn(async () => undefined),
+  },
   exports: {
     exportHtml: vi.fn(async () => ({ path: '/tmp/exported.html' })),
     exportPdf: vi.fn(async () => ({ path: '/tmp/exported.pdf' })),

@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
+
+import type { AppWindow } from '@/browser-window'
+
+import { insertTextAtSelection } from '@/utils/insertTextAtSelection'
+
+import type { FindMatch } from '../composables/useFindReplace'
+
+import FindReplaceBar from './FindReplaceBar.vue'
+import MatchOverlay from './MatchOverlay.vue'
 
 interface EditorScrollState {
   clientHeight: number
@@ -10,18 +19,49 @@ interface EditorScrollState {
 }
 
 interface Props {
+  activeMatchIndex?: number
   content: string
+  findOpen?: boolean
   lineCount: number
+  matchCase?: boolean
+  matchCount?: number
+  matches?: FindMatch[]
+  query?: string
+  replaceText?: string
+  showReplace?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  activeMatchIndex: -1,
+  findOpen: false,
+  matchCase: false,
+  matchCount: 0,
+  matches: () => [],
+  query: '',
+  replaceText: '',
+  showReplace: false,
+})
 
 const emit = defineEmits<{
+  'find:close': []
+  'find:next': []
+  'find:previous': []
+  'find:replace-all': []
+  'find:replace-current': []
+  'request-find': []
+  'request-replace': []
   scroll: [payload: EditorScrollState]
   'update:content': [value: string]
+  'update:match-case': [value: boolean]
+  'update:query': [value: string]
+  'update:replace-text': [value: string]
 }>()
 
 const editorRef = useTemplateRef<HTMLTextAreaElement>('editor')
+const findReplaceBarRef = useTemplateRef<InstanceType<typeof FindReplaceBar>>('findReplaceBar')
+const scrollbarWidth = shallowRef(0)
+const scrollTop = shallowRef(0)
+let resizeObserver: null | ResizeObserver = null
 
 // Use computed for v-model to avoid direct prop mutation
 const localContent = computed({
@@ -33,6 +73,8 @@ function emitScroll(): void {
   const scrollState = getScrollState()
   if (!scrollState) return
 
+  syncEditorMetrics()
+  scrollTop.value = scrollState.scrollTop
   emit('scroll', scrollState)
 }
 
@@ -42,17 +84,11 @@ function focus(): void {
 }
 
 async function focusAtOffset(offset: number): Promise<void> {
-  const editor = editorRef.value
-  if (!editor) return
+  await setSelectionRange(offset, offset, true)
+}
 
-  const clampedOffset = Math.max(0, Math.min(offset, props.content.length))
-  const lineIndex = getLineIndexForOffset(clampedOffset)
-  const lineHeight = getLineHeight(editor)
-
-  editor.focus()
-  await nextTick()
-  editor.setSelectionRange(clampedOffset, clampedOffset)
-  editor.scrollTop = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 2)
+function focusFindQuery(): void {
+  findReplaceBarRef.value?.focusQueryInput()
 }
 
 function getLineHeight(editor: HTMLTextAreaElement): number {
@@ -89,6 +125,20 @@ function getScrollState(): EditorScrollState | null {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
+    event.preventDefault()
+    event.stopPropagation()
+    emit('request-find')
+    return
+  }
+
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'h') {
+    event.preventDefault()
+    event.stopPropagation()
+    emit('request-replace')
+    return
+  }
+
   if (event.key === 'Tab') {
     event.preventDefault()
     const editor = editorRef.value
@@ -105,7 +155,107 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
-defineExpose({ focus, focusAtOffset, getScrollState })
+async function replaceAllContent(nextContent: string): Promise<void> {
+  const editor = editorRef.value
+  if (!editor) return
+
+  editor.focus()
+  await nextTick()
+  editor.setSelectionRange(0, editor.value.length)
+  const browserWindow = window as AppWindow
+
+  if (browserWindow.desktop?.isDesktop) {
+    await browserWindow.desktop.editing.insertText(nextContent)
+    return
+  }
+
+  insertTextAtSelection(editor, nextContent, 0, editor.value.length)
+}
+
+async function replaceRange(start: number, end: number, replacement: string): Promise<void> {
+  const editor = editorRef.value
+  if (!editor) return
+
+  const clampedStart = Math.max(0, Math.min(start, props.content.length))
+  const clampedEnd = Math.max(clampedStart, Math.min(end, props.content.length))
+
+  editor.focus()
+  await nextTick()
+  editor.setSelectionRange(clampedStart, clampedEnd)
+  const browserWindow = window as AppWindow
+
+  if (browserWindow.desktop?.isDesktop) {
+    await browserWindow.desktop.editing.insertText(replacement)
+    return
+  }
+
+  insertTextAtSelection(editor, replacement, clampedStart, clampedEnd)
+}
+
+async function setSelectionRange(start: number, end: number, shouldFocus = false): Promise<void> {
+  const editor = editorRef.value
+  if (!editor) return
+
+  const clampedStart = Math.max(0, Math.min(start, props.content.length))
+  const clampedEnd = Math.max(clampedStart, Math.min(end, props.content.length))
+  const lineIndex = getLineIndexForOffset(clampedStart)
+  const lineHeight = getLineHeight(editor)
+
+  if (shouldFocus) {
+    editor.focus()
+  }
+
+  await nextTick()
+  editor.setSelectionRange(clampedStart, clampedEnd)
+  editor.scrollTop = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 2)
+}
+
+function syncEditorMetrics(): void {
+  const editor = editorRef.value
+  if (!editor) {
+    scrollbarWidth.value = 0
+    return
+  }
+
+  scrollbarWidth.value = Math.max(0, editor.offsetWidth - editor.clientWidth)
+}
+
+defineExpose({
+  focus,
+  focusAtOffset,
+  focusFindQuery,
+  getScrollState,
+  replaceAllContent,
+  replaceRange,
+  setSelectionRange,
+})
+
+onMounted(() => {
+  syncEditorMetrics()
+
+  if (typeof ResizeObserver === 'undefined' || !editorRef.value) {
+    return
+  }
+
+  resizeObserver = new ResizeObserver(() => {
+    syncEditorMetrics()
+  })
+  resizeObserver.observe(editorRef.value)
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
+
+watch(
+  () => props.content,
+  async () => {
+    await nextTick()
+    syncEditorMetrics()
+  },
+  { flush: 'post' },
+)
 </script>
 
 <template>
@@ -114,15 +264,44 @@ defineExpose({ focus, focusAtOffset, getScrollState })
       <span class="pane-label">Markdown</span>
       <span class="line-count">{{ lineCount }} line{{ lineCount !== 1 ? 's' : '' }}</span>
     </div>
-    <textarea
-      ref="editor"
-      v-model="localContent"
-      class="editor"
-      spellcheck="false"
-      placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
-      @keydown="handleKeydown"
-      @scroll="emitScroll"
-    ></textarea>
+
+    <FindReplaceBar
+      v-if="findOpen"
+      ref="findReplaceBar"
+      :active-match-number="activeMatchIndex >= 0 ? activeMatchIndex + 1 : 0"
+      :match-case="matchCase"
+      :match-count="matchCount"
+      :query="query"
+      :replace-text="replaceText"
+      :show-replace="showReplace"
+      @close="emit('find:close')"
+      @next="emit('find:next')"
+      @previous="emit('find:previous')"
+      @replace-all="emit('find:replace-all')"
+      @replace-current="emit('find:replace-current')"
+      @update:match-case="emit('update:match-case', $event)"
+      @update:query="emit('update:query', $event)"
+      @update:replace-text="emit('update:replace-text', $event)"
+    />
+
+    <div class="editor-body">
+      <MatchOverlay
+        :active-match-index="activeMatchIndex"
+        :content="content"
+        :matches="findOpen ? matches : []"
+        :scrollbar-width="scrollbarWidth"
+        :scroll-top="scrollTop"
+      />
+      <textarea
+        ref="editor"
+        v-model="localContent"
+        class="editor"
+        spellcheck="false"
+        placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
+        @keydown="handleKeydown"
+        @scroll="emitScroll"
+      ></textarea>
+    </div>
   </div>
 </template>
 
@@ -133,6 +312,13 @@ defineExpose({ focus, focusAtOffset, getScrollState })
   flex-direction: column;
   border-right: 1px solid var(--border);
   min-width: 0;
+}
+
+.editor-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--surface);
 }
 
 .pane-header {
@@ -164,8 +350,11 @@ defineExpose({ focus, focusAtOffset, getScrollState })
 .editor {
   flex: 1;
   width: 100%;
-  background: var(--surface);
-  color: var(--text);
+  height: 100%;
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  color: transparent;
   border: none;
   outline: none;
   resize: none;
@@ -174,6 +363,17 @@ defineExpose({ focus, focusAtOffset, getScrollState })
   font-size: 13.5px;
   line-height: 1.7;
   tab-size: 2;
+  caret-color: var(--text);
+  text-shadow: 0 0 0 var(--text);
+}
+
+.editor::placeholder {
+  color: var(--text-faint);
+  text-shadow: none;
+}
+
+.editor::selection {
+  background: color-mix(in srgb, var(--accent-light) 70%, transparent);
 }
 
 @media (max-width: 700px) {
