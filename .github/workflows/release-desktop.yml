@@ -72,7 +72,6 @@ jobs:
           --ref "${{ steps.release_meta.outputs.sha }}"
           --tag-pattern "desktop-v*"
           --version "${{ steps.release_meta.outputs.version }}"
-          --title "Markdown Studio Desktop v${{ steps.release_meta.outputs.version }}"
           --output "${{ runner.temp }}/desktop-release-notes.md"
 
       - name: Format

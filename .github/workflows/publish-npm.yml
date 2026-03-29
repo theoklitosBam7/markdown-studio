@@ -74,7 +74,6 @@ jobs:
           --ref "${{ steps.publish_meta.outputs.sha }}"
           --tag-pattern "npm-v*"
           --version "${{ steps.publish_meta.outputs.version }}"
-          --title "markdown-studio npm v${{ steps.publish_meta.outputs.version }}"
           --output "${{ runner.temp }}/npm-release-notes.md"
 
       - name: Build npm package
