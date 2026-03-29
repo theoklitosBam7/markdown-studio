@@ -8,6 +8,11 @@
 - When running a specific single test file in Vitest, use the `pnpm exec vitest run` command; e.g.: `pnpm exec vitest run packages/app/src/__tests__/App.spec.ts`.
 - Do not use outdated or redundant scripts when a repo-specific command already exists.
 
+## Issue and PR Templates
+
+- Use the appropriate issue or PR template when creating a new issue or PR located in the `.github` directory.
+- If the template doesn't fit, update it to match the new use case.
+
 ## Project Snapshot
 
 Markdown Studio is a Vue 3 + Electron Markdown editor with live preview, Mermaid diagram support, and a split web/desktop experience. The repo is intentionally lightweight and still evolving, so changes that improve long-term clarity, maintainability, and UI quality are welcome.
