@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef, useTemplateRef } from 'vue'
+import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
 
 import ThemeToggle from '@/components/base/ThemeToggle.vue'
 import ToolbarButton from '@/components/base/ToolbarButton.vue'
@@ -95,9 +95,23 @@ function handleExportMenuToggle(event: Event): void {
   }
 }
 
+function handleOutsideClick(event: MouseEvent): void {
+  if (!exportMenuRef.value?.contains(event.target as Node)) {
+    closeExportMenu()
+  }
+}
+
 function toggleExportMenu(nextOpen: boolean): void {
   isExportMenuOpen.value = nextOpen
 }
+
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick, true)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleOutsideClick, true)
+})
 </script>
 
 <template>
