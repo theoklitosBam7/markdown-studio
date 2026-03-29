@@ -56,12 +56,26 @@ jobs:
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=npm-v$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
           if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "npm_tag=latest" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
           else
             echo "npm_tag=next" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Generate release notes
+        run: >
+          node ./scripts/generate-release-notes.mjs
+          --changelog packages/cli/CHANGELOG.md
+          --current-tag "${{ steps.publish_meta.outputs.tag }}"
+          --ref "${{ steps.publish_meta.outputs.sha }}"
+          --tag-pattern "npm-v*"
+          --version "${{ steps.publish_meta.outputs.version }}"
+          --title "markdown-studio npm v${{ steps.publish_meta.outputs.version }}"
+          --output "${{ runner.temp }}/npm-release-notes.md"
 
       - name: Build npm package
         run: pnpm build:npm
@@ -95,9 +109,20 @@ jobs:
             git push origin "refs/tags/$RELEASE_TAG"
           fi
 
+      - name: Publish GitHub release
+        if: ${{ !inputs.dry_run }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.publish_meta.outputs.tag }}
+          target_commitish: ${{ steps.publish_meta.outputs.sha }}
+          name: markdown-studio npm v${{ steps.publish_meta.outputs.version }}
+          body_path: ${{ runner.temp }}/npm-release-notes.md
+          prerelease: ${{ steps.publish_meta.outputs.is_prerelease }}
+          make_latest: false
+
       - name: Report dry run result
         if: ${{ inputs.dry_run }}
         shell: bash
         run: |
           echo "Dry run completed for npm package version ${{ steps.publish_meta.outputs.version }}."
-          echo "Skipped npm publish with tag ${{ steps.publish_meta.outputs.npm_tag }} and skipped creating tag ${{ steps.publish_meta.outputs.tag }}."
+          echo "Skipped npm publish with tag ${{ steps.publish_meta.outputs.npm_tag }}, skipped creating tag ${{ steps.publish_meta.outputs.tag }}, and skipped publishing the GitHub release."
