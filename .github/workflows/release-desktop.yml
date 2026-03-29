@@ -64,6 +64,17 @@ jobs:
             echo "make_latest=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Generate release notes
+        run: >
+          node ./scripts/generate-release-notes.mjs
+          --changelog apps/desktop/CHANGELOG.md
+          --current-tag "${{ steps.release_meta.outputs.tag }}"
+          --ref "${{ steps.release_meta.outputs.sha }}"
+          --tag-pattern "desktop-v*"
+          --version "${{ steps.release_meta.outputs.version }}"
+          --title "Markdown Studio Desktop v${{ steps.release_meta.outputs.version }}"
+          --output "${{ runner.temp }}/desktop-release-notes.md"
+
       - name: Format
         run: pnpm format:check
 
@@ -107,7 +118,7 @@ jobs:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           target_commitish: ${{ steps.release_meta.outputs.sha }}
           name: Markdown Studio Desktop v${{ steps.release_meta.outputs.version }}
-          generate_release_notes: true
+          body_path: ${{ runner.temp }}/desktop-release-notes.md
           prerelease: ${{ steps.release_meta.outputs.is_prerelease }}
           make_latest: ${{ steps.release_meta.outputs.make_latest }}
           files: |
