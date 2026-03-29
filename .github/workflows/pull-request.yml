@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,12 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Filter changed paths
+      - name: Filter meaningful changed paths
         if: github.event_name == 'pull_request'
-        id: filter
+        id: meaningful_filter
         uses: dorny/paths-filter@v4
         with:
-          predicate-quantifier: 'every'
           filters: |
             meaningful_changes:
               - 'apps/**/*.{ts,vue,js,json}'
@@ -43,13 +41,37 @@ jobs:
               - '**/vite.config.ts'
               - '**/tsconfig.json'
               - '.github/workflows/*.yml'
-            release_changes:
-              # These source workspaces feed the shipped desktop app or npm package,
-              # even when their own package names are ignored by Changesets.
+
+      - name: Filter release changed paths
+        if: github.event_name == 'pull_request'
+        id: release_filter
+        uses: dorny/paths-filter@v4
+        with:
+          predicate-quantifier: 'every'
+          filters: |
+            # These source workspaces feed the shipped desktop app or npm package,
+            # even when their own package names are ignored by Changesets.
+            desktop_release_changes:
               - 'apps/desktop/**/*'
+              - '!**/__tests__/**'
+              - '!**/*.spec.ts'
+              - '!**/*.md'
+            web_release_changes:
               - 'apps/web/**/*'
+              - '!**/__tests__/**'
+              - '!**/*.spec.ts'
+              - '!**/*.md'
+            cli_release_changes:
               - 'packages/cli/**/*'
+              - '!**/__tests__/**'
+              - '!**/*.spec.ts'
+              - '!**/*.md'
+            app_release_changes:
               - 'packages/app/**/*'
+              - '!**/__tests__/**'
+              - '!**/*.spec.ts'
+              - '!**/*.md'
+            desktop_contract_release_changes:
               - 'packages/desktop-contract/**/*'
               - '!**/__tests__/**'
               - '!**/*.spec.ts'
@@ -58,8 +80,12 @@ jobs:
       - name: Compute workflow scope
         id: compute
         env:
-          MEANINGFUL_CHANGED: ${{ steps.filter.outputs.meaningful_changes }}
-          RELEASE_CHANGED: ${{ steps.filter.outputs.release_changes }}
+          MEANINGFUL_CHANGED: ${{ steps.meaningful_filter.outputs.meaningful_changes }}
+          DESKTOP_RELEASE_CHANGED: ${{ steps.release_filter.outputs.desktop_release_changes }}
+          WEB_RELEASE_CHANGED: ${{ steps.release_filter.outputs.web_release_changes }}
+          CLI_RELEASE_CHANGED: ${{ steps.release_filter.outputs.cli_release_changes }}
+          APP_RELEASE_CHANGED: ${{ steps.release_filter.outputs.app_release_changes }}
+          DESKTOP_CONTRACT_RELEASE_CHANGED: ${{ steps.release_filter.outputs.desktop_contract_release_changes }}
         run: |
           run_changeset_check=false
           run_full_workflow=false
@@ -68,7 +94,13 @@ jobs:
             run_full_workflow=true
           fi
 
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$RELEASE_CHANGED" = "true" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] && {
+            [ "$DESKTOP_RELEASE_CHANGED" = "true" ] ||
+            [ "$WEB_RELEASE_CHANGED" = "true" ] ||
+            [ "$CLI_RELEASE_CHANGED" = "true" ] ||
+            [ "$APP_RELEASE_CHANGED" = "true" ] ||
+            [ "$DESKTOP_CONTRACT_RELEASE_CHANGED" = "true" ]
+          }; then
             run_changeset_check=true
           fi
 
@@ -123,6 +155,7 @@ jobs:
     name: Quality and unit tests
     runs-on: ubuntu-24.04
     needs: changes
+    if: needs.changes.outputs.run_full_workflow == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -171,7 +204,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           cache: pnpm
-          node-version: 24
+          node-version-file: package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
