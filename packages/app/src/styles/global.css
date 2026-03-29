@@ -23,6 +23,8 @@
   --accent-light: #e8f2ef;
   --accent-mid: #4a8c78;
   --code-bg: #f3f0eb;
+  --find-match-bg: #f3d98f;
+  --find-match-active-bg: #d8b44f;
 
   /* Error */
   --error-bg: #fdf0ef;
@@ -58,6 +60,8 @@
   --accent-light: #1a2e28;
   --accent-mid: #4a9a80;
   --code-bg: #1a1814;
+  --find-match-bg: #5c4a1e;
+  --find-match-active-bg: #8a7432;
 
   /* Error */
   --error-bg: #3b1a18;

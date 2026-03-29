@@ -16,6 +16,7 @@ import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
 import { useDocumentExport } from '@/features/markdown/composables/useDocumentExport'
 import { useDocumentSession } from '@/features/markdown/composables/useDocumentSession'
+import { useFindReplace } from '@/features/markdown/composables/useFindReplace'
 import { useMarkdownEditor } from '@/features/markdown/composables/useMarkdownEditor'
 
 // Use the composable
@@ -54,6 +55,31 @@ const { exportHtml, exportPdf } = useDocumentExport({
   content,
   currentPath,
   displayName,
+})
+const {
+  activeMatch,
+  activeMatchIndex,
+  close: closeFindReplace,
+  commitReplacement,
+  findNext,
+  findPrevious,
+  isOpen: isFindReplaceOpen,
+  matchCase,
+  matchCount,
+  matches,
+  openFind: openFindPanel,
+  openReplace: openReplacePanel,
+  prepareReplaceAll,
+  prepareReplaceCurrent,
+  query,
+  replaceText,
+  requestSelectionSync,
+  setMatchCase,
+  setQuery,
+  setReplaceText,
+  showReplace,
+} = useFindReplace({
+  content,
 })
 
 interface EditorScrollPayload {
@@ -117,6 +143,12 @@ function closeExamples(): void {
   isExamplesModalOpen.value = false
 }
 
+function focusFindQuery(): void {
+  void nextTick(() => {
+    editorPaneRef.value?.focusFindQuery()
+  })
+}
+
 function getOffsetForLine(contentValue: string, lineNumber: number): number {
   if (lineNumber <= 0) return 0
 
@@ -168,6 +200,60 @@ function handleExportPdf(): void {
   })
 }
 
+function handleFindClose(): void {
+  closeFindReplace()
+  editorPaneRef.value?.focus()
+}
+
+function handleFindQueryUpdate(value: string): void {
+  setQuery(value)
+}
+
+function handleFindReplaceShortcut(): void {
+  openReplacePanel()
+  focusFindQuery()
+}
+
+function handleFindShortcut(): void {
+  openFindPanel()
+  focusFindQuery()
+}
+
+function handleGlobalKeydown(event: KeyboardEvent): void {
+  if (event.defaultPrevented) {
+    return
+  }
+
+  const normalizedKey = event.key.toLowerCase()
+  const hasCommandModifier = event.metaKey || event.ctrlKey
+
+  if (hasCommandModifier && normalizedKey === 'f') {
+    event.preventDefault()
+    handleFindShortcut()
+    return
+  }
+
+  if (hasCommandModifier && normalizedKey === 'h') {
+    event.preventDefault()
+    handleFindReplaceShortcut()
+    return
+  }
+
+  if (!isFindReplaceOpen.value) {
+    return
+  }
+
+  if ((hasCommandModifier && normalizedKey === 'g') || event.key === 'F3') {
+    event.preventDefault()
+    if (event.shiftKey) {
+      findPrevious()
+      return
+    }
+
+    findNext()
+  }
+}
+
 function handlePreviewJump(offset: number): void {
   if (isMobile.value || viewMode.value !== 'split') return
 
@@ -176,6 +262,32 @@ function handlePreviewJump(offset: number): void {
 
 function handleRenderDiagrams(container: HTMLElement): void {
   renderMermaidDiagrams(container)
+}
+
+async function handleReplaceAll(): Promise<void> {
+  const replacementPlan = prepareReplaceAll()
+  if (!replacementPlan) {
+    return
+  }
+
+  await editorPaneRef.value?.replaceAllContent(replacementPlan.nextContent)
+  commitReplacement(replacementPlan.nextActiveIndex)
+  editorPaneRef.value?.focus()
+}
+
+async function handleReplaceCurrent(): Promise<void> {
+  const replacementPlan = prepareReplaceCurrent()
+  if (!replacementPlan) {
+    return
+  }
+
+  await editorPaneRef.value?.replaceRange(
+    replacementPlan.match.index,
+    replacementPlan.match.end,
+    replacementPlan.replacement,
+  )
+  commitReplacement(replacementPlan.nextActiveIndex)
+  editorPaneRef.value?.focus()
 }
 
 async function handleThemeChange(request: ThemeChangeRequest): Promise<void> {
@@ -193,6 +305,17 @@ function handleViewModeChange(mode: ViewMode): void {
 
 function openExamples(): void {
   isExamplesModalOpen.value = true
+}
+
+function syncFindSelection(): void {
+  const match = activeMatch.value
+  if (!match) {
+    return
+  }
+
+  void nextTick(() => {
+    editorPaneRef.value?.setSelectionRange(match.index, match.end)
+  })
 }
 
 function syncPreviewToEditorPosition(scrollState?: EditorScrollPayload | null): void {
@@ -223,6 +346,7 @@ function syncViewport(): void {
 onMounted(() => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
+  window.addEventListener('keydown', handleGlobalKeydown)
   startUpdateChecks()
 
   const onAppCommand = desktop.value?.commands?.onAppCommand
@@ -239,6 +363,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', syncViewport)
+  window.removeEventListener('keydown', handleGlobalKeydown)
   removeDesktopCommandListener()
   stopUpdateChecks()
 })
@@ -252,6 +377,10 @@ watch(
   { deep: true },
 )
 
+watch(requestSelectionSync, () => {
+  syncFindSelection()
+})
+
 async function handleDesktopCommand(command: AppCommand): Promise<void> {
   switch (command) {
     case 'document:exportHtml':
@@ -259,6 +388,12 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
       return
     case 'document:exportPdf':
       await exportPdf()
+      return
+    case 'editor:find':
+      handleFindShortcut()
+      return
+    case 'editor:replace':
+      handleFindReplaceShortcut()
       return
     case 'update:check':
       await checkNow()
@@ -304,10 +439,28 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
     <main class="main-content">
       <EditorPane
         ref="editorPane"
+        :active-match-index="activeMatchIndex"
         :content="content"
+        :find-open="isFindReplaceOpen"
         :line-count="stats.lines"
+        :match-case="matchCase"
+        :match-count="matchCount"
+        :matches="matches"
+        :query="query"
+        :replace-text="replaceText"
+        :show-replace="showReplace"
+        @find:close="handleFindClose"
+        @find:next="findNext"
+        @find:previous="findPrevious"
+        @find:replace-all="handleReplaceAll"
+        @find:replace-current="handleReplaceCurrent"
+        @request-find="handleFindShortcut"
+        @request-replace="handleFindReplaceShortcut"
         @scroll="handleEditorScroll"
         @update:content="handleContentUpdate"
+        @update:match-case="setMatchCase"
+        @update:query="handleFindQueryUpdate"
+        @update:replace-text="setReplaceText"
       />
       <PreviewPane
         ref="previewPane"

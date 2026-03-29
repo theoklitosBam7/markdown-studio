@@ -131,6 +131,9 @@ describe('useDocumentExport', () => {
         save: async () => null,
         saveAs: async () => null,
       },
+      editing: {
+        insertText: async () => undefined,
+      },
       exports: {
         exportHtml,
         exportPdf,

@@ -95,6 +95,9 @@ describe('PreviewPane', () => {
         save: async () => null,
         saveAs: async () => null,
       },
+      editing: {
+        insertText: async () => undefined,
+      },
       exports: {
         exportHtml: async () => null,
         exportPdf: async () => null,

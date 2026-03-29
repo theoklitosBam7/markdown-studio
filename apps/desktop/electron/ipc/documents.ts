@@ -4,6 +4,7 @@ import {
   DOCUMENTS_OPEN_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
+  EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
@@ -121,6 +122,7 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.removeHandler(DOCUMENTS_OPEN_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_AS_CHANNEL)
+  ipcMain.removeHandler(EDITING_INSERT_TEXT_CHANNEL)
   ipcMain.removeHandler(EXPORTS_HTML_CHANNEL)
   ipcMain.removeHandler(EXPORTS_PDF_CHANNEL)
   ipcMain.removeHandler(SHELL_OPEN_EXTERNAL_CHANNEL)
@@ -130,6 +132,9 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.handle(DOCUMENTS_SAVE_AS_CHANNEL, async (_, payload) =>
     saveDocumentAs(mainWindow, payload),
   )
+  ipcMain.handle(EDITING_INSERT_TEXT_CHANNEL, async (_, text) => {
+    await mainWindow.webContents.insertText(String(text))
+  })
   ipcMain.handle(EXPORTS_HTML_CHANNEL, async (_, payload) => exportHtml(mainWindow, payload))
   ipcMain.handle(EXPORTS_PDF_CHANNEL, async (_, payload) => exportPdf(mainWindow, payload))
   ipcMain.handle(SHELL_OPEN_EXTERNAL_CHANNEL, (_, url) =>

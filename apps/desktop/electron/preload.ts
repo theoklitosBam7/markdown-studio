@@ -5,6 +5,7 @@ import {
   DOCUMENTS_OPEN_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
+  EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
@@ -33,6 +34,9 @@ function createDesktopApi(): DesktopApi {
       open: () => ipcRenderer.invoke(DOCUMENTS_OPEN_CHANNEL),
       save: (input) => ipcRenderer.invoke(DOCUMENTS_SAVE_CHANNEL, input),
       saveAs: (input) => ipcRenderer.invoke(DOCUMENTS_SAVE_AS_CHANNEL, input),
+    },
+    editing: {
+      insertText: (text) => ipcRenderer.invoke(EDITING_INSERT_TEXT_CHANNEL, text),
     },
     exports: {
       exportHtml: (input) => ipcRenderer.invoke(EXPORTS_HTML_CHANNEL, input),

@@ -12,6 +12,7 @@ export const allowedReleaseNoteScopes = [
   'app',
   'ci',
   'cli',
+  'common',
   'desktop',
   'electron',
   'export',

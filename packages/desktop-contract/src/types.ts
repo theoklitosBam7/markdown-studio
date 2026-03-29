@@ -4,11 +4,14 @@ export type AppCommand =
   | 'document:open'
   | 'document:save'
   | 'document:saveAs'
+  | 'editor:find'
+  | 'editor:replace'
   | 'update:check'
 
 export interface DesktopApi {
   commands: DesktopCommandsApi
   documents: DesktopDocumentsApi
+  editing: DesktopEditingApi
   exports: DesktopExportsApi
   isDesktop: boolean
   shell: DesktopShellApi
@@ -27,6 +30,10 @@ export interface DesktopDocumentsApi {
   open: () => Promise<DesktopDocumentHandle | null>
   save: (input: DesktopSaveInput) => Promise<{ path: string } | null>
   saveAs: (input: DesktopSaveAsInput) => Promise<{ path: string } | null>
+}
+
+export interface DesktopEditingApi {
+  insertText: (text: string) => Promise<void>
 }
 
 export interface DesktopExportInput {
