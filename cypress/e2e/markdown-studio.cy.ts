@@ -395,4 +395,15 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.preview-pane').should('be.visible')
     cy.get('.editor-pane').should('not.be.visible')
   })
+
+  it('closes the export menu when clicking outside of it', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    openExportMenu()
+    cy.get('.export-menu__popover').should('be.visible')
+
+    cy.get('textarea').click('topLeft')
+    cy.get('.export-menu__popover').should('not.be.visible')
+  })
 })
