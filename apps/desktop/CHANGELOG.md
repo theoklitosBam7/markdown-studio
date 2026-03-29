@@ -1,5 +1,11 @@
 # @markdown-studio/desktop
 
+## 0.3.1
+
+### Patch Changes
+
+- bb833f3: Normalize desktop-v prefix in semver comparison for consistent desktop release versioning
+
 ## 0.3.0
 
 ### Minor Changes
