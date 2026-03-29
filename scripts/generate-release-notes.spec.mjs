@@ -6,7 +6,9 @@ import {
   groupCommitSubjectsByScope,
   parseConventionalCommitSubject,
   renderCommitsByScopeSection,
+  renderContributorsSection,
   renderReleaseNotes,
+  resolveGitHubUsername,
   shouldIncludeCommitSubject,
 } from './generate-release-notes.mjs'
 
@@ -40,7 +42,7 @@ describe('extractChangelogSection', () => {
 })
 
 describe('renderReleaseNotes', () => {
-  it('renders a markdown title followed by the changelog section', () => {
+  it('renders the changelog section without a title heading', () => {
     const releaseNotes = renderReleaseNotes({
       changelogSource: `# package
 
@@ -50,13 +52,10 @@ describe('renderReleaseNotes', () => {
 
 - Keep npm notes artifact-specific
 `,
-      title: 'markdown-studio npm v0.3.0',
       version: '0.3.0',
     })
 
-    expect(releaseNotes).toBe(`# markdown-studio npm v0.3.0
-
-### Patch Changes
+    expect(releaseNotes).toBe(`### Patch Changes
 
 - Keep npm notes artifact-specific`)
   })
@@ -221,5 +220,55 @@ describe('renderCommitsByScopeSection', () => {
     expect(renderCommitsByScopeSection([])).toBe(`## Commits by scope
 
 _No matching commits found for this release range._`)
+  })
+})
+
+describe('resolveGitHubUsername', () => {
+  it('extracts the username from the new-style noreply email', () => {
+    expect(resolveGitHubUsername('41898282+github-actions[bot]@users.noreply.github.com')).toBe(
+      'github-actions[bot]',
+    )
+  })
+
+  it('extracts the username from the old-style noreply email', () => {
+    expect(resolveGitHubUsername('octocat@users.noreply.github.com')).toBe('octocat')
+  })
+
+  it('returns null for regular email addresses', () => {
+    expect(resolveGitHubUsername('user@example.com')).toBeNull()
+  })
+})
+
+describe('renderContributorsSection', () => {
+  it('renders contributors with GitHub usernames as clickable links', () => {
+    expect(
+      renderContributorsSection([
+        {
+          email: '41898282+github-actions[bot]@users.noreply.github.com',
+          name: 'GitHub Actions',
+          username: 'github-actions[bot]',
+        },
+        {
+          email: '123456+theoklitosBam7@users.noreply.github.com',
+          name: 'Theoklitos Bampouris',
+          username: 'theoklitosBam7',
+        },
+      ]),
+    ).toBe(`## Contributors
+- [@github-actions[bot]](https://github.com/github-actions[bot]) (GitHub Actions)
+- [@theoklitosBam7](https://github.com/theoklitosBam7) (Theoklitos Bampouris)`)
+  })
+
+  it('renders contributors without a username as plain names', () => {
+    expect(
+      renderContributorsSection([{ email: 'john@example.com', name: 'John Doe', username: null }]),
+    ).toBe(`## Contributors
+- John Doe`)
+  })
+
+  it('renders an empty-state message when no contributors are available', () => {
+    expect(renderContributorsSection([])).toBe(`## Contributors
+
+_No contributors found for this release range._`)
   })
 })

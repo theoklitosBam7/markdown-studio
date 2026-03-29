@@ -66,17 +66,22 @@ export async function generateReleaseNotes({
   outputPath,
   ref,
   tagPattern,
-  title,
   version,
 }) {
   const changelogSource = await readFile(changelogPath, 'utf8')
   const previousTag = await findPreviousArtifactTag({ currentTag, ref, tagPattern })
   const commitSubjects = await getCommitSubjectsSinceTag({ previousTag, ref })
+  const contributors = await getContributors({ previousTag, ref })
+  const changelogNotes = renderReleaseNotes({ changelogSource, version })
   const commitsByScope = renderCommitsByScopeSection(commitSubjects)
-  const changelogNotes = renderReleaseNotes({ changelogSource, title, version })
+  const contributorsSection = renderContributorsSection(contributors)
 
   await mkdir(path.dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${[changelogNotes, commitsByScope].join('\n\n')}\n`, 'utf8')
+  await writeFile(
+    outputPath,
+    `${[changelogNotes, commitsByScope, contributorsSection].join('\n\n')}\n`,
+    'utf8',
+  )
 }
 
 export async function getCommitSubjectsSinceTag({ previousTag, ref }) {
@@ -87,6 +92,34 @@ export async function getCommitSubjectsSinceTag({ previousTag, ref }) {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
+}
+
+export async function getContributors({ previousTag, ref }) {
+  const revisionRange = previousTag ? `${previousTag}..${ref}` : ref
+  const stdout = await runGit(['log', '--format=%aN%x00%aE', revisionRange])
+
+  const authors = stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, email] = line.split('\0')
+      return { email, name }
+    })
+
+  const seen = new Set()
+  const uniqueAuthors = []
+  for (const author of authors) {
+    if (!seen.has(author.email)) {
+      seen.add(author.email)
+      uniqueAuthors.push(author)
+    }
+  }
+
+  return uniqueAuthors.map((author) => ({
+    ...author,
+    username: resolveGitHubUsername(author.email),
+  }))
 }
 
 export function groupCommitSubjectsByScope(subjects) {
@@ -153,10 +186,30 @@ export function renderCommitsByScopeSection(subjects) {
   return lines.join('\n')
 }
 
-export function renderReleaseNotes({ changelogSource, title, version }) {
-  const section = extractChangelogSection(changelogSource, version)
+export function renderContributorsSection(contributors) {
+  if (contributors.length === 0) {
+    return '## Contributors\n\n_No contributors found for this release range._'
+  }
 
-  return [`# ${title}`, '', section].join('\n')
+  const lines = ['## Contributors']
+  for (const c of contributors) {
+    if (c.username) {
+      lines.push(`- [@${c.username}](https://github.com/${c.username}) (${c.name})`)
+    } else {
+      lines.push(`- ${c.name}`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+export function renderReleaseNotes({ changelogSource, version }) {
+  return extractChangelogSection(changelogSource, version)
+}
+
+export function resolveGitHubUsername(email) {
+  const match = email.match(/^(?:\d+\+)?([^@]+)@users\.noreply\.github\.com$/)
+  return match ? match[1] : null
 }
 
 export function shouldIncludeCommitSubject(subject) {
@@ -184,7 +237,6 @@ function parseArgs(argv) {
     output: '',
     ref: 'HEAD',
     tagPattern: '',
-    title: '',
     version: '',
   }
 
@@ -222,12 +274,6 @@ function parseArgs(argv) {
       continue
     }
 
-    if (arg === '--title') {
-      args.title = value ?? ''
-      index += 1
-      continue
-    }
-
     if (arg === '--version') {
       args.version = value ?? ''
       index += 1
@@ -241,11 +287,10 @@ function parseArgs(argv) {
     !args.output ||
     !args.ref ||
     !args.tagPattern ||
-    !args.title ||
     !args.version
   ) {
     throw new Error(
-      'Usage: node ./scripts/generate-release-notes.mjs --changelog <path> --version <version> --title <title> --current-tag <tag> --tag-pattern <pattern> --ref <git-ref> --output <path>',
+      'Usage: node ./scripts/generate-release-notes.mjs --changelog <path> --version <version> --current-tag <tag> --tag-pattern <pattern> --ref <git-ref> --output <path>',
     )
   }
 
@@ -258,7 +303,7 @@ async function runGit(args) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { changelog, currentTag, output, ref, tagPattern, title, version } = parseArgs(
+  const { changelog, currentTag, output, ref, tagPattern, version } = parseArgs(
     process.argv.slice(2),
   )
   const changelogPath = path.resolve(rootDir, changelog)
@@ -270,7 +315,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     outputPath,
     ref,
     tagPattern,
-    title,
     version,
   })
 }
