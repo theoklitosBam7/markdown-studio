@@ -15,14 +15,12 @@ export const allowedReleaseNoteScopes = [
   'common',
   'desktop',
   'electron',
-  'export',
   'landing-page',
   'markdown',
 ]
 
 const releaseNoteScopeAliases = new Map([
   ['markdown-editor', 'markdown'],
-  ['useDocumentActions', 'markdown'],
   ['workflows', 'ci'],
 ])
 
@@ -216,7 +214,10 @@ export function resolveGitHubUsername(email) {
 export function shouldIncludeCommitSubject(subject) {
   const entry = parseConventionalCommitSubject(subject)
 
-  return !(entry.type === 'chore' && entry.rawScope === 'release')
+  if (entry.type === 'chore' && entry.rawScope === 'release') return false
+  if (entry.scope === 'landing-page' || entry.scope === 'ci') return false
+
+  return true
 }
 
 function normalizeReleaseNoteScope(scope) {

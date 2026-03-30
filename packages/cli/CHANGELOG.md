@@ -5,7 +5,6 @@
 ### Minor Changes
 
 - a112de5: Add find and replace functionality to the editor
-
   - Add FindReplaceBar component with search input and replace controls
   - Add MatchOverlay component for highlighting search matches in the editor
   - Implement useFindReplace composable for managing search state and operations
@@ -19,7 +18,6 @@
 ### Patch Changes
 
 - 33eece6: Hide export popover when menu is closed
-
   - Add CSS rule to prevent the export popover from being visible when the details element is not in open state.
   - This ensures the popover is properly hidden during transitions and when closed via outside click.
 
