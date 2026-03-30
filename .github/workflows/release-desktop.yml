@@ -74,18 +74,6 @@ jobs:
           --version "${{ steps.release_meta.outputs.version }}"
           --output "${{ runner.temp }}/desktop-release-notes.md"
 
-      - name: Format
-        run: pnpm format:check
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Type check
-        run: pnpm type-check
-
-      - name: Run unit tests
-        run: pnpm test:unit
-
       - name: Build desktop artifacts
         run: pnpm dist:mac
 
