@@ -26,6 +26,7 @@ interface UseDocumentSessionReturn {
   isDesktop: ComputedRef<boolean>
   isDirty: ComputedRef<boolean>
   openDocument: () => Promise<void>
+  restoreDraft: (input: { content: string; label: string }) => Promise<void>
   saveDocument: () => Promise<void>
   saveDocumentAs: () => Promise<void>
   startNewDocument: () => Promise<void>
@@ -35,13 +36,14 @@ interface UseDocumentSessionReturn {
 export function useDocumentSession(options: UseDocumentSessionOptions): UseDocumentSessionReturn {
   const documents = useDocumentActions()
   const currentPath = shallowRef<null | string>(null)
+  const draftLabel = shallowRef<null | string>(null)
   const lastAction = shallowRef('Ready')
   const savedContent = shallowRef(options.content.value)
 
   const { canOpenDocuments, canSaveDocuments, isDesktop } = documents
   const isDirty = computed(() => options.content.value !== savedContent.value)
   const displayName = computed(() =>
-    currentPath.value ? getFileName(currentPath.value) : 'Untitled.md',
+    currentPath.value ? getFileName(currentPath.value) : (draftLabel.value ?? 'Untitled.md'),
   )
   const statusText = computed(() => {
     const dirtySuffix = isDirty.value ? ' • Edited' : ''
@@ -73,8 +75,20 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
 
     options.replaceContent(opened.content)
     currentPath.value = opened.path
+    draftLabel.value = null
     savedContent.value = opened.content
     lastAction.value = `Opened ${getFileName(opened.path)}`
+    syncDocumentTitle()
+  }
+
+  async function restoreDraft(input: { content: string; label: string }): Promise<void> {
+    if (!(await confirmDiscardChanges())) return
+
+    options.replaceContent(input.content)
+    currentPath.value = null
+    draftLabel.value = input.label || 'Untitled.md'
+    savedContent.value = ''
+    lastAction.value = 'Restored local draft'
     syncDocumentTitle()
   }
 
@@ -87,6 +101,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     if (!saved) return
 
     currentPath.value = saved.path
+    draftLabel.value = null
     savedContent.value = options.content.value
     lastAction.value = `Saved ${getFileName(saved.path)}`
     syncDocumentTitle()
@@ -101,6 +116,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     if (!saved) return
 
     currentPath.value = saved.path
+    draftLabel.value = null
     savedContent.value = options.content.value
     lastAction.value = `Saved ${getFileName(saved.path)}`
     syncDocumentTitle()
@@ -112,6 +128,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     documents.clearCurrentDocumentReference()
     options.replaceContent('')
     currentPath.value = null
+    draftLabel.value = null
     savedContent.value = ''
     lastAction.value = 'Started a new document'
     syncDocumentTitle()
@@ -145,6 +162,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     isDesktop,
     isDirty,
     openDocument,
+    restoreDraft,
     saveDocument,
     saveDocumentAs,
     startNewDocument,

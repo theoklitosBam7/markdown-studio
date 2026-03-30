@@ -66,6 +66,23 @@ describe('Toolbar', () => {
     expect(wrapper.text()).not.toContain('Save')
   })
 
+  it('renders an install action only when installation is available', async () => {
+    const wrapper = mountToolbar({
+      canInstall: true,
+    })
+
+    const installButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Install'))
+
+    expect(installButton).toBeDefined()
+
+    await installButton?.trigger('click')
+
+    expect(installButton?.classes()).toContain('toolbar-btn--primary')
+    expect(wrapper.emitted('install')).toHaveLength(1)
+  })
+
   describe('export menu', () => {
     it('closes the export menu when clicking outside', () => {
       const wrapper = mountToolbar()

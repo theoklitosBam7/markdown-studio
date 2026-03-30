@@ -6,11 +6,13 @@ import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef,
 import type { Example, Theme, ViewMode } from '@/features/markdown/types'
 
 import { useDesktop } from '@/composables/useDesktop'
+import { usePwa } from '@/composables/usePwa'
 import { useThemeTransition } from '@/composables/useThemeTransition'
 import { useUpdateChecker } from '@/composables/useUpdateChecker'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
+import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
@@ -18,6 +20,7 @@ import { useDocumentExport } from '@/features/markdown/composables/useDocumentEx
 import { useDocumentSession } from '@/features/markdown/composables/useDocumentSession'
 import { useFindReplace } from '@/features/markdown/composables/useFindReplace'
 import { useMarkdownEditor } from '@/features/markdown/composables/useMarkdownEditor'
+import { useWebDraftPersistence } from '@/features/markdown/composables/useWebDraftPersistence'
 
 // Use the composable
 const {
@@ -42,8 +45,10 @@ const {
   currentPath,
   displayName,
   handleAppCommand,
+  isDesktop,
   isDirty,
   openDocument,
+  restoreDraft,
   saveDocument,
   startNewDocument,
   statusText,
@@ -106,10 +111,25 @@ const {
   updateAvailable,
   updateInfo,
 } = useUpdateChecker()
+const {
+  canInstall,
+  dismissOfflineReady,
+  dismissRefreshPrompt,
+  install,
+  needRefresh,
+  offlineReady,
+  updateApp,
+} = usePwa()
 const mobileBreakpoint = 700
 
 const bannerStatus = computed(() =>
   updateAvailable.value ? ('update-available' as const) : ('up-to-date' as const),
+)
+const pwaBannerStatus = computed(() =>
+  needRefresh.value ? ('update-available' as const) : ('offline-ready' as const),
+)
+const showPwaBanner = computed(
+  () => !desktop.value.isDesktop && (needRefresh.value || offlineReady.value),
 )
 
 // Local state
@@ -121,6 +141,15 @@ const previewPaneRef = useTemplateRef<InstanceType<typeof PreviewPane>>('preview
 const availableModes = computed<ViewMode[]>(() =>
   isMobile.value ? ['editor', 'preview'] : ['editor', 'split', 'preview'],
 )
+
+// Note: restoreStoredDraft must be called after useDocumentSession initializes restoreDraft.
+const { clearDraft, restoreStoredDraft } = useWebDraftPersistence({
+  content,
+  displayName,
+  isDesktop,
+  isDirty,
+  restoreDraft,
+})
 
 // Computed body classes for view mode and theme
 const bodyClasses = computed(() => ({
@@ -164,12 +193,6 @@ function getOffsetForLine(contentValue: string, lineNumber: number): number {
   }
 
   return contentValue.length
-}
-
-function handleClear(): void {
-  void startNewDocument().catch((error: unknown) => {
-    console.error('Failed to start new document:', error)
-  })
 }
 
 function handleContentUpdate(value: string): void {
@@ -254,10 +277,25 @@ function handleGlobalKeydown(event: KeyboardEvent): void {
   }
 }
 
+function handleInstall(): void {
+  void install().catch((error: unknown) => {
+    console.error('Failed to trigger web app install:', error)
+  })
+}
+
 function handlePreviewJump(offset: number): void {
   if (isMobile.value || viewMode.value !== 'split') return
 
   void editorPaneRef.value?.focusAtOffset(offset)
+}
+
+function handlePwaBannerDismiss(): void {
+  if (needRefresh.value) {
+    dismissRefreshPrompt()
+    return
+  }
+
+  dismissOfflineReady()
 }
 
 function handleRenderDiagrams(container: HTMLElement): void {
@@ -288,6 +326,18 @@ async function handleReplaceCurrent(): Promise<void> {
   )
   commitReplacement(replacementPlan.nextActiveIndex)
   editorPaneRef.value?.focus()
+}
+
+function handleStartNewDocument(): void {
+  void startNewDocument()
+    .then(() => {
+      if (!content.value) {
+        clearDraft()
+      }
+    })
+    .catch((error: unknown) => {
+      console.error('Failed to start new document:', error)
+    })
 }
 
 async function handleThemeChange(request: ThemeChangeRequest): Promise<void> {
@@ -343,11 +393,12 @@ function syncViewport(): void {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
   window.addEventListener('keydown', handleGlobalKeydown)
   startUpdateChecks()
+  await restoreStoredDraft()
 
   const onAppCommand = desktop.value?.commands?.onAppCommand
   if (onAppCommand) {
@@ -409,16 +460,18 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
     <Toolbar
       :available-modes="availableModes"
       :can-open-documents="canOpenDocuments"
+      :can-install="canInstall"
       :can-save-documents="canSaveDocuments"
       :is-mobile="isMobile"
       :view-mode="viewMode"
       :theme="theme"
       :is-copied="isCopied"
+      @install="handleInstall"
       @open-document="openDocument"
       @update:view-mode="handleViewModeChange"
       @update:theme="handleThemeChange"
       @open-examples="openExamples"
-      @clear="handleClear"
+      @clear="handleStartNewDocument"
       @copy="copyContent"
       @export-html="handleExportHtml"
       @export-pdf="handleExportPdf"
@@ -433,6 +486,15 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
         :latest-version="updateInfo?.latestVersion"
         @dismiss="dismissUpdateBanner"
         @download="downloadUpdate"
+      />
+    </Transition>
+
+    <Transition name="banner-slide">
+      <PwaBanner
+        v-if="showPwaBanner"
+        :status="pwaBannerStatus"
+        @dismiss="handlePwaBannerDismiss"
+        @refresh="updateApp"
       />
     </Transition>
 

@@ -17,6 +17,7 @@ export const allowedReleaseNoteScopes = [
   'electron',
   'landing-page',
   'markdown',
+  'web',
 ]
 
 const releaseNoteScopeAliases = new Map([

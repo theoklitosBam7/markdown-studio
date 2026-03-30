@@ -36,8 +36,9 @@
     "preview:desktop": "pnpm --filter @markdown-studio/desktop preview",
     "test:unit": "pnpm -r test",
     "prepare": "cypress install",
-    "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
-    "test:e2e:dev": "start-server-and-test 'pnpm --filter @markdown-studio/web dev -- --port 4173' http://localhost:4173 'cypress open --e2e'",
+    "generate-pwa-assets": "pwa-assets-generator",
+    "test:e2e": "VITE_DISABLE_PWA=true pnpm build:web && start-server-and-test 'pnpm --filter @markdown-studio/web exec vite preview --port 4175' http://localhost:4175 'cypress run --e2e --config baseUrl=http://localhost:4175'",
+    "test:e2e:dev": "start-server-and-test 'VITE_DISABLE_PWA=true pnpm --filter @markdown-studio/web dev -- --port 4175' http://localhost:4175 'cypress open --e2e --config baseUrl=http://localhost:4175'",
     "type-check": "vue-tsc --build",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
@@ -47,10 +48,11 @@
     "format:check": "oxfmt --check"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
+    "@changesets/cli": "^2.30.0",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.12.0",
     "@types/semver": "^7.7.1",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vitest/eslint-plugin": "^1.6.13",
     "@vue/eslint-config-typescript": "^14.7.0",
@@ -75,5 +77,5 @@
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"
 }

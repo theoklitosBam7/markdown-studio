@@ -9,13 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@markdown-studio/app": "workspace:*"
+    "@markdown-studio/app": "workspace:*",
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "typescript": "~5.9.3",
-    "vite": "^8.0.2",
+    "vite": "^8.0.3",
+    "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-vue-devtools": "^8.1.1",
     "vue-tsc": "^3.2.6"
   }

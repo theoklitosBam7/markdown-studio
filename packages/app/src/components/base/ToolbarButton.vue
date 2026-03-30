@@ -3,12 +3,14 @@ interface Props {
   active?: boolean
   ariaLabel?: string
   compact?: boolean
+  variant?: 'default' | 'primary'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   active: false,
   ariaLabel: undefined,
   compact: false,
+  variant: 'default',
 })
 
 const emit = defineEmits<{
@@ -22,7 +24,11 @@ function handleClick(): void {
 
 <template>
   <button
-    :class="['toolbar-btn', { active: props.active, compact: props.compact }]"
+    :class="[
+      'toolbar-btn',
+      `toolbar-btn--${props.variant}`,
+      { active: props.active, compact: props.compact },
+    ]"
     :aria-label="props.ariaLabel"
     type="button"
     @click="handleClick"
@@ -65,6 +71,26 @@ function handleClick(): void {
   background: var(--accent-light);
   color: var(--accent);
   border-color: var(--accent-mid);
+}
+
+.toolbar-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  color: #fff;
+  font-weight: 600;
+}
+
+.toolbar-btn--primary:hover,
+.toolbar-btn--primary.active {
+  background: var(--accent-mid);
+  border-color: var(--accent-mid);
+  color: #fff;
+}
+
+.toolbar-btn--primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .toolbar-btn :deep(svg) {
