@@ -73,9 +73,11 @@ describe('Toolbar', () => {
       const summary = wrapper.get('.export-menu summary')
       summary.trigger('click')
       expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(true)
+      expect(wrapper.get('.export-menu__popover').isVisible()).toBe(true)
 
       document.body.click()
       expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(false)
+      expect(wrapper.get('.export-menu__popover').isVisible()).toBe(false)
     })
 
     it('keeps the export menu open when clicking inside the popover', () => {
