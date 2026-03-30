@@ -353,6 +353,10 @@ onUnmounted(() => {
   z-index: 20;
 }
 
+.export-menu:not([open]) .export-menu__popover {
+  display: none;
+}
+
 .export-menu__item {
   appearance: none;
   border: none;
