@@ -19,8 +19,7 @@ function stubBrowserDownload(
 ): void {
   const originalCreateElement = win.document.createElement.bind(win.document)
 
-  win.URL.createObjectURL = () => 'blob:markdown-studio'
-  win.URL.revokeObjectURL = () => undefined
+  cy.stub(win.URL, 'createObjectURL').returns('blob:markdown-studio')
   win.showSaveFilePicker = undefined
 
   win.document.createElement = ((tagName: string, options?: ElementCreationOptions) => {
@@ -96,7 +95,7 @@ function stubBrowserOpenFallbackInput(
 }
 
 function stubBrowserPopup(win: BrowserWindow, popupCapture: PopupCapture): void {
-  win.open = ((url?: string | URL, _target?: string) => {
+  cy.stub(win, 'open').callsFake((url?: string | URL, _target?: string) => {
     const popupWindow = {
       location: {
         get href() {
@@ -121,7 +120,7 @@ function stubBrowserPopup(win: BrowserWindow, popupCapture: PopupCapture): void 
         return true
       },
     }) as unknown as Window
-  }) as typeof win.open
+  })
 }
 
 function stubBrowserSavePicker(win: BrowserWindow, writes: string[], fileName: string): void {
@@ -242,7 +241,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.visit('/', {
       onBeforeLoad(win) {
-        stubBrowserDownload(win, downloads)
+        stubBrowserDownload(win as BrowserWindow, downloads)
       },
     })
 
@@ -267,7 +266,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.visit('/', {
       onBeforeLoad(win) {
-        stubBrowserSavePicker(win, writes, 'picked-from-browser.md')
+        stubBrowserSavePicker(win as BrowserWindow, writes, 'picked-from-browser.md')
       },
     })
 
@@ -292,7 +291,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.visit('/', {
       onBeforeLoad(win) {
-        stubBrowserDownload(win, downloads)
+        stubBrowserDownload(win as BrowserWindow, downloads)
       },
     })
 

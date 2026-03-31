@@ -263,6 +263,7 @@ async function showBrowserOpenPicker(): Promise<BrowserOpenResult | null | undef
   }
 
   const browserWindow = window as AppWindow
+
   if (typeof browserWindow.showOpenFilePicker !== 'function') {
     return undefined
   }
@@ -307,6 +308,7 @@ async function showBrowserSavePicker(
   }
 
   const browserWindow = window as AppWindow
+
   if (typeof browserWindow.showSaveFilePicker !== 'function') {
     return undefined
   }

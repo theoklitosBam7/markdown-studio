@@ -16,17 +16,47 @@ Markdown Studio is a split-pane Markdown editor that lets you write on one side 
 - Dark and light themes
 - File management (open, save, save as)
 - Example templates to get you started
-- Available as a web app or desktop application
+- Available as a web app, desktop application, or installable PWA
 
 ## Quick Start
 
-### Run via NPX (No installation required)
+### Web App (Recommended)
+
+Use Markdown Studio instantly in your browser at **https://pwa.markdownstudio.eu/**
+
+Features at a glance:
+
+- **Live preview** — See your rendered Markdown as you type
+- **Mermaid diagrams** — Create flowcharts, sequence diagrams, and more
+- **PWA install** — Install as a standalone desktop app for offline use
+- **Auto-save** — Drafts persist automatically between sessions
+
+### Install as PWA
+
+Install Markdown Studio as a standalone desktop app:
+
+1. Visit https://pwa.markdownstudio.eu/ in Chrome, Edge, or Safari
+2. Click the **Install** button in the toolbar or use your browser's install option (look for the install icon in the address bar)
+3. Launch from your desktop or Start menu — it works offline
+
+**PWA features:**
+
+- **Offline support** — Service worker caches the app for use without internet
+- **Auto-save drafts** — Unsaved work persists to browser storage
+- **Automatic updates** — New versions deploy automatically; a banner notifies you when an update is available
+- **Native feel** — Runs in its own window, separate from the browser
+
+### Run Locally via NPX (Offline option)
+
+For local-only use without internet:
 
 ```sh
 npx markdown-studio@latest
 ```
 
-With optional flags:
+This serves the web build locally and opens your browser. The launcher is useful when you want a fully offline-capable instance without relying on the hosted URL.
+
+Optional flags:
 
 ```sh
 npx markdown-studio@latest --port 4173
@@ -34,51 +64,52 @@ npx markdown-studio@latest --host 127.0.0.1 --no-open
 npx markdown-studio@latest --version
 ```
 
-The launcher serves the production web build over `http://127.0.0.1` and opens your browser automatically. This is the web experience, not the Electron app, so browser file APIs and fallbacks still apply.
-
 **Browser behavior:**
 
 - Chromium browsers can use the File System Access API on `localhost`
 - Other browsers fall back to the existing picker and download flows
-- The server is local-only by default because it binds to `127.0.0.1`
+- The server binds to `127.0.0.1` by default for security
 
-### Web App (Development)
+### Download Desktop App
 
-Visit the app in your browser by running the dev server:
+Get the native macOS application from GitHub Releases:
 
-```sh
-pnpm install
-pnpm dev
-```
+**[Download latest release →](https://github.com/theoklitosBam7/markdown-studio/releases/latest)**
 
-### Desktop App
-
-Build and run the Electron desktop application:
-
-```sh
-# Install dependencies
-pnpm install
-
-# Run in development mode
-pnpm dev:desktop
-
-# Build for production
-pnpm build:desktop
-
-# Create macOS distribution package (unsigned, no auto-publish)
-pnpm dist:mac
-```
+Download `Markdown-Studio-darwin-arm64.dmg` (Apple Silicon), open the DMG, and drag the app to your `/Applications` folder.
 
 > [!IMPORTANT]
-> **⚠️ macOS Security Warning — Action Required**
+> **macOS Security Warning — Action Required**
 >
-> If macOS says `Markdown Studio.app` is **damaged and can't be opened**, you need to clear the quarantine flag after moving it to `/Applications`:
+> macOS may show a warning that `Markdown Studio.app` is **damaged and can't be opened**. This happens because the app is unsigned.
+>
+> **Fix:** Clear the quarantine flag in Terminal:
 >
 > ```sh
 > xattr -cr /Applications/Markdown\ Studio.app
 > ```
 >
 > **Alternative:** Open `System Settings` → `Privacy & Security` and allow the app to run from there.
+
+### Development
+
+Build and run the app locally from source:
+
+**Web app:**
+
+```sh
+pnpm install
+pnpm dev
+```
+
+**Desktop app:**
+
+```sh
+pnpm install
+pnpm dev:desktop    # Development mode
+pnpm build:desktop # Production build
+pnpm dist:mac      # Create macOS distribution package (unsigned)
+```
 
 ## Features
 
@@ -92,6 +123,9 @@ pnpm dist:mac
 - **Document statistics** — Track word, character, line, and diagram counts in real-time
 - **Example documents** — Load pre-made templates to learn Markdown or Mermaid syntax
 - **Copy to clipboard** — Quickly copy your Markdown source with visual feedback
+- **PWA install support** — Install as a standalone desktop-like app from supported browsers
+- **Auto-save drafts** — Web app automatically persists unsaved work to localStorage
+- **Offline ready** — Service worker caching enables continued use without an internet connection
 
 ### For Developers
 
@@ -101,6 +135,7 @@ pnpm dist:mac
 - **Responsive design** — Works on desktop and mobile devices
 - **Keyboard shortcuts** — Efficient editing with familiar shortcuts
 - **Scroll synchronization** — Source map tracking enables editor-preview sync
+- **Service worker** — Offline caching and automatic update detection in the web app
 
 ## Usage
 

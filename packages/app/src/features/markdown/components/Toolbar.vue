@@ -9,6 +9,7 @@ import type { Theme, ViewMode } from '../types'
 
 interface Props {
   availableModes?: ViewMode[]
+  canInstall?: boolean
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
   isCopied: boolean
@@ -24,6 +25,7 @@ interface ThemeChangeRequest {
 
 const props = withDefaults(defineProps<Props>(), {
   availableModes: () => ['editor', 'split', 'preview'],
+  canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
   isMobile: false,
@@ -34,6 +36,7 @@ const emit = defineEmits<{
   copy: []
   exportHtml: []
   exportPdf: []
+  install: []
   openDocument: []
   openExamples: []
   saveDocument: []
@@ -101,6 +104,10 @@ function handleOutsideClick(event: MouseEvent): void {
   }
 }
 
+function install(): void {
+  emit('install')
+}
+
 function toggleExportMenu(nextOpen: boolean): void {
   isExportMenuOpen.value = nextOpen
 }
@@ -123,6 +130,20 @@ onUnmounted(() => {
       </div>
 
       <div class="toolbar__actions" aria-label="Document actions">
+        <ToolbarButton
+          v-if="props.canInstall"
+          variant="primary"
+          :compact="props.isMobile"
+          @click="install"
+        >
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 2.5v7" />
+            <path d="M5.5 7 8 9.5 10.5 7" />
+            <path d="M3 12.5h10" />
+          </svg>
+          <span>Install</span>
+        </ToolbarButton>
+
         <ToolbarButton
           v-if="props.canOpenDocuments"
           :compact="props.isMobile"

@@ -81,6 +81,22 @@ describe('useDocumentSession', () => {
     expect(session.canSaveDocuments.value).toBe(true)
   })
 
+  it('restores a saved web draft as unsaved work', async () => {
+    const { content, session } = createSession()
+
+    await session.restoreDraft({
+      content: '# Restored draft',
+      label: 'notes.md',
+    })
+    await nextTick()
+
+    expect(content.value).toBe('# Restored draft')
+    expect(session.currentPath.value).toBe(null)
+    expect(session.displayName.value).toBe('notes.md')
+    expect(session.isDirty.value).toBe(true)
+    expect(session.statusText.value).toContain('Restored local draft')
+  })
+
   it('tracks dirty state and save branching in desktop mode', async () => {
     const { content, session } = createSession()
 
