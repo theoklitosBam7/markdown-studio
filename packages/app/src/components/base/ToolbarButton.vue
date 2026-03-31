@@ -3,6 +3,7 @@ interface Props {
   active?: boolean
   ariaLabel?: string
   compact?: boolean
+  iconOnly?: boolean
   variant?: 'default' | 'primary'
 }
 
@@ -10,6 +11,7 @@ const props = withDefaults(defineProps<Props>(), {
   active: false,
   ariaLabel: undefined,
   compact: false,
+  iconOnly: false,
   variant: 'default',
 })
 
@@ -27,7 +29,7 @@ function handleClick(): void {
     :class="[
       'toolbar-btn',
       `toolbar-btn--${props.variant}`,
-      { active: props.active, compact: props.compact },
+      { active: props.active, compact: props.compact, 'icon-only': props.iconOnly },
     ]"
     :aria-label="props.ariaLabel"
     type="button"
@@ -59,6 +61,16 @@ function handleClick(): void {
 
 .toolbar-btn.compact {
   padding: 0 9px;
+}
+
+.toolbar-btn.icon-only {
+  padding: 0;
+  justify-content: center;
+}
+
+.toolbar-btn.icon-only svg {
+  width: 20px;
+  height: 20px;
 }
 
 .toolbar-btn:hover {
@@ -99,11 +111,35 @@ function handleClick(): void {
   flex-shrink: 0;
 }
 
+/* Mobile touch targets - 44px minimum */
 @media (max-width: 700px) {
   .toolbar-btn {
-    height: 36px;
-    min-width: 36px;
-    font-size: 11px;
+    height: 44px;
+    min-width: 44px;
+    font-size: 14px;
+    padding: 0 14px;
+  }
+
+  .toolbar-btn.compact {
+    height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+  }
+
+  .toolbar-btn.icon-only {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .toolbar-btn.icon-only svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toolbar-btn :deep(svg) {
+    width: 18px;
+    height: 18px;
   }
 }
 </style>

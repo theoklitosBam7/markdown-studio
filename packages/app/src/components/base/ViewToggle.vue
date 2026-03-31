@@ -78,6 +78,10 @@ function setMode(mode: ViewMode): void {
 
 .view-toggle.compact button {
   flex: 1;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 36px;
 }
 
 .view-toggle button.active {
@@ -88,5 +92,19 @@ function setMode(mode: ViewMode): void {
 .view-toggle button:not(.active):hover {
   background: var(--panel);
   color: var(--text);
+}
+
+/* Mobile touch targets */
+@media (max-width: 700px) {
+  .view-toggle {
+    border-radius: 10px;
+  }
+
+  .view-toggle button {
+    height: 44px;
+    font-size: 14px;
+    min-width: 44px;
+    padding: 0 14px;
+  }
 }
 </style>
