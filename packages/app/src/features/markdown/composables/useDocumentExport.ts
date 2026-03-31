@@ -17,6 +17,7 @@ interface UseDocumentExportOptions {
   content: DeepReadonly<ShallowRef<string>>
   currentPath: DeepReadonly<Ref<null | string>>
   displayName: DeepReadonly<Ref<string>>
+  isMobile: DeepReadonly<Ref<boolean>>
 }
 
 interface UseDocumentExportReturn {
@@ -24,10 +25,18 @@ interface UseDocumentExportReturn {
   canExportPdf: Readonly<Ref<boolean>>
   exportHtml: () => Promise<void>
   exportPdf: () => Promise<void>
+  pdfExportUnavailableReason: Readonly<Ref<string>>
 }
 
 const PRINT_JOB_KEY = 'markdown-studio:print-export:'
 const PRINT_JOB_WINDOW_NAME_PREFIX = 'markdown-studio:print-export-window:'
+const MOBILE_PDF_EXPORT_UNAVAILABLE_REASON =
+  "PDF export isn't available on mobile or installed PWAs yet. Use Export as HTML instead."
+
+interface PdfExportSupportInput {
+  isDesktop: boolean
+  isMobile: boolean
+}
 
 export function cleanupPrintJob(jobId: string): void {
   if (typeof window === 'undefined') {
@@ -35,6 +44,30 @@ export function cleanupPrintJob(jobId: string): void {
   }
 
   window.localStorage.removeItem(getPrintJobStorageKey(jobId))
+}
+
+export function getPdfExportSupport(input: PdfExportSupportInput): {
+  isSupported: boolean
+  unavailableReason: string
+} {
+  if (input.isDesktop) {
+    return {
+      isSupported: true,
+      unavailableReason: '',
+    }
+  }
+
+  if (input.isMobile) {
+    return {
+      isSupported: false,
+      unavailableReason: MOBILE_PDF_EXPORT_UNAVAILABLE_REASON,
+    }
+  }
+
+  return {
+    isSupported: true,
+    unavailableReason: '',
+  }
 }
 
 export function readPrintJob(jobId: string): { bodyHtml: string; title: string } | null {
@@ -95,7 +128,16 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
   const router = useRouter()
 
   const canExportHtml = computed(() => typeof window !== 'undefined')
-  const canExportPdf = computed(() => typeof window !== 'undefined')
+  const pdfExportSupport = computed(() =>
+    getPdfExportSupport({
+      isDesktop: desktop.value.isDesktop,
+      isMobile: options.isMobile.value,
+    }),
+  )
+  const canExportPdf = computed(
+    () => typeof window !== 'undefined' && pdfExportSupport.value.isSupported,
+  )
+  const pdfExportUnavailableReason = computed(() => pdfExportSupport.value.unavailableReason)
 
   async function exportHtml(): Promise<void> {
     const rendered = await renderCurrentDocument()
@@ -115,6 +157,10 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
   }
 
   async function exportPdf(): Promise<void> {
+    if (!canExportPdf.value) {
+      throw new Error(pdfExportUnavailableReason.value || 'PDF export is not available.')
+    }
+
     const rendered = await renderCurrentDocument()
     const documentHtml = buildMarkdownDocumentHtml(rendered)
     const suggestedPath = getSuggestedExportFileName(getDocumentPath(), 'pdf')
@@ -156,6 +202,7 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
     canExportPdf,
     exportHtml,
     exportPdf,
+    pdfExportUnavailableReason,
   }
 
   function getDocumentPath(): string {

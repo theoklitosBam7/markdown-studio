@@ -86,6 +86,34 @@ describe('MobileActionSheet', () => {
     expect(saveAction).not.toHaveBeenCalled()
   })
 
+  it('renders disabled actions with helper text and does not call them', async () => {
+    const exportPdf = vi.fn()
+
+    mountSheet({
+      actions: [
+        {
+          action: exportPdf,
+          description: 'PDF export is unavailable on mobile. Use HTML instead.',
+          disabled: true,
+          icon: '📑',
+          label: 'Export as PDF',
+        },
+      ],
+      isOpen: true,
+    })
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    expect(actions).toHaveLength(1)
+    expect(actions[0]?.hasAttribute('disabled')).toBe(true)
+    expect(actions[0]?.classList.contains('mobile-action-sheet__action--disabled')).toBe(true)
+    expect(actions[0]?.textContent).toContain('Export as PDF')
+    expect(actions[0]?.textContent).toContain('Use HTML instead')
+
+    await actions[0]?.dispatchEvent(new MouseEvent('click'))
+
+    expect(exportPdf).not.toHaveBeenCalled()
+  })
+
   it('closes when cancel button is clicked', async () => {
     const wrapper = mountSheet({ isOpen: true })
 

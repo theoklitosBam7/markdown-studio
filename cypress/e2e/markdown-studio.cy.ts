@@ -161,7 +161,15 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.mobile-action-sheet__action').contains('Copy Markdown').should('be.visible')
     cy.get('.mobile-action-sheet__action').contains('Clear Document').should('be.visible')
     cy.get('.mobile-action-sheet__action').contains('Export as HTML').should('be.visible')
-    cy.get('.mobile-action-sheet__action').contains('Export as PDF').should('be.visible')
+    cy.contains('.mobile-action-sheet__action', 'Export as PDF')
+      .should('be.visible')
+      .and('be.disabled')
+      .within(() => {
+        cy.contains("PDF export isn't available on mobile or installed PWAs yet.").should(
+          'be.visible',
+        )
+        cy.contains('Use Export as HTML instead.').should('be.visible')
+      })
 
     // Close action sheet and switch to preview mode
     cy.get('.mobile-action-sheet__cancel').click()

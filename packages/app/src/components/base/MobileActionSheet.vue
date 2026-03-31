@@ -3,6 +3,8 @@ import { onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 
 interface ActionItem {
   action: () => void
+  description?: string
+  disabled?: boolean
   icon?: string
   label: string
   variant?: 'danger' | 'default' | 'primary'
@@ -62,6 +64,14 @@ function handleBackdropClick(event: MouseEvent): void {
   if (event.target === event.currentTarget) {
     close()
   }
+}
+
+function handleItemClick(item: ActionItem): void {
+  if (item.disabled) {
+    return
+  }
+
+  handleAction(item.action)
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -154,15 +164,24 @@ onUnmounted(() => {
               v-for="(item, index) in actions"
               :key="index"
               class="mobile-action-sheet__action"
-              :class="`mobile-action-sheet__action--${item.variant || 'default'}`"
+              :class="[
+                `mobile-action-sheet__action--${item.variant || 'default'}`,
+                { 'mobile-action-sheet__action--disabled': item.disabled },
+              ]"
+              :disabled="item.disabled"
               role="menuitem"
               type="button"
-              @click="handleAction(item.action)"
+              @click="handleItemClick(item)"
             >
               <span v-if="item.icon" class="mobile-action-sheet__icon" aria-hidden="true">
                 {{ item.icon }}
               </span>
-              <span class="mobile-action-sheet__label">{{ item.label }}</span>
+              <span class="mobile-action-sheet__content">
+                <span class="mobile-action-sheet__label">{{ item.label }}</span>
+                <span v-if="item.description" class="mobile-action-sheet__description">
+                  {{ item.description }}
+                </span>
+              </span>
             </button>
           </div>
 
@@ -242,7 +261,7 @@ onUnmounted(() => {
 
 .mobile-action-sheet__action {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
   background: var(--surface);
@@ -260,6 +279,18 @@ onUnmounted(() => {
   background: var(--panel);
 }
 
+.mobile-action-sheet__action:disabled {
+  cursor: not-allowed;
+}
+
+.mobile-action-sheet__action--disabled {
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+.mobile-action-sheet__action--disabled:hover {
+  background: var(--surface);
+}
+
 .mobile-action-sheet__action--danger {
   color: var(--error, #dc2626);
 }
@@ -274,10 +305,26 @@ onUnmounted(() => {
   width: 24px;
   text-align: center;
   flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.mobile-action-sheet__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .mobile-action-sheet__label {
   flex: 1;
+  text-align: left;
+}
+
+.mobile-action-sheet__description {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
   text-align: left;
 }
 

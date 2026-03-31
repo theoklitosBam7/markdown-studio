@@ -100,6 +100,24 @@ describe('MobileToolbarActions', () => {
     expect(actionLabels.some((label) => label?.includes('View on GitHub'))).toBe(true)
   })
 
+  it('disables pdf export with guidance when unavailable', async () => {
+    mountToolbar({
+      canExportPdf: false,
+      pdfExportUnavailableReason:
+        "PDF export isn't available on mobile or installed PWAs yet. Use Export as HTML instead.",
+    })
+
+    const menuButton = document.querySelector('button[aria-label="Menu"]')
+    await menuButton?.dispatchEvent(new MouseEvent('click'))
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const pdfAction = Array.from(actions).find((el) => el.textContent?.includes('Export as PDF'))
+
+    expect(pdfAction).not.toBeNull()
+    expect(pdfAction?.hasAttribute('disabled')).toBe(true)
+    expect(pdfAction?.textContent).toContain('Use Export as HTML instead')
+  })
+
   it('emits openDocument when Open action is clicked', async () => {
     const wrapper = mountToolbar({ canOpenDocuments: true })
 

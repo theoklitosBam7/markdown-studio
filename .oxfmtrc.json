@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "embeddedLanguageFormatting": "auto",
-  "ignorePatterns": [".changeset/**"],
+  "ignorePatterns": [".changeset/**", "**/CHANGELOG.md"],
   "semi": false,
   "singleQuote": true
 }

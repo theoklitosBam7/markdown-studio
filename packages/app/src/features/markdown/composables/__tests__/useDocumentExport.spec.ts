@@ -10,6 +10,7 @@ import { useDocumentExport } from '../useDocumentExport'
 const content = shallowRef('# Export\n\nBody copy')
 const currentPath = shallowRef<null | string>('/tmp/export-notes.md')
 const displayName = shallowRef('export-notes.md')
+const isMobile = shallowRef(false)
 
 const Harness = defineComponent({
   setup() {
@@ -17,6 +18,7 @@ const Harness = defineComponent({
       content,
       currentPath,
       displayName,
+      isMobile,
     })
   },
   template: '<div />',
@@ -43,6 +45,7 @@ describe('useDocumentExport', () => {
     content.value = '# Export\n\nBody copy'
     currentPath.value = '/tmp/export-notes.md'
     displayName.value = 'export-notes.md'
+    isMobile.value = false
     appWindow.desktop = undefined
     window.localStorage.clear()
     vi.clearAllMocks()
@@ -117,6 +120,55 @@ describe('useDocumentExport', () => {
     expect(popupWindow.location.href).toMatch(/^\/export\/print\?job=/)
     expect(popupWindow.name).toContain('"title":"export-notes"')
     expect(window.localStorage.length).toBe(1)
+  })
+
+  it('blocks pdf export on mobile web with a stable reason', async () => {
+    isMobile.value = true
+
+    const router = createRouterForTest()
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(Harness, {
+      global: {
+        plugins: [router],
+      },
+    })
+    const openSpy = vi.fn()
+    window.open = openSpy as typeof window.open
+
+    const viewModel = wrapper.vm as unknown as {
+      canExportPdf: boolean
+      exportPdf: () => Promise<void>
+      pdfExportUnavailableReason: string
+    }
+
+    expect(viewModel.canExportPdf).toBe(false)
+    expect(viewModel.pdfExportUnavailableReason).toContain('Export as HTML instead')
+    await expect(viewModel.exportPdf()).rejects.toThrow(
+      "PDF export isn't available on mobile or installed PWAs yet. Use Export as HTML instead.",
+    )
+    expect(openSpy).not.toHaveBeenCalled()
+  })
+
+  it('allows pdf export on desktop browsers even when PWA is installed', async () => {
+    const router = createRouterForTest()
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(Harness, {
+      global: {
+        plugins: [router],
+      },
+    })
+
+    const viewModel = wrapper.vm as unknown as {
+      canExportPdf: boolean
+      pdfExportUnavailableReason: string
+    }
+
+    expect(viewModel.canExportPdf).toBe(true)
+    expect(viewModel.pdfExportUnavailableReason).toBe('')
   })
 
   it('delegates exports to the desktop bridge when available', async () => {
