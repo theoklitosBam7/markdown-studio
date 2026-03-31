@@ -1,5 +1,29 @@
 # markdown-studio
 
+## 0.5.0
+
+### Minor Changes
+
+- bdfd66d: Redesign mobile toolbar UX with hamburger menu and action sheet
+
+  Implement progressive disclosure pattern for mobile toolbar to improve UX on narrow viewports:
+
+  - Add native-feeling bottom action sheet with smooth animations and gesture support
+  - Replace overcrowded mobile button grid with hamburger menu revealing all CTAs
+  - Move all actions (Open, Save, Install, Examples, Copy, Clear, Export, GitHub) into organized action sheet
+  - Improve touch targets to meet 44px minimum accessibility standard
+  - Add responsive breakpoints: compact buttons at ≤1200px, icon-only GitHub at ≤1100px
+  - Include comprehensive test coverage for new mobile components
+
+- 5442521: Add Progressive Web App support with offline-ready banners, install prompt, and web draft persistence
+  - Add service worker registration via vite-plugin-pwa with offline caching
+  - Show install prompt in toolbar and PWA banners for offline-ready/update-available states
+  - Auto-save unsaved web drafts to localStorage with 1MB size limit and 250ms debounce
+  - Restore persisted drafts on app load in the browser
+  - Add PWA icon assets, web manifest, and theme/meta tags
+  - Update E2E tests to stub browser APIs directly via onBeforeLoad instead of a global override namespace
+  - Bump dependencies
+
 ## 0.4.0
 
 ### Minor Changes
@@ -18,6 +42,7 @@
 ### Patch Changes
 
 - 33eece6: Hide export popover when menu is closed
+
   - Add CSS rule to prevent the export popover from being visible when the details element is not in open state.
   - This ensures the popover is properly hidden during transitions and when closed via outside click.
 
