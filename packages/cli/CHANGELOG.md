@@ -16,6 +16,7 @@
   - Include comprehensive test coverage for new mobile components
 
 - 5442521: Add Progressive Web App support with offline-ready banners, install prompt, and web draft persistence
+
   - Add service worker registration via vite-plugin-pwa with offline caching
   - Show install prompt in toolbar and PWA banners for offline-ready/update-available states
   - Auto-save unsaved web drafts to localStorage with 1MB size limit and 250ms debounce
@@ -29,6 +30,7 @@
 ### Minor Changes
 
 - a112de5: Add find and replace functionality to the editor
+
   - Add FindReplaceBar component with search input and replace controls
   - Add MatchOverlay component for highlighting search matches in the editor
   - Implement useFindReplace composable for managing search state and operations
