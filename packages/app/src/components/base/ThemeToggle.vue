@@ -133,8 +133,12 @@ function toggle(): void {
 
 @media (max-width: 700px) {
   .theme-toggle {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .theme-toggle__icon {
+    font-size: 18px;
   }
 }
 </style>

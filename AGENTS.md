@@ -5,7 +5,6 @@
 - Run `pnpm format`, `pnpm lint`, and `pnpm type-check` before considering a task complete.
 - Before running a script command that uses `vite preview` or `electron-vite preview`, don't forget to build the corresponding app first.
 - If tests are relevant to the change, run the smallest targeted suite first, then expand only if needed. Prefer `pnpm test:unit`, `pnpm test:e2e:dev`, or `pnpm test:e2e` over ad hoc commands.
-- When running a specific single test file in Vitest, use the `pnpm exec vitest run` command; e.g.: `pnpm exec vitest run packages/app/src/__tests__/App.spec.ts`.
 - Do not use outdated or redundant scripts when a repo-specific command already exists.
 
 ## Issue and PR Templates

@@ -31,27 +31,68 @@ describe('Toolbar', () => {
     const wrapper = mountToolbar()
 
     expect(wrapper.find('.toolbar__desktop-controls').exists()).toBe(true)
-    expect(wrapper.find('.toolbar__mobile-controls').exists()).toBe(false)
+    expect(wrapper.find('.mobile-toolbar-actions').exists()).toBe(false)
     expect(wrapper.text()).toContain('Open')
     expect(wrapper.text()).toContain('Save')
     expect(wrapper.get('[data-mode="split"]').text()).toBe('Split')
     expect(wrapper.find('button[aria-label="Switch to dark mode"]').exists()).toBe(true)
   })
 
-  it('renders reachable mobile controls without split mode', () => {
+  it('renders GitHub link on desktop', () => {
+    const wrapper = mountToolbar()
+
+    const githubLink = wrapper.find('a.github-link')
+    expect(githubLink.exists()).toBe(true)
+    expect(githubLink.attributes('href')).toBe('https://github.com/theoklitosBam7/markdown-studio')
+    expect(githubLink.attributes('target')).toBe('_blank')
+    expect(githubLink.attributes('rel')).toBe('noopener noreferrer')
+    expect(githubLink.text()).toContain('GitHub')
+  })
+
+  it('renders mobile layout with hamburger menu', () => {
     const wrapper = mountToolbar({
       availableModes: ['editor', 'preview'],
       isMobile: true,
       viewMode: 'editor',
     })
 
-    expect(wrapper.find('.toolbar__mobile-controls').exists()).toBe(true)
+    // Mobile should not show desktop controls
+    expect(wrapper.find('.toolbar__desktop-controls').exists()).toBe(false)
+    expect(wrapper.find('.export-menu').exists()).toBe(false)
+
+    // Mobile should show new mobile toolbar
+    expect(wrapper.find('.mobile-toolbar-actions').exists()).toBe(true)
+
+    // Should have ViewToggle with editor/preview modes (no split)
     expect(wrapper.findAll('[data-mode="split"]')).toHaveLength(0)
-    expect(wrapper.find('.toolbar__mobile-controls [data-mode="editor"]').exists()).toBe(true)
-    expect(wrapper.find('.toolbar__mobile-controls [data-mode="preview"]').exists()).toBe(true)
+    expect(wrapper.find('.mobile-toolbar-actions [data-mode="editor"]').exists()).toBe(true)
+    expect(wrapper.find('.mobile-toolbar-actions [data-mode="preview"]').exists()).toBe(true)
+
+    // Should have hamburger menu button
+    expect(wrapper.find('.mobile-toolbar-actions__menu-btn').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Menu"]').exists()).toBe(true)
+
+    // Should have theme toggle
     expect(
-      wrapper.find('.toolbar__mobile-controls button[aria-label="Switch to dark mode"]').exists(),
+      wrapper.find('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]').exists(),
     ).toBe(true)
+  })
+
+  it('opens action sheet when hamburger menu is clicked', async () => {
+    const wrapper = mountToolbar({
+      availableModes: ['editor', 'preview'],
+      isMobile: true,
+      viewMode: 'editor',
+    })
+
+    const menuButton = wrapper.find('button[aria-label="Menu"]')
+    expect(menuButton.exists()).toBe(true)
+
+    await menuButton.trigger('click')
+
+    // Action sheet is teleported to body, check document
+    expect(document.querySelector('.mobile-action-sheet')).not.toBeNull()
+    expect(document.querySelector('.mobile-action-sheet-backdrop')).not.toBeNull()
   })
 
   it('hides open and save when document actions are unavailable', () => {

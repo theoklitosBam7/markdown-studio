@@ -143,18 +143,43 @@ describe('Markdown Studio responsive shell', () => {
     cy.viewport('iphone-6')
     cy.visit('/')
 
-    cy.get('.toolbar__actions').contains('button', 'Open').should('be.visible')
-    cy.get('.toolbar__actions').contains('button', 'Save').should('be.visible')
-    cy.get('.toolbar__mobile-controls').contains('button', 'Preview').click()
+    // Mobile toolbar should show brand, view toggle, theme toggle, and hamburger menu
+    cy.get('.mobile-toolbar-actions').should('be.visible')
+    cy.get('.mobile-toolbar-actions__brand').should('contain', 'Markdown Studio')
+    cy.get('.mobile-toolbar-actions [data-mode="editor"]').should('be.visible')
+    cy.get('.mobile-toolbar-actions [data-mode="preview"]').should('be.visible')
+
+    // Open action sheet via hamburger menu
+    cy.get('button[aria-label="Menu"]').should('be.visible').click()
+    cy.get('.mobile-action-sheet').should('be.visible')
+    cy.get('.mobile-action-sheet__title').should('contain', 'Actions')
+
+    // All CTAs should be in the action sheet
+    cy.get('.mobile-action-sheet__action').contains('Open').should('be.visible')
+    cy.get('.mobile-action-sheet__action').contains('Save').should('be.visible')
+    cy.get('.mobile-action-sheet__action').contains('Load Examples').should('be.visible')
+    cy.get('.mobile-action-sheet__action').contains('Copy Markdown').should('be.visible')
+    cy.get('.mobile-action-sheet__action').contains('Clear Document').should('be.visible')
+    cy.get('.mobile-action-sheet__action').contains('Export as HTML').should('be.visible')
+    cy.get('.mobile-action-sheet__action').contains('Export as PDF').should('be.visible')
+
+    // Close action sheet and switch to preview mode
+    cy.get('.mobile-action-sheet__cancel').click()
+    cy.get('.mobile-action-sheet').should('not.exist')
+
+    cy.get('.mobile-toolbar-actions [data-mode="preview"]').click()
     cy.get('.preview-pane').should('be.visible')
     cy.get('.editor-pane').should('not.be.visible')
 
-    cy.get('.toolbar__mobile-controls button[aria-label="Switch to dark mode"]')
+    // Theme toggle should be visible and work
+    cy.get('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]')
       .should('be.visible')
       .click()
     cy.get('html').should('have.attr', 'data-theme', 'dark')
 
-    cy.get('.toolbar__actions').contains('button', 'Examples').click()
+    // Open examples from action sheet
+    cy.get('button[aria-label="Menu"]').click()
+    cy.get('.mobile-action-sheet__action').contains('Load Examples').click()
     cy.contains('[role="dialog"] h2', 'Load an example').should('be.visible')
     cy.get('[role="dialog"]').should(($dialog) => {
       const dialogRect = $dialog[0].getBoundingClientRect()
@@ -163,10 +188,12 @@ describe('Markdown Studio responsive shell', () => {
     })
     cy.get('button[aria-label="Close dialog"]').click()
 
+    // Clear document from action sheet
     cy.window().then((win) => {
       cy.stub(win, 'confirm').returns(true)
     })
-    cy.get('.toolbar__actions').contains('button', 'Clear').click()
+    cy.get('button[aria-label="Menu"]').click()
+    cy.get('.mobile-action-sheet__action').contains('Clear Document').click()
     cy.get('textarea').should('have.value', '')
   })
 
@@ -182,8 +209,8 @@ describe('Markdown Studio responsive shell', () => {
     cy.viewport('iphone-6')
     cy.visit('/')
     cy.contains('button', 'Split').should('not.exist')
-    cy.get('.toolbar__mobile-controls').contains('button', 'Editor').should('be.visible')
-    cy.get('.toolbar__mobile-controls').contains('button', 'Preview').should('be.visible')
+    cy.get('.mobile-toolbar-actions [data-mode="editor"]').should('be.visible')
+    cy.get('.mobile-toolbar-actions [data-mode="preview"]').should('be.visible')
   })
 
   it('opens a markdown file from the web toolbar', () => {
@@ -387,7 +414,7 @@ describe('Markdown Studio responsive shell', () => {
   it('does not jump back to the editor when preview is the only visible pane', () => {
     cy.viewport('iphone-6')
     cy.visit('/')
-    cy.get('.toolbar__mobile-controls').contains('button', 'Preview').click()
+    cy.get('.mobile-toolbar-actions [data-mode="preview"]').click()
 
     cy.get('.rendered-md [data-source-start]').first().dblclick()
 
