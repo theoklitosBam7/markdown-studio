@@ -149,6 +149,20 @@ describe('Toolbar', () => {
       expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(false)
     })
 
+    it('shows disabled pdf export guidance when pdf export is unavailable', async () => {
+      const wrapper = mountToolbar({
+        canExportPdf: false,
+        pdfExportUnavailableReason:
+          "PDF export isn't available on mobile or installed PWAs yet. Use Export as HTML instead.",
+      })
+
+      await wrapper.get('.export-menu summary').trigger('click')
+
+      const items = wrapper.findAll('.export-menu__item')
+      expect(items[1]?.attributes('disabled')).toBeDefined()
+      expect(wrapper.get('.export-menu__hint').text()).toContain('Use Export as HTML instead')
+    })
+
     it('removes the click-outside listener when the component is unmounted', () => {
       const wrapper = mountToolbar()
       const removeSpy = vi.spyOn(document, 'removeEventListener')

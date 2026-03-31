@@ -12,19 +12,23 @@ import ViewToggle from './ViewToggle.vue'
 
 interface Props {
   availableModes?: ViewMode[]
+  canExportPdf?: boolean
   canInstall?: boolean
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
   isCopied: boolean
+  pdfExportUnavailableReason?: string
   theme: Theme
   viewMode: ViewMode
 }
 
 const props = withDefaults(defineProps<Props>(), {
   availableModes: () => ['editor', 'preview'],
+  canExportPdf: true,
   canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
+  pdfExportUnavailableReason: '',
 })
 
 const emit = defineEmits<{
@@ -45,6 +49,8 @@ const isActionSheetOpen = shallowRef(false)
 const secondaryActions = computed(() => {
   const actions: {
     action: () => void
+    description?: string
+    disabled?: boolean
     icon: string
     label: string
     variant?: 'danger' | 'default' | 'primary'
@@ -103,6 +109,8 @@ const secondaryActions = computed(() => {
     },
     {
       action: () => emit('exportPdf'),
+      description: props.canExportPdf ? undefined : props.pdfExportUnavailableReason,
+      disabled: !props.canExportPdf,
       icon: '📑',
       label: 'Export as PDF',
     },

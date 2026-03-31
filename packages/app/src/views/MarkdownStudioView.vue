@@ -56,11 +56,6 @@ const {
   content,
   replaceContent: updateContent,
 })
-const { exportHtml, exportPdf } = useDocumentExport({
-  content,
-  currentPath,
-  displayName,
-})
 const {
   activeMatch,
   activeMatchIndex,
@@ -121,6 +116,14 @@ const {
   updateApp,
 } = usePwa()
 const mobileBreakpoint = 700
+const isExamplesModalOpen = shallowRef(false)
+const isMobile = shallowRef(false)
+const { canExportPdf, exportHtml, exportPdf, pdfExportUnavailableReason } = useDocumentExport({
+  content,
+  currentPath,
+  displayName,
+  isMobile,
+})
 
 const bannerStatus = computed(() =>
   updateAvailable.value ? ('update-available' as const) : ('up-to-date' as const),
@@ -132,9 +135,6 @@ const showPwaBanner = computed(
   () => !desktop.value.isDesktop && (needRefresh.value || offlineReady.value),
 )
 
-// Local state
-const isExamplesModalOpen = shallowRef(false)
-const isMobile = shallowRef(false)
 let removeDesktopCommandListener: () => void = () => undefined
 const editorPaneRef = useTemplateRef<InstanceType<typeof EditorPane>>('editorPane')
 const previewPaneRef = useTemplateRef<InstanceType<typeof PreviewPane>>('previewPane')
@@ -438,7 +438,9 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
       await exportHtml()
       return
     case 'document:exportPdf':
-      await exportPdf()
+      if (canExportPdf.value) {
+        await exportPdf()
+      }
       return
     case 'editor:find':
       handleFindShortcut()
@@ -459,11 +461,13 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
   <div class="markdown-studio" :class="bodyClasses">
     <Toolbar
       :available-modes="availableModes"
+      :can-export-pdf="canExportPdf"
       :can-open-documents="canOpenDocuments"
       :can-install="canInstall"
       :can-save-documents="canSaveDocuments"
       :is-mobile="isMobile"
       :view-mode="viewMode"
+      :pdf-export-unavailable-reason="pdfExportUnavailableReason"
       :theme="theme"
       :is-copied="isCopied"
       @install="handleInstall"

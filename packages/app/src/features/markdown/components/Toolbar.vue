@@ -11,11 +11,13 @@ import type { Theme, ViewMode } from '../types'
 
 interface Props {
   availableModes?: ViewMode[]
+  canExportPdf?: boolean
   canInstall?: boolean
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
   isCopied: boolean
   isMobile?: boolean
+  pdfExportUnavailableReason?: string
   theme: Theme
   viewMode: ViewMode
 }
@@ -27,10 +29,12 @@ interface ThemeChangeRequest {
 
 const props = withDefaults(defineProps<Props>(), {
   availableModes: () => ['editor', 'split', 'preview'],
+  canExportPdf: true,
   canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
   isMobile: false,
+  pdfExportUnavailableReason: '',
 })
 
 const emit = defineEmits<{
@@ -130,10 +134,12 @@ onUnmounted(() => {
     <MobileToolbarActions
       v-if="props.isMobile"
       :available-modes="props.availableModes"
+      :can-export-pdf="props.canExportPdf"
       :can-install="props.canInstall"
       :can-open-documents="props.canOpenDocuments"
       :can-save-documents="props.canSaveDocuments"
       :is-copied="props.isCopied"
+      :pdf-export-unavailable-reason="props.pdfExportUnavailableReason"
       :theme="props.theme"
       :view-mode="props.viewMode"
       @clear="clear"
@@ -226,9 +232,21 @@ onUnmounted(() => {
               <button class="export-menu__item" type="button" role="menuitem" @click="exportHtml">
                 Export HTML
               </button>
-              <button class="export-menu__item" type="button" role="menuitem" @click="exportPdf">
+              <button
+                class="export-menu__item"
+                :disabled="!props.canExportPdf"
+                type="button"
+                role="menuitem"
+                @click="exportPdf"
+              >
                 Export PDF
               </button>
+              <p
+                v-if="!props.canExportPdf && props.pdfExportUnavailableReason"
+                class="export-menu__hint"
+              >
+                {{ props.pdfExportUnavailableReason }}
+              </p>
             </div>
           </details>
         </div>
@@ -419,6 +437,23 @@ onUnmounted(() => {
 
 .export-menu__item:hover {
   background: var(--panel);
+}
+
+.export-menu__item:disabled {
+  cursor: not-allowed;
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+.export-menu__item:disabled:hover {
+  background: transparent;
+}
+
+.export-menu__hint {
+  margin: 0;
+  padding: 6px 10px 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
 }
 
 .github-link {
