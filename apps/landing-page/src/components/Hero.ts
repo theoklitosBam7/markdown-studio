@@ -18,7 +18,8 @@ export function Hero(): string {
 
           <p class="hero-subtitle">
             A beautiful, distraction-free editor with live preview, Mermaid diagram support,
-            and built-in export to standalone HTML and print-ready PDF. Available on the web and as a desktop app for macOS.
+            and built-in export to standalone HTML and print-ready PDF. Use it in your browser,
+            install as a PWA, or download the desktop app for macOS.
           </p>
 
           <div class="hero-ctas">
