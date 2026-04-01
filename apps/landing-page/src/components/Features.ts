@@ -37,8 +37,14 @@ const features: Feature[] = [
     title: 'Theme Switching',
   },
   {
+    description:
+      'Install as a standalone app from your browser. Works offline, auto-saves drafts, and stays updated automatically.',
+    icon: '📲',
+    title: 'PWA Support',
+  },
+  {
     description: 'Download the desktop app for macOS and enjoy a native editing experience.',
-    icon: '📱',
+    icon: '🖥️',
     title: 'Native Desktop App',
   },
   {

@@ -15,6 +15,12 @@ export function Footer(): string {
           </div>
 
           <div class="footer-links">
+            <a href="https://pwa.markdownstudio.eu/"
+               class="footer-link"
+               target="_blank"
+               rel="noopener noreferrer">
+              Web App
+            </a>
             <a href="https://github.com/theoklitosBam7/markdown-studio"
                class="footer-link"
                target="_blank"

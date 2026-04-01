@@ -3,6 +3,7 @@ import { Features } from './components/Features'
 import { Footer } from './components/Footer'
 import { Hero } from './components/Hero'
 import { Mockup } from './components/Mockup'
+import { UsageModes } from './components/UsageModes'
 import './styles/components.css'
 import './styles/main.css'
 
@@ -36,6 +37,7 @@ function renderApp(): void {
   app.innerHTML = `
     ${Hero()}
     ${Mockup()}
+    ${UsageModes()}
     ${Features()}
     ${CTASection()}
     ${Footer()}
