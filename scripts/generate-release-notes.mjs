@@ -20,6 +20,11 @@ export const allowedReleaseNoteScopes = [
   'web',
 ]
 
+const artifactRelevantScopes = {
+  desktop: ['app', 'cli', 'common', 'desktop', 'electron', 'markdown'],
+  npm: ['app', 'cli', 'common', 'markdown', 'web'],
+}
+
 const releaseNoteScopeAliases = new Map([
   ['markdown-editor', 'markdown'],
   ['workflows', 'ci'],
@@ -61,6 +66,7 @@ export async function findPreviousArtifactTag({ currentTag, ref, tagPattern }) {
 }
 
 export async function generateReleaseNotes({
+  artifactType,
   changelogPath,
   currentTag,
   outputPath,
@@ -71,9 +77,9 @@ export async function generateReleaseNotes({
   const changelogSource = await readFile(changelogPath, 'utf8')
   const previousTag = await findPreviousArtifactTag({ currentTag, ref, tagPattern })
   const commitSubjects = await getCommitSubjectsSinceTag({ previousTag, ref })
-  const contributors = await getContributors({ previousTag, ref })
+  const contributors = await getContributors({ artifactType, previousTag, ref })
   const changelogNotes = renderReleaseNotes({ changelogSource, version })
-  const commitsByScope = renderCommitsByScopeSection(commitSubjects)
+  const commitsByScope = renderCommitsByScopeSection(commitSubjects, artifactType)
   const contributorsSection = renderContributorsSection(contributors)
 
   await mkdir(path.dirname(outputPath), { recursive: true })
@@ -94,22 +100,26 @@ export async function getCommitSubjectsSinceTag({ previousTag, ref }) {
     .filter(Boolean)
 }
 
-export async function getContributors({ previousTag, ref }) {
+export async function getContributors({ artifactType = null, previousTag, ref }) {
   const revisionRange = previousTag ? `${previousTag}..${ref}` : ref
-  const stdout = await runGit(['log', '--format=%aN%x00%aE', revisionRange])
+  const stdout = await runGit(['log', '--format=%H%x00%aN%x00%aE%x00%s', revisionRange])
 
-  const authors = stdout
+  const commits = stdout
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [name, email] = line.split('\0')
-      return { email, name }
+      const [hash, name, email, subject] = line.split('\0')
+      return { email, hash, name, subject }
     })
+
+  const filteredCommits = artifactType
+    ? commits.filter((commit) => shouldIncludeCommitSubject(commit.subject, artifactType))
+    : commits
 
   const seen = new Set()
   const uniqueAuthors = []
-  for (const author of authors) {
+  for (const author of filteredCommits) {
     if (!seen.has(author.email)) {
       seen.add(author.email)
       uniqueAuthors.push(author)
@@ -122,11 +132,11 @@ export async function getContributors({ previousTag, ref }) {
   }))
 }
 
-export function groupCommitSubjectsByScope(subjects) {
+export function groupCommitSubjectsByScope(subjects, artifactType = null) {
   const groups = new Map()
 
   for (const subject of subjects) {
-    if (!shouldIncludeCommitSubject(subject)) continue
+    if (!shouldIncludeCommitSubject(subject, artifactType)) continue
 
     const entry = parseConventionalCommitSubject(subject)
     const scopeEntries = groups.get(entry.scope) ?? []
@@ -167,12 +177,17 @@ export function parseConventionalCommitSubject(subject) {
   }
 }
 
-export function renderCommitsByScopeSection(subjects) {
+export function renderCommitsByScopeSection(subjects, artifactType = null) {
   if (subjects.length === 0) {
     return '## Commits by scope\n\n_No matching commits found for this release range._'
   }
 
-  const groups = groupCommitSubjectsByScope(subjects)
+  const groups = groupCommitSubjectsByScope(subjects, artifactType)
+
+  if (groups.length === 0) {
+    return '## Commits by scope\n\n_No matching commits found for this release range._'
+  }
+
   const lines = ['## Commits by scope']
 
   for (const group of groups) {
@@ -212,11 +227,17 @@ export function resolveGitHubUsername(email) {
   return match ? match[1] : null
 }
 
-export function shouldIncludeCommitSubject(subject) {
+export function shouldIncludeCommitSubject(subject, artifactType = null) {
   const entry = parseConventionalCommitSubject(subject)
 
   if (entry.type === 'chore' && entry.rawScope === 'release') return false
   if (entry.scope === 'landing-page' || entry.scope === 'ci') return false
+
+  // Filter by artifact type if specified - only include relevant scopes
+  if (artifactType && artifactRelevantScopes[artifactType]) {
+    const relevantScopes = artifactRelevantScopes[artifactType]
+    if (!relevantScopes.includes(entry.scope)) return false
+  }
 
   return true
 }
@@ -235,6 +256,7 @@ function normalizeReleaseNoteScope(scope) {
 
 function parseArgs(argv) {
   const args = {
+    artifactType: null,
     changelog: '',
     currentTag: '',
     output: '',
@@ -246,6 +268,12 @@ function parseArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
     const value = argv[index + 1]
+
+    if (arg === '--artifact-type') {
+      args.artifactType = value ?? null
+      index += 1
+      continue
+    }
 
     if (arg === '--changelog') {
       args.changelog = value ?? ''
@@ -293,7 +321,7 @@ function parseArgs(argv) {
     !args.version
   ) {
     throw new Error(
-      'Usage: node ./scripts/generate-release-notes.mjs --changelog <path> --version <version> --current-tag <tag> --tag-pattern <pattern> --ref <git-ref> --output <path>',
+      'Usage: node ./scripts/generate-release-notes.mjs --changelog <path> --version <version> --current-tag <tag> --tag-pattern <pattern> --artifact-type <desktop|npm> --ref <git-ref> --output <path>',
     )
   }
 
@@ -306,13 +334,14 @@ async function runGit(args) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { changelog, currentTag, output, ref, tagPattern, version } = parseArgs(
+  const { artifactType, changelog, currentTag, output, ref, tagPattern, version } = parseArgs(
     process.argv.slice(2),
   )
   const changelogPath = path.resolve(rootDir, changelog)
   const outputPath = path.resolve(rootDir, output)
 
   await generateReleaseNotes({
+    artifactType,
     changelogPath,
     currentTag,
     outputPath,

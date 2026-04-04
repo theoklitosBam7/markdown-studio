@@ -73,6 +73,7 @@ jobs:
           --current-tag "${{ steps.publish_meta.outputs.tag }}"
           --ref "${{ steps.publish_meta.outputs.sha }}"
           --tag-pattern "npm-v*"
+          --artifact-type npm
           --version "${{ steps.publish_meta.outputs.version }}"
           --output "${{ runner.temp }}/npm-release-notes.md"
 

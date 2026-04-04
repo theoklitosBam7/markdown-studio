@@ -71,6 +71,7 @@ jobs:
           --current-tag "${{ steps.release_meta.outputs.tag }}"
           --ref "${{ steps.release_meta.outputs.sha }}"
           --tag-pattern "desktop-v*"
+          --artifact-type desktop
           --version "${{ steps.release_meta.outputs.version }}"
           --output "${{ runner.temp }}/desktop-release-notes.md"
 
