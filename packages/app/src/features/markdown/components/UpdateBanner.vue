@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { coerce } from '@/utils/semver'
+
 interface Props {
   currentVersion?: string
   latestVersion?: string
@@ -12,7 +14,7 @@ const emit = defineEmits<{
   download: []
 }>()
 
-const normalizeVersion = (v?: string) => v?.replace(/^v/, '')
+const normalizeVersion = (v?: string) => (v ? coerce(v) : undefined)
 </script>
 
 <template>
