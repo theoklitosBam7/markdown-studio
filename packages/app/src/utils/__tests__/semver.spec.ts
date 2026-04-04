@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { compareSemver } from '../semver'
+import { coerce, compareSemver } from '../semver'
 
 describe('compareSemver', () => {
   it('returns 0 for equal versions', () => {
@@ -47,5 +47,25 @@ describe('compareSemver', () => {
   it('throws on invalid version strings', () => {
     expect(() => compareSemver('not-a-version', '1.0.0')).toThrow('Invalid semver')
     expect(() => compareSemver('1.0.0', '')).toThrow('Invalid semver')
+  })
+})
+
+describe('coerce', () => {
+  it('extracts semver from plain version', () => {
+    expect(coerce('1.2.3')).toBe('1.2.3')
+  })
+
+  it('strips v prefix', () => {
+    expect(coerce('v1.2.3')).toBe('1.2.3')
+  })
+
+  it('strips desktop-v prefix', () => {
+    expect(coerce('desktop-v1.2.3')).toBe('1.2.3')
+    expect(coerce('desktop-v0.4.0')).toBe('0.4.0')
+  })
+
+  it('throws on invalid version strings', () => {
+    expect(() => coerce('not-a-version')).toThrow('Invalid semver')
+    expect(() => coerce('')).toThrow('Invalid semver')
   })
 })
