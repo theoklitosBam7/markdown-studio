@@ -1,5 +1,11 @@
 # @markdown-studio/desktop
 
+## 0.4.1
+
+### Patch Changes
+
+- 33e7e78: Fix update banner showing incorrect version format with desktop- prefix (e.g., vdesktop-v0.4.0 instead of v0.4.0)
+
 ## 0.4.0
 
 ### Minor Changes
@@ -18,6 +24,7 @@
 ### Patch Changes
 
 - 33eece6: Hide export popover when menu is closed
+
   - Add CSS rule to prevent the export popover from being visible when the details element is not in open state.
   - This ensures the popover is properly hidden during transitions and when closed via outside click.
 
