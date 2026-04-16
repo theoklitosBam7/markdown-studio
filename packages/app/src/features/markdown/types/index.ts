@@ -20,3 +20,12 @@ export interface MarkdownSourceMapEntry {
 
 export type Theme = 'dark' | 'light'
 export type ViewMode = 'editor' | 'preview' | 'split'
+
+export type {
+  EditorPaneAdapter,
+  EditorScrollPayload,
+  EditorWorkspaceController,
+  EditorWorkspaceState,
+  PreviewPaneAdapter,
+  ThemeChangeRequest,
+} from './workspace'

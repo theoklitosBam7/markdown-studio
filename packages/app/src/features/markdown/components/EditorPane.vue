@@ -6,17 +6,10 @@ import type { AppWindow } from '@/browser-window'
 import { insertTextAtSelection } from '@/utils/insertTextAtSelection'
 
 import type { FindMatch } from '../composables/useFindReplace'
+import type { EditorScrollPayload } from '../types'
 
 import FindReplaceBar from './FindReplaceBar.vue'
 import MatchOverlay from './MatchOverlay.vue'
-
-interface EditorScrollState {
-  clientHeight: number
-  contentLength: number
-  lineHeight: number
-  scrollHeight: number
-  scrollTop: number
-}
 
 interface Props {
   activeMatchIndex?: number
@@ -50,7 +43,7 @@ const emit = defineEmits<{
   'find:replace-current': []
   'request-find': []
   'request-replace': []
-  scroll: [payload: EditorScrollState]
+  scroll: [payload: EditorScrollPayload]
   'update:content': [value: string]
   'update:match-case': [value: boolean]
   'update:query': [value: string]
@@ -111,7 +104,7 @@ function getLineIndexForOffset(offset: number): number {
   return lineIndex
 }
 
-function getScrollState(): EditorScrollState | null {
+function getScrollState(): EditorScrollPayload | null {
   const editor = editorRef.value
   if (!editor) return null
 

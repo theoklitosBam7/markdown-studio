@@ -7,7 +7,7 @@ import ToolbarButton from '@/components/base/ToolbarButton.vue'
 import ViewToggle from '@/components/base/ViewToggle.vue'
 import { GITHUB_REPO_URL } from '@/utils/constants'
 
-import type { Theme, ViewMode } from '../types'
+import type { Theme, ThemeChangeRequest, ViewMode } from '../types'
 
 interface Props {
   availableModes?: ViewMode[]
@@ -20,11 +20,6 @@ interface Props {
   pdfExportUnavailableReason?: string
   theme: Theme
   viewMode: ViewMode
-}
-
-interface ThemeChangeRequest {
-  origin: { x: number; y: number }
-  theme: Theme
 }
 
 const props = withDefaults(defineProps<Props>(), {
