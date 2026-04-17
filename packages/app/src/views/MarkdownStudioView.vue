@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import type { AppCommand } from '@markdown-studio/desktop-contract/types'
+import { onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
 
-import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
+import type { EditorScrollPayload } from '@/features/markdown/types'
 
-import type { Example, Theme, ViewMode } from '@/features/markdown/types'
-
-import { useDesktop } from '@/composables/useDesktop'
-import { usePwa } from '@/composables/usePwa'
-import { useThemeTransition } from '@/composables/useThemeTransition'
-import { useUpdateChecker } from '@/composables/useUpdateChecker'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
@@ -16,445 +10,115 @@ import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
-import { useDocumentExport } from '@/features/markdown/composables/useDocumentExport'
-import { useDocumentSession } from '@/features/markdown/composables/useDocumentSession'
-import { useFindReplace } from '@/features/markdown/composables/useFindReplace'
-import { useMarkdownEditor } from '@/features/markdown/composables/useMarkdownEditor'
-import { useWebDraftPersistence } from '@/features/markdown/composables/useWebDraftPersistence'
+import { useEditorWorkspaceController } from '@/features/markdown/composables/useEditorWorkspaceController'
 
-// Use the composable
+const workspace = useEditorWorkspaceController()
 const {
-  content,
-  copyContent,
-  isCopied,
-  loadExample,
-  renderedHtml,
-  renderMermaidDiagrams,
-  setTheme,
-  setViewMode,
-  sourceMap,
-  stats,
-  theme,
-  updateContent,
-  viewMode,
-} = useMarkdownEditor()
-const desktop = useDesktop()
-const {
+  activeMatchIndex,
+  availableModes,
+  bannerStatus,
+  bodyClasses,
+  canExportPdf,
+  canInstall,
   canOpenDocuments,
   canSaveDocuments,
-  currentPath,
-  displayName,
-  handleAppCommand,
-  isDesktop,
-  isDirty,
-  openDocument,
-  restoreDraft,
-  saveDocument,
-  startNewDocument,
-  statusText,
-} = useDocumentSession({
   content,
-  replaceContent: updateContent,
-})
-const {
-  activeMatch,
-  activeMatchIndex,
-  close: closeFindReplace,
-  commitReplacement,
-  findNext,
-  findPrevious,
-  isOpen: isFindReplaceOpen,
+  displayName,
+  isCopied,
+  isDirty,
+  isExamplesModalOpen,
+  isFindReplaceOpen,
+  isMobile,
   matchCase,
   matchCount,
   matches,
-  openFind: openFindPanel,
-  openReplace: openReplacePanel,
-  prepareReplaceAll,
-  prepareReplaceCurrent,
+  pdfExportUnavailableReason,
+  pwaBannerStatus,
   query,
+  renderedHtml,
   replaceText,
-  requestSelectionSync,
-  setMatchCase,
-  setQuery,
-  setReplaceText,
-  showReplace,
-} = useFindReplace({
-  content,
-})
-
-interface EditorScrollPayload {
-  clientHeight: number
-  contentLength: number
-  lineHeight: number
-  scrollHeight: number
-  scrollTop: number
-}
-
-interface ThemeChangeRequest {
-  origin: { x: number; y: number }
-  theme: Theme
-}
-
-const { transitionTheme } = useThemeTransition()
-const {
-  checkNow,
-  dismiss: dismissUpdateBanner,
-  download: downloadUpdate,
   showBanner,
-  startChecking: startUpdateChecks,
-  stopChecking: stopUpdateChecks,
-  updateAvailable,
+  showPwaBanner,
+  showReplace,
+  sourceMap,
+  stats,
+  statusText,
+  theme,
   updateInfo,
-} = useUpdateChecker()
-const {
-  canInstall,
-  dismissOfflineReady,
-  dismissRefreshPrompt,
-  install,
-  needRefresh,
-  offlineReady,
-  updateApp,
-} = usePwa()
-const mobileBreakpoint = 700
-const isExamplesModalOpen = shallowRef(false)
-const isMobile = shallowRef(false)
-const { canExportPdf, exportHtml, exportPdf, pdfExportUnavailableReason } = useDocumentExport({
-  content,
-  currentPath,
-  displayName,
-  isMobile,
-})
-
-const bannerStatus = computed(() =>
-  updateAvailable.value ? ('update-available' as const) : ('up-to-date' as const),
-)
-const pwaBannerStatus = computed(() =>
-  needRefresh.value ? ('update-available' as const) : ('offline-ready' as const),
-)
-const showPwaBanner = computed(
-  () => !desktop.value.isDesktop && (needRefresh.value || offlineReady.value),
-)
-
-let removeDesktopCommandListener: () => void = () => undefined
+  viewMode,
+} = workspace.state
 const editorPaneRef = useTemplateRef<InstanceType<typeof EditorPane>>('editorPane')
 const previewPaneRef = useTemplateRef<InstanceType<typeof PreviewPane>>('previewPane')
-const availableModes = computed<ViewMode[]>(() =>
-  isMobile.value ? ['editor', 'preview'] : ['editor', 'split', 'preview'],
-)
 
-// Note: restoreStoredDraft must be called after useDocumentSession initializes restoreDraft.
-const { clearDraft, restoreStoredDraft } = useWebDraftPersistence({
-  content,
-  displayName,
-  isDesktop,
-  isDirty,
-  restoreDraft,
-})
-
-// Computed body classes for view mode and theme
-const bodyClasses = computed(() => ({
-  'is-mobile': isMobile.value,
-  'view-editor': viewMode.value === 'editor',
-  'view-preview': viewMode.value === 'preview',
-  'view-split': viewMode.value === 'split',
-}))
-
-// Watch theme and apply to document
 watch(
-  theme,
-  (newTheme) => {
-    document.documentElement.setAttribute('data-theme', newTheme)
+  editorPaneRef,
+  (editorPane) => {
+    if (!editorPane) {
+      return
+    }
+
+    workspace.attach.editor({
+      focus: () => editorPane.focus(),
+      focusAtOffset: (offset) => editorPane.focusAtOffset(offset),
+      focusFindQuery: () => editorPane.focusFindQuery(),
+      getScrollState: () => editorPane.getScrollState(),
+      replaceAllContent: (content) => editorPane.replaceAllContent(content),
+      replaceRange: (start, end, replacement) => editorPane.replaceRange(start, end, replacement),
+      setSelectionRange: (start, end) => editorPane.setSelectionRange(start, end),
+    })
   },
   { immediate: true },
 )
 
-function closeExamples(): void {
-  isExamplesModalOpen.value = false
-}
-
-function focusFindQuery(): void {
-  void nextTick(() => {
-    editorPaneRef.value?.focusFindQuery()
-  })
-}
-
-function getOffsetForLine(contentValue: string, lineNumber: number): number {
-  if (lineNumber <= 0) return 0
-
-  let currentLine = 0
-
-  for (let index = 0; index < contentValue.length; index += 1) {
-    if (contentValue[index] === '\n') {
-      currentLine += 1
-      if (currentLine === lineNumber) {
-        return index + 1
-      }
+watch(
+  previewPaneRef,
+  (previewPane) => {
+    if (!previewPane) {
+      return
     }
-  }
 
-  return contentValue.length
-}
-
-function handleContentUpdate(value: string): void {
-  updateContent(value)
-}
+    workspace.attach.preview({
+      scrollToSourceOffset: (offset) => previewPane.scrollToSourceOffset(offset),
+    })
+  },
+  { immediate: true },
+)
 
 function handleEditorScroll(scrollState: EditorScrollPayload): void {
-  syncPreviewToEditorPosition(scrollState)
-}
-
-function handleExampleSelect(example: Example): void {
-  loadExample(example)
-  // Focus the editor after loading
-  setTimeout(() => {
-    editorPaneRef.value?.focus()
-  }, 0)
+  workspace.editor.syncPreviewToEditorPosition(scrollState)
 }
 
 function handleExportHtml(): void {
-  void exportHtml().catch((error: unknown) => {
+  void workspace.export.html().catch((error: unknown) => {
     console.error('Failed to export HTML:', error)
   })
 }
 
 function handleExportPdf(): void {
-  void exportPdf().catch((error: unknown) => {
+  void workspace.export.pdf().catch((error: unknown) => {
     console.error('Failed to export PDF:', error)
   })
 }
 
-function handleFindClose(): void {
-  closeFindReplace()
-  editorPaneRef.value?.focus()
-}
-
-function handleFindQueryUpdate(value: string): void {
-  setQuery(value)
-}
-
-function handleFindReplaceShortcut(): void {
-  openReplacePanel()
-  focusFindQuery()
-}
-
-function handleFindShortcut(): void {
-  openFindPanel()
-  focusFindQuery()
-}
-
-function handleGlobalKeydown(event: KeyboardEvent): void {
-  if (event.defaultPrevented) {
-    return
-  }
-
-  const normalizedKey = event.key.toLowerCase()
-  const hasCommandModifier = event.metaKey || event.ctrlKey
-
-  if (hasCommandModifier && normalizedKey === 'f') {
-    event.preventDefault()
-    handleFindShortcut()
-    return
-  }
-
-  if (hasCommandModifier && normalizedKey === 'h') {
-    event.preventDefault()
-    handleFindReplaceShortcut()
-    return
-  }
-
-  if (!isFindReplaceOpen.value) {
-    return
-  }
-
-  if ((hasCommandModifier && normalizedKey === 'g') || event.key === 'F3') {
-    event.preventDefault()
-    if (event.shiftKey) {
-      findPrevious()
-      return
-    }
-
-    findNext()
-  }
-}
-
 function handleInstall(): void {
-  void install().catch((error: unknown) => {
+  void workspace.toolbar.install().catch((error: unknown) => {
     console.error('Failed to trigger web app install:', error)
   })
 }
 
-function handlePreviewJump(offset: number): void {
-  if (isMobile.value || viewMode.value !== 'split') return
-
-  void editorPaneRef.value?.focusAtOffset(offset)
-}
-
-function handlePwaBannerDismiss(): void {
-  if (needRefresh.value) {
-    dismissRefreshPrompt()
-    return
-  }
-
-  dismissOfflineReady()
-}
-
-function handleRenderDiagrams(container: HTMLElement): void {
-  renderMermaidDiagrams(container)
-}
-
-async function handleReplaceAll(): Promise<void> {
-  const replacementPlan = prepareReplaceAll()
-  if (!replacementPlan) {
-    return
-  }
-
-  await editorPaneRef.value?.replaceAllContent(replacementPlan.nextContent)
-  commitReplacement(replacementPlan.nextActiveIndex)
-  editorPaneRef.value?.focus()
-}
-
-async function handleReplaceCurrent(): Promise<void> {
-  const replacementPlan = prepareReplaceCurrent()
-  if (!replacementPlan) {
-    return
-  }
-
-  await editorPaneRef.value?.replaceRange(
-    replacementPlan.match.index,
-    replacementPlan.match.end,
-    replacementPlan.replacement,
-  )
-  commitReplacement(replacementPlan.nextActiveIndex)
-  editorPaneRef.value?.focus()
-}
-
 function handleStartNewDocument(): void {
-  void startNewDocument()
-    .then(() => {
-      if (!content.value) {
-        clearDraft()
-      }
-    })
-    .catch((error: unknown) => {
-      console.error('Failed to start new document:', error)
-    })
-}
-
-async function handleThemeChange(request: ThemeChangeRequest): Promise<void> {
-  if (request.theme === theme.value) return
-
-  await transitionTheme(request.theme, setTheme, {
-    origin: request.origin,
+  void workspace.document.startNew().catch((error: unknown) => {
+    console.error('Failed to start new document:', error)
   })
 }
 
-// Actions
-function handleViewModeChange(mode: ViewMode): void {
-  setViewMode(mode)
-}
-
-function openExamples(): void {
-  isExamplesModalOpen.value = true
-}
-
-function syncFindSelection(): void {
-  const match = activeMatch.value
-  if (!match) {
-    return
-  }
-
-  void nextTick(() => {
-    editorPaneRef.value?.setSelectionRange(match.index, match.end)
-  })
-}
-
-function syncPreviewToEditorPosition(scrollState?: EditorScrollPayload | null): void {
-  if (isMobile.value || viewMode.value !== 'split') return
-
-  const effectiveScrollState = scrollState ?? editorPaneRef.value?.getScrollState()
-  if (!effectiveScrollState) return
-
-  const topLine = Math.max(
-    0,
-    Math.floor(effectiveScrollState.scrollTop / effectiveScrollState.lineHeight),
-  )
-  const sourceOffset = getOffsetForLine(content.value, topLine)
-  previewPaneRef.value?.scrollToSourceOffset(sourceOffset)
-}
-
-function syncViewport(): void {
-  if (typeof window === 'undefined') return
-
-  const nextIsMobile = window.innerWidth <= mobileBreakpoint
-  isMobile.value = nextIsMobile
-
-  if (nextIsMobile && viewMode.value === 'split') {
-    setViewMode('editor')
-  }
-}
-
-onMounted(async () => {
-  syncViewport()
-  window.addEventListener('resize', syncViewport)
-  window.addEventListener('keydown', handleGlobalKeydown)
-  startUpdateChecks()
-  await restoreStoredDraft()
-
-  const onAppCommand = desktop.value?.commands?.onAppCommand
-  if (onAppCommand) {
-    removeDesktopCommandListener = onAppCommand((command: AppCommand) => {
-      void handleDesktopCommand(command).catch((error: unknown) => {
-        console.error('Failed to handle desktop app command:', error)
-      })
-    })
-  } else {
-    removeDesktopCommandListener = () => undefined
-  }
+onMounted(() => {
+  void workspace.system.start()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', syncViewport)
-  window.removeEventListener('keydown', handleGlobalKeydown)
-  removeDesktopCommandListener()
-  stopUpdateChecks()
+  workspace.system.stop()
 })
-
-watch(
-  () => [content.value, isMobile.value, sourceMap.value, viewMode.value],
-  async () => {
-    await nextTick()
-    syncPreviewToEditorPosition()
-  },
-  { deep: true },
-)
-
-watch(requestSelectionSync, () => {
-  syncFindSelection()
-})
-
-async function handleDesktopCommand(command: AppCommand): Promise<void> {
-  switch (command) {
-    case 'document:exportHtml':
-      await exportHtml()
-      return
-    case 'document:exportPdf':
-      if (canExportPdf.value) {
-        await exportPdf()
-      }
-      return
-    case 'editor:find':
-      handleFindShortcut()
-      return
-    case 'editor:replace':
-      handleFindReplaceShortcut()
-      return
-    case 'update:check':
-      await checkNow()
-      return
-    default:
-      await handleAppCommand(command)
-  }
-}
 </script>
 
 <template>
@@ -471,15 +135,15 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
       :theme="theme"
       :is-copied="isCopied"
       @install="handleInstall"
-      @open-document="openDocument"
-      @update:view-mode="handleViewModeChange"
-      @update:theme="handleThemeChange"
-      @open-examples="openExamples"
+      @open-document="workspace.document.open"
+      @update:view-mode="workspace.editor.setViewMode"
+      @update:theme="workspace.editor.setTheme"
+      @open-examples="workspace.examples.open"
       @clear="handleStartNewDocument"
-      @copy="copyContent"
+      @copy="workspace.toolbar.copy"
       @export-html="handleExportHtml"
       @export-pdf="handleExportPdf"
-      @save-document="saveDocument"
+      @save-document="workspace.document.save"
     />
 
     <Transition name="banner-slide">
@@ -488,8 +152,8 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
         :status="bannerStatus"
         :current-version="updateInfo?.currentVersion"
         :latest-version="updateInfo?.latestVersion"
-        @dismiss="dismissUpdateBanner"
-        @download="downloadUpdate"
+        @dismiss="workspace.toolbar.dismissUpdateBanner"
+        @download="workspace.toolbar.downloadUpdate"
       />
     </Transition>
 
@@ -497,8 +161,8 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
       <PwaBanner
         v-if="showPwaBanner"
         :status="pwaBannerStatus"
-        @dismiss="handlePwaBannerDismiss"
-        @refresh="updateApp"
+        @dismiss="workspace.toolbar.dismissPwaBanner"
+        @refresh="workspace.toolbar.updateApp"
       />
     </Transition>
 
@@ -515,18 +179,18 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
         :query="query"
         :replace-text="replaceText"
         :show-replace="showReplace"
-        @find:close="handleFindClose"
-        @find:next="findNext"
-        @find:previous="findPrevious"
-        @find:replace-all="handleReplaceAll"
-        @find:replace-current="handleReplaceCurrent"
-        @request-find="handleFindShortcut"
-        @request-replace="handleFindReplaceShortcut"
+        @find:close="workspace.find.close"
+        @find:next="workspace.find.next"
+        @find:previous="workspace.find.previous"
+        @find:replace-all="workspace.find.replaceAll"
+        @find:replace-current="workspace.find.replaceCurrent"
+        @request-find="workspace.find.open"
+        @request-replace="workspace.find.openReplace"
         @scroll="handleEditorScroll"
-        @update:content="handleContentUpdate"
-        @update:match-case="setMatchCase"
-        @update:query="handleFindQueryUpdate"
-        @update:replace-text="setReplaceText"
+        @update:content="workspace.editor.updateContent"
+        @update:match-case="workspace.find.setMatchCase"
+        @update:query="workspace.find.setQuery"
+        @update:replace-text="workspace.find.setReplaceText"
       />
       <PreviewPane
         ref="previewPane"
@@ -534,8 +198,8 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
         :source-map="sourceMap"
         :theme="theme"
         :word-count="stats.words"
-        @jump-to-offset="handlePreviewJump"
-        @render-diagrams="handleRenderDiagrams"
+        @jump-to-offset="workspace.preview.jumpToOffset"
+        @render-diagrams="workspace.preview.renderDiagrams"
       />
     </main>
 
@@ -549,8 +213,8 @@ async function handleDesktopCommand(command: AppCommand): Promise<void> {
 
     <ExamplesModal
       :is-open="isExamplesModalOpen"
-      @close="closeExamples"
-      @select="handleExampleSelect"
+      @close="workspace.examples.close"
+      @select="workspace.editor.loadExample"
     />
   </div>
 </template>
