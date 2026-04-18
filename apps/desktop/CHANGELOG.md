@@ -4,19 +4,12 @@
 
 ### Minor Changes
 
-- 76f723d: Add desktop app icons and update branding assets
-
-  **Desktop app:**
+- 76f723d: Add desktop app icons
 
   - Add Windows icon (icon.ico) with multi-resolution support (16, 32, 48, 256)
   - Add Linux/macOS icon (icon.png, 1024×1024)
   - Configure electron-builder to use build/icon resources
   - Add generate-desktop-icons script for regenerating from logo.svg
-
-  **CLI:**
-
-  - Update logo.svg with new design (visible when launching via CLI)
-  - Regenerate favicon and PWA icons from updated logo
 
 ### Patch Changes
 
@@ -38,12 +31,15 @@
   - Reduce coupling between MarkdownStudioView, useFindReplace, and imperative pane calls
 
 - d9fc89d: Refactor markdown workspace with controller boundary
+
   - Introduce `useEditorWorkspaceController` for workspace orchestration
   - Define shared editor and preview pane adapter interfaces
   - Move route view coordination behind controller state and APIs
   - Reuse shared workspace types in pane and toolbar components
   - Add controller-focused tests for shortcuts, sync, and draft restore
+
 - 8ca635b: Internalize workspace controller lifecycle
+
   - Move `start()`/`stop()` calls from MarkdownStudioView.vue into `useEditorWorkspaceController` via `onMounted`/`onUnmounted`
   - Harden lifecycle with idempotency guards (`isStarted` flag) and comprehensive error-path cleanup
   - Replace `setTimeout(0)` with `nextTick()` for deterministic editor focus after loading examples
