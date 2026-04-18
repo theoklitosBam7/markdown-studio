@@ -32,6 +32,7 @@ flowchart TD
 > A branch is a hypothesis. Merge it when it's proven.
 `,
     desc: 'A git feature branch workflow rendered as a Mermaid flowchart.',
+    id: 'flowchart-diagram',
     title: 'Flowchart diagram',
   },
   {
@@ -69,6 +70,7 @@ sequenceDiagram
 Never store tokens in \`localStorage\` — use **HttpOnly cookies** for refresh tokens.
 `,
     desc: 'HTTP authentication flow with JWT tokens.',
+    id: 'sequence-diagram',
     title: 'Sequence diagram',
   },
   {
@@ -119,6 +121,7 @@ erDiagram
 Posts and comments share the same \`author_id\` FK pointing to \`USER.id\`.
 `,
     desc: 'A blog platform database schema as an ER diagram.',
+    id: 'entity-relationship-diagram',
     title: 'Entity relationship diagram',
   },
   {
@@ -151,6 +154,7 @@ gantt
 > All dates subject to review after beta feedback.
 `,
     desc: 'A product launch project timeline.',
+    id: 'gantt-chart',
     title: 'Gantt chart',
   },
   {
@@ -215,6 +219,7 @@ console.log(greet("world")); // Hello, world!
 *Happy writing.*
 `,
     desc: 'A document exercising all markdown features — headings, code, tables, quotes, and a diagram.',
+    id: 'full-kitchen-sink',
     title: 'Full kitchen-sink',
   },
 ]

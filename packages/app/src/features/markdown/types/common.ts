@@ -8,6 +8,7 @@ export interface EditorStats {
 export interface Example {
   content: string
   desc: string
+  id: string
   title: string
 }
 

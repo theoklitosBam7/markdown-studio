@@ -25,6 +25,7 @@ interface UseDocumentSessionReturn {
   handleAppCommand: (command: AppCommand) => Promise<void>
   isDesktop: ComputedRef<boolean>
   isDirty: ComputedRef<boolean>
+  loadExampleDocument: (input: { content: string; title: string }) => Promise<void>
   openDocument: () => Promise<void>
   restoreDraft: (input: { content: string; label: string }) => Promise<void>
   saveDocument: () => Promise<void>
@@ -89,6 +90,16 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     draftLabel.value = input.label || 'Untitled.md'
     savedContent.value = ''
     lastAction.value = 'Restored local draft'
+    syncDocumentTitle()
+  }
+
+  async function loadExampleDocument(input: { content: string; title: string }): Promise<void> {
+    documents.clearCurrentDocumentReference()
+    options.replaceContent(input.content)
+    currentPath.value = null
+    draftLabel.value = null
+    savedContent.value = input.content
+    lastAction.value = `Loaded example: ${input.title}`
     syncDocumentTitle()
   }
 
@@ -161,6 +172,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     handleAppCommand,
     isDesktop,
     isDirty,
+    loadExampleDocument,
     openDocument,
     restoreDraft,
     saveDocument,
