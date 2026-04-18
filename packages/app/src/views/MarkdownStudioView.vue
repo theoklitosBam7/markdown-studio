@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
+import { useTemplateRef, watch } from 'vue'
 
 import type { EditorScrollPayload } from '@/features/markdown/types'
 
@@ -54,6 +54,7 @@ watch(
   editorPaneRef,
   (editorPane) => {
     if (!editorPane) {
+      workspace.attach.editor(null)
       return
     }
 
@@ -74,6 +75,7 @@ watch(
   previewPaneRef,
   (previewPane) => {
     if (!previewPane) {
+      workspace.attach.preview(null)
       return
     }
 
@@ -111,14 +113,6 @@ function handleStartNewDocument(): void {
     console.error('Failed to start new document:', error)
   })
 }
-
-onMounted(() => {
-  void workspace.system.start()
-})
-
-onUnmounted(() => {
-  workspace.system.stop()
-})
 </script>
 
 <template>
