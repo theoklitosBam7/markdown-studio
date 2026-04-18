@@ -2,8 +2,12 @@ packages:
   - packages/*
   - apps/*
 
+blockExoticSubdeps: true
+strictDepBuilds: true
+
 allowBuilds:
   cypress: true
   electron: true
   electron-winstaller: false
   esbuild: true
+  sharp: true

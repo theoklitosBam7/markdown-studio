@@ -37,6 +37,7 @@
     "test:unit": "pnpm -r test",
     "prepare": "cypress install",
     "generate-pwa-assets": "pwa-assets-generator",
+    "generate-desktop-icons": "node scripts/generate-desktop-icons.mjs",
     "test:e2e": "VITE_DISABLE_PWA=true pnpm build:web && start-server-and-test 'pnpm --filter @markdown-studio/web exec vite preview --port 4175' http://localhost:4175 'cypress run --e2e --config baseUrl=http://localhost:4175'",
     "test:e2e:dev": "start-server-and-test 'VITE_DISABLE_PWA=true pnpm --filter @markdown-studio/web dev -- --port 4175' http://localhost:4175 'cypress open --e2e --config baseUrl=http://localhost:4175'",
     "type-check": "vue-tsc --build",
@@ -69,7 +70,9 @@
     "npm-run-all2": "^8.0.4",
     "oxfmt": "^0.41.0",
     "oxlint": "~1.56.0",
+    "png-to-ico": "^3.0.1",
     "semver": "^7.7.4",
+    "sharp": "^0.34.5",
     "start-server-and-test": "^2.1.5",
     "typescript": "~5.9.3",
     "vue-tsc": "^3.2.6"
