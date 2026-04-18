@@ -185,7 +185,7 @@ function handleStartNewDocument(): void {
     <ExamplesModal
       :is-open="isExamplesModalOpen"
       @close="workspace.examples.close"
-      @select="workspace.editor.loadExample"
+      @select="workspace.document.loadExample"
     />
   </div>
 </template>

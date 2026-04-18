@@ -14,16 +14,15 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
-  select: [example: Example]
+  select: [exampleId: Example['id']]
 }>()
 
 function handleClose(): void {
   emit('close')
 }
 
-function handleSelect(example: Example): void {
-  emit('select', example)
-  emit('close')
+function handleSelect(exampleId: Example['id']): void {
+  emit('select', exampleId)
 }
 </script>
 
@@ -34,7 +33,7 @@ function handleSelect(example: Example): void {
     </template>
     <ExampleCard
       v-for="example in EXAMPLES"
-      :key="example.title"
+      :key="example.id"
       :example="example"
       @select="handleSelect"
     />

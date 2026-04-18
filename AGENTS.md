@@ -12,6 +12,11 @@
 - Use the appropriate issue or PR template when creating a new issue or PR located in the `.github` directory.
 - If the template doesn't fit, update it to match the new use case.
 
+## Changesets Validation
+
+- `markdown-studio` package is always affected when `@markdown-studio/app`, `@markdown-studio/web` have changes.
+- Run `pnpm changeset:validate-scopes` after you perform changeset actions.
+
 ## Project Snapshot
 
 Markdown Studio is a Vue 3 + Electron Markdown editor with live preview, Mermaid diagram support, and a split web/desktop experience. The repo is intentionally lightweight and still evolving, so changes that improve long-term clarity, maintainability, and UI quality are welcome.

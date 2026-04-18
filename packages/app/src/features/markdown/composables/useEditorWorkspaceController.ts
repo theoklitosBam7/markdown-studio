@@ -7,7 +7,7 @@ import { usePwa } from '@/composables/usePwa'
 import { useThemeTransition } from '@/composables/useThemeTransition'
 import { useUpdateChecker } from '@/composables/useUpdateChecker'
 
-import type { ViewMode } from '../types'
+import type { Example, ViewMode } from '../types'
 import type {
   EditorPaneAdapter,
   EditorScrollPayload,
@@ -17,6 +17,7 @@ import type {
   ThemeChangeRequest,
 } from '../types/workspace'
 
+import { EXAMPLES } from './examples'
 import { useDocumentExport } from './useDocumentExport'
 import { useDocumentSession } from './useDocumentSession'
 import { useFindReplace } from './useFindReplace'
@@ -43,7 +44,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     content,
     copyContent,
     isCopied,
-    loadExample,
     renderedHtml,
     renderMermaidDiagrams,
     setTheme,
@@ -63,6 +63,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     handleAppCommand,
     isDesktop,
     isDirty,
+    loadExampleDocument,
     openDocument,
     restoreDraft,
     saveDocument,
@@ -319,11 +320,36 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     editorAdapter?.focus()
   }
 
+  async function focusEditorAfterDocumentAction(): Promise<void> {
+    await nextTick()
+    editorPane.value?.focus()
+  }
+
+  async function performDocumentAction(action: () => Promise<void>): Promise<void> {
+    await action()
+    await focusEditorAfterDocumentAction()
+  }
+
+  async function openWorkspaceDocument(): Promise<void> {
+    await performDocumentAction(openDocument)
+  }
+
+  async function saveWorkspaceDocument(): Promise<void> {
+    await performDocumentAction(saveDocument)
+  }
+
   async function startNew(): Promise<void> {
-    await startNewDocument()
-    if (!content.value) {
-      clearDraft()
-    }
+    await performDocumentAction(async () => {
+      await startNewDocument()
+
+      if (!content.value) {
+        clearDraft()
+      }
+    })
+  }
+
+  async function restoreWorkspaceDraft(): Promise<void> {
+    await performDocumentAction(restoreStoredDraft)
   }
 
   async function setWorkspaceTheme(request: ThemeChangeRequest): Promise<void> {
@@ -334,10 +360,20 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     })
   }
 
-  async function loadWorkspaceExample(example: Parameters<typeof loadExample>[0]): Promise<void> {
-    loadExample(example)
-    await nextTick()
-    editorPane.value?.focus()
+  async function loadWorkspaceExample(exampleId: Example['id']): Promise<void> {
+    const selectedExample = EXAMPLES.find((example) => example.id === exampleId)
+    if (!selectedExample) {
+      console.warn(`Unknown example id received: ${exampleId}`)
+      return
+    }
+
+    await performDocumentAction(async () => {
+      await loadExampleDocument({
+        content: selectedExample.content.trim(),
+        title: selectedExample.title,
+      })
+      closeExamples()
+    })
   }
 
   async function jumpToOffset(offset: number): Promise<void> {
@@ -359,7 +395,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       window.addEventListener('keydown', handleGlobalKeydown)
       startUpdateChecks()
       syncViewport(window.innerWidth)
-      await restoreStoredDraft()
+      await restoreWorkspaceDraft()
 
       const onAppCommand = desktop.value?.commands?.onAppCommand
       if (onAppCommand) {
@@ -477,23 +513,23 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       async handleAppCommand(command: AppCommand): Promise<void> {
         await handleDesktopCommand(command)
       },
+      async loadExample(exampleId: Example['id']): Promise<void> {
+        await loadWorkspaceExample(exampleId)
+      },
       async open(): Promise<void> {
-        await openDocument()
+        await openWorkspaceDocument()
       },
       async restoreDraft(): Promise<void> {
-        await restoreStoredDraft()
+        await restoreWorkspaceDraft()
       },
       async save(): Promise<void> {
-        await saveDocument()
+        await saveWorkspaceDocument()
       },
       async startNew(): Promise<void> {
         await startNew()
       },
     },
     editor: {
-      async loadExample(example) {
-        await loadWorkspaceExample(example)
-      },
       async setTheme(request: ThemeChangeRequest) {
         await setWorkspaceTheme(request)
       },

@@ -43,13 +43,13 @@ export interface EditorWorkspaceController {
   }
   document: {
     handleAppCommand(command: AppCommand): Promise<void>
+    loadExample(exampleId: Example['id']): Promise<void>
     open(): Promise<void>
     restoreDraft(): Promise<void>
     save(): Promise<void>
     startNew(): Promise<void>
   }
   editor: {
-    loadExample(example: Example): Promise<void>
     setTheme(request: ThemeChangeRequest): Promise<void>
     setViewMode(mode: ViewMode): void
     syncPreviewToEditorPosition(payload?: EditorScrollPayload | null): void

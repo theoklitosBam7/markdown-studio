@@ -123,6 +123,8 @@ describe('useEditorWorkspaceController', () => {
     const { workspace, wrapper } = await mountWorkspace()
     const editor = createEditorAdapter()
     workspace.attach.editor(editor)
+    await flushPromises()
+    vi.mocked(editor.focus).mockClear()
 
     workspace.editor.updateContent('cat dog cat')
     await workspace.find.dispatch({ type: 'set-query', value: 'cat' })
@@ -218,19 +220,36 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
-  it('loads an example and restores editor focus after the update flushes', async () => {
+  it('loads an example by id through the document api and restores editor focus', async () => {
     const { workspace, wrapper } = await mountWorkspace()
     const editor = createEditorAdapter()
     workspace.attach.editor(editor)
+    await flushPromises()
+    vi.mocked(editor.focus).mockClear()
 
-    await workspace.editor.loadExample({
-      content: '# Example content',
-      desc: 'Example description',
-      title: 'Example title',
-    })
+    await workspace.document.loadExample('flowchart-diagram')
 
-    expect(workspace.state.content.value).toBe('# Example content')
+    expect(workspace.state.content.value).toContain('# Git Feature Branch Workflow')
+    expect(workspace.state.statusText.value).toContain('Loaded example: Flowchart diagram')
     expect(editor.focus).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+  })
+
+  it('warns and keeps the editor unchanged when an unknown example id is requested', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    const warningSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    workspace.attach.editor(editor)
+    workspace.editor.updateContent('# Existing content')
+    await flushPromises()
+    vi.mocked(editor.focus).mockClear()
+
+    await workspace.document.loadExample('unknown-example-id')
+
+    expect(workspace.state.content.value).toBe('# Existing content')
+    expect(editor.focus).not.toHaveBeenCalled()
+    expect(warningSpy).toHaveBeenCalledWith('Unknown example id received: unknown-example-id')
 
     wrapper.unmount()
   })
@@ -264,6 +283,60 @@ describe('useEditorWorkspaceController', () => {
     expect(workspace.state.content.value).toBe('# Restored draft')
     expect(workspace.state.displayName.value).toBe('notes.md')
     expect(workspace.state.isDirty.value).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('restores editor focus after every document lifecycle action', async () => {
+    const open = vi.fn(async () => ({ content: '# Opened', path: 'opened.md' }))
+    const save = vi.fn(async () => ({ path: 'saved.md' }))
+
+    appWindow.desktop = {
+      commands: {
+        onAppCommand: vi.fn(() => () => undefined),
+      },
+      documents: {
+        open,
+        save,
+        saveAs: async () => null,
+      },
+      editing: {
+        insertText: async () => undefined,
+      },
+      exports: {
+        exportHtml: async () => null,
+        exportPdf: async () => null,
+      },
+      isDesktop: true,
+      shell: {
+        openExternal: async () => undefined,
+      },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    workspace.attach.editor(editor)
+    await flushPromises()
+    vi.mocked(editor.focus).mockClear()
+
+    await workspace.document.open()
+    await workspace.document.save()
+    await workspace.document.startNew()
+
+    window.localStorage.setItem(
+      'markdown-studio:web-draft',
+      JSON.stringify({
+        content: '# Restored from storage',
+        label: 'draft.md',
+      }),
+    )
+
+    await workspace.document.restoreDraft()
+    await workspace.document.loadExample('flowchart-diagram')
+
+    expect(open).toHaveBeenCalledTimes(1)
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(editor.focus).toHaveBeenCalledTimes(5)
 
     wrapper.unmount()
   })

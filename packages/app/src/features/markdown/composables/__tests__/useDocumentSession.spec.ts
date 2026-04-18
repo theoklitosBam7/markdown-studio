@@ -115,6 +115,30 @@ describe('useDocumentSession', () => {
     expect(session.isDirty.value).toBe(false)
   })
 
+  it('clears previous file and edited state when loading an example', async () => {
+    const { content, session } = createSession()
+
+    await session.openDocument()
+    content.value = '# Edited loaded file'
+    await nextTick()
+
+    expect(session.currentPath.value).toBe('/tmp/loaded.md')
+    expect(session.isDirty.value).toBe(true)
+    expect(session.statusText.value).toContain('Edited')
+
+    await session.loadExampleDocument({
+      content: '# Example content',
+      title: 'Flowchart diagram',
+    })
+    await nextTick()
+
+    expect(content.value).toBe('# Example content')
+    expect(session.currentPath.value).toBe(null)
+    expect(session.displayName.value).toBe('Untitled.md')
+    expect(session.isDirty.value).toBe(false)
+    expect(session.statusText.value).toBe('Loaded example: Flowchart diagram')
+  })
+
   it('handles app command routing', async () => {
     const { session } = createSession()
 

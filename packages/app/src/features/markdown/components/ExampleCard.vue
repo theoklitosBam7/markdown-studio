@@ -8,11 +8,11 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  select: [example: Example]
+  select: [exampleId: Example['id']]
 }>()
 
 function handleClick(): void {
-  emit('select', props.example)
+  emit('select', props.example.id)
 }
 
 function handleKeyDown(event: KeyboardEvent): void {
