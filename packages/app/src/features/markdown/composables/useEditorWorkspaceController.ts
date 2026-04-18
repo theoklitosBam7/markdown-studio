@@ -12,6 +12,7 @@ import type {
   EditorPaneAdapter,
   EditorScrollPayload,
   EditorWorkspaceController,
+  EditorWorkspaceFindAction,
   PreviewPaneAdapter,
   ThemeChangeRequest,
 } from '../types/workspace'
@@ -149,6 +150,16 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     'view-editor': viewMode.value === 'editor',
     'view-preview': viewMode.value === 'preview',
     'view-split': viewMode.value === 'split',
+  }))
+  const findState = computed(() => ({
+    activeMatchIndex: activeMatchIndex.value,
+    isOpen: isFindReplaceOpen.value,
+    matchCase: matchCase.value,
+    matchCount: matchCount.value,
+    matches: matches.value,
+    query: query.value,
+    replaceText: replaceText.value,
+    showReplace: showReplace.value,
   }))
 
   let removeDesktopCommandListener: () => void = () => undefined
@@ -431,7 +442,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     }
   }
 
-  function closeFind(): void {
+  function closeFindPanel(): void {
     closeFindReplace()
     editorPane.value?.focus()
   }
@@ -503,20 +514,43 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
     },
     find: {
-      close: closeFind,
-      next: findNext,
-      open: openFindPanel,
-      openReplace: openReplacePanel,
-      previous: findPrevious,
-      async replaceAll(): Promise<void> {
-        await replaceAll()
+      async dispatch(action: EditorWorkspaceFindAction): Promise<void> {
+        switch (action.type) {
+          case 'close':
+            closeFindPanel()
+            return
+          case 'next':
+            findNext()
+            return
+          case 'open':
+            openFindPanel()
+            return
+          case 'open-replace':
+            openReplacePanel()
+            return
+          case 'previous':
+            findPrevious()
+            return
+          case 'replace-all':
+            await replaceAll()
+            return
+          case 'replace-current':
+            await replaceCurrent()
+            return
+          case 'set-match-case':
+            setMatchCase(action.value)
+            return
+          case 'set-query':
+            setQuery(action.value)
+            return
+          case 'set-replace-text':
+            setReplaceText(action.value)
+            return
+          default:
+            action satisfies never
+        }
       },
-      async replaceCurrent(): Promise<void> {
-        await replaceCurrent()
-      },
-      setMatchCase,
-      setQuery,
-      setReplaceText,
+      state: findState,
     },
     preview: {
       async jumpToOffset(offset: number): Promise<void> {
@@ -527,7 +561,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
     },
     state: {
-      activeMatchIndex,
       availableModes,
       bannerStatus,
       bodyClasses,
@@ -542,21 +575,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       isDesktop,
       isDirty,
       isExamplesModalOpen,
-      isFindReplaceOpen,
       isMobile,
-      matchCase,
-      matchCount,
-      matches,
       needRefresh,
       offlineReady,
       pdfExportUnavailableReason,
       pwaBannerStatus,
-      query,
       renderedHtml,
-      replaceText,
       showBanner,
       showPwaBanner,
-      showReplace,
       sourceMap,
       stats,
       statusText,

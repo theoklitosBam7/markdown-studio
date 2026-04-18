@@ -5,49 +5,38 @@ import type { AppWindow } from '@/browser-window'
 
 import { insertTextAtSelection } from '@/utils/insertTextAtSelection'
 
-import type { FindMatch } from '../composables/useFindReplace'
-import type { EditorScrollPayload } from '../types'
+import type {
+  EditorScrollPayload,
+  EditorWorkspaceFindAction,
+  EditorWorkspaceFindState,
+} from '../types'
 
 import FindReplaceBar from './FindReplaceBar.vue'
 import MatchOverlay from './MatchOverlay.vue'
 
 interface Props {
-  activeMatchIndex?: number
   content: string
-  findOpen?: boolean
+  findState?: EditorWorkspaceFindState
   lineCount: number
-  matchCase?: boolean
-  matchCount?: number
-  matches?: FindMatch[]
-  query?: string
-  replaceText?: string
-  showReplace?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  activeMatchIndex: -1,
-  findOpen: false,
-  matchCase: false,
-  matchCount: 0,
-  matches: () => [],
-  query: '',
-  replaceText: '',
-  showReplace: false,
+  findState: () => ({
+    activeMatchIndex: -1,
+    isOpen: false,
+    matchCase: false,
+    matchCount: 0,
+    matches: [],
+    query: '',
+    replaceText: '',
+    showReplace: false,
+  }),
 })
 
 const emit = defineEmits<{
-  'find:close': []
-  'find:next': []
-  'find:previous': []
-  'find:replace-all': []
-  'find:replace-current': []
-  'request-find': []
-  'request-replace': []
+  'find-action': [action: EditorWorkspaceFindAction]
   scroll: [payload: EditorScrollPayload]
   'update:content': [value: string]
-  'update:match-case': [value: boolean]
-  'update:query': [value: string]
-  'update:replace-text': [value: string]
 }>()
 
 const editorRef = useTemplateRef<HTMLTextAreaElement>('editor')
@@ -121,14 +110,14 @@ function handleKeydown(event: KeyboardEvent): void {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
     event.preventDefault()
     event.stopPropagation()
-    emit('request-find')
+    emit('find-action', { type: 'open' })
     return
   }
 
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'h') {
     event.preventDefault()
     event.stopPropagation()
-    emit('request-replace')
+    emit('find-action', { type: 'open-replace' })
     return
   }
 
@@ -259,29 +248,29 @@ watch(
     </div>
 
     <FindReplaceBar
-      v-if="findOpen"
+      v-if="findState.isOpen"
       ref="findReplaceBar"
-      :active-match-number="activeMatchIndex >= 0 ? activeMatchIndex + 1 : 0"
-      :match-case="matchCase"
-      :match-count="matchCount"
-      :query="query"
-      :replace-text="replaceText"
-      :show-replace="showReplace"
-      @close="emit('find:close')"
-      @next="emit('find:next')"
-      @previous="emit('find:previous')"
-      @replace-all="emit('find:replace-all')"
-      @replace-current="emit('find:replace-current')"
-      @update:match-case="emit('update:match-case', $event)"
-      @update:query="emit('update:query', $event)"
-      @update:replace-text="emit('update:replace-text', $event)"
+      :active-match-number="findState.activeMatchIndex >= 0 ? findState.activeMatchIndex + 1 : 0"
+      :match-case="findState.matchCase"
+      :match-count="findState.matchCount"
+      :query="findState.query"
+      :replace-text="findState.replaceText"
+      :show-replace="findState.showReplace"
+      @close="emit('find-action', { type: 'close' })"
+      @next="emit('find-action', { type: 'next' })"
+      @previous="emit('find-action', { type: 'previous' })"
+      @replace-all="emit('find-action', { type: 'replace-all' })"
+      @replace-current="emit('find-action', { type: 'replace-current' })"
+      @update:match-case="emit('find-action', { type: 'set-match-case', value: $event })"
+      @update:query="emit('find-action', { type: 'set-query', value: $event })"
+      @update:replace-text="emit('find-action', { type: 'set-replace-text', value: $event })"
     />
 
     <div class="editor-body">
       <MatchOverlay
-        :active-match-index="activeMatchIndex"
+        :active-match-index="findState.activeMatchIndex"
         :content="content"
-        :matches="findOpen ? matches : []"
+        :matches="findState.isOpen ? findState.matches : []"
         :scrollbar-width="scrollbarWidth"
         :scroll-top="scrollTop"
       />

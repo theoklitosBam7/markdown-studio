@@ -9,16 +9,18 @@ function mountEditorPane(overrides: Record<string, unknown> = {}) {
   return mount(EditorPane, {
     attachTo: document.body,
     props: {
-      activeMatchIndex: -1,
       content: 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6',
-      findOpen: false,
+      findState: {
+        activeMatchIndex: -1,
+        isOpen: false,
+        matchCase: false,
+        matchCount: 0,
+        matches: [],
+        query: '',
+        replaceText: '',
+        showReplace: false,
+      },
       lineCount: 6,
-      matchCase: false,
-      matchCount: 0,
-      matches: [],
-      query: '',
-      replaceText: '',
-      showReplace: false,
       ...overrides,
     },
   })
@@ -82,23 +84,25 @@ describe('EditorPane', () => {
     await wrapper.get('textarea').trigger('keydown', { ctrlKey: true, key: 'f' })
     await wrapper.get('textarea').trigger('keydown', { key: 'h', metaKey: true })
 
-    expect(wrapper.emitted('request-find')).toHaveLength(1)
-    expect(wrapper.emitted('request-replace')).toHaveLength(1)
+    expect(wrapper.emitted('find-action')).toEqual([[{ type: 'open' }], [{ type: 'open-replace' }]])
   })
 
   it('renders the inline find UI and emits navigation and close actions', async () => {
     const wrapper = mountEditorPane({
-      activeMatchIndex: 1,
-      findOpen: true,
-      matchCount: 3,
-      matches: [
-        { end: 4, index: 0, length: 4 },
-        { end: 10, index: 6, length: 4 },
-        { end: 16, index: 12, length: 4 },
-      ],
-      query: 'line',
-      replaceText: 'row',
-      showReplace: true,
+      findState: {
+        activeMatchIndex: 1,
+        isOpen: true,
+        matchCase: false,
+        matchCount: 3,
+        matches: [
+          { end: 4, index: 0, length: 4 },
+          { end: 10, index: 6, length: 4 },
+          { end: 16, index: 12, length: 4 },
+        ],
+        query: 'line',
+        replaceText: 'row',
+        showReplace: true,
+      },
     })
 
     expect(wrapper.text()).toContain('2 of 3')
@@ -112,17 +116,25 @@ describe('EditorPane', () => {
     await queryInput!.trigger('keydown', { key: 'Enter', shiftKey: true })
     await replaceInput!.trigger('keydown', { key: 'Escape' })
 
-    expect(wrapper.emitted('find:next')).toHaveLength(1)
-    expect(wrapper.emitted('find:previous')).toHaveLength(1)
-    expect(wrapper.emitted('find:close')).toHaveLength(1)
+    expect(wrapper.emitted('find-action')).toEqual([
+      [{ type: 'next' }],
+      [{ type: 'previous' }],
+      [{ type: 'close' }],
+    ])
   })
 
   it('disables replace actions when there are no matches', () => {
     const wrapper = mountEditorPane({
-      findOpen: true,
-      matchCount: 0,
-      query: 'missing',
-      showReplace: true,
+      findState: {
+        activeMatchIndex: -1,
+        isOpen: true,
+        matchCase: false,
+        matchCount: 0,
+        matches: [],
+        query: 'missing',
+        replaceText: '',
+        showReplace: true,
+      },
     })
 
     const replaceButtons = wrapper
@@ -237,16 +249,21 @@ describe('EditorPane', () => {
 
   it('does not move focus away from the editor when clicking find controls', async () => {
     const wrapper = mountEditorPane({
-      activeMatchIndex: 0,
       content: 'item one item two',
-      findOpen: true,
+      findState: {
+        activeMatchIndex: 0,
+        isOpen: true,
+        matchCase: false,
+        matchCount: 2,
+        matches: [
+          { end: 4, index: 0, length: 4 },
+          { end: 13, index: 9, length: 4 },
+        ],
+        query: 'item',
+        replaceText: '',
+        showReplace: false,
+      },
       lineCount: 1,
-      matchCount: 2,
-      matches: [
-        { end: 4, index: 0, length: 4 },
-        { end: 13, index: 9, length: 4 },
-      ],
-      query: 'item',
     })
 
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
