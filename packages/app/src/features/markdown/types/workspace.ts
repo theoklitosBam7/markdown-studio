@@ -64,16 +64,8 @@ export interface EditorWorkspaceController {
     pdf(): Promise<void>
   }
   find: {
-    close(): void
-    next(): void
-    open(): void
-    openReplace(): void
-    previous(): void
-    replaceAll(): Promise<void>
-    replaceCurrent(): Promise<void>
-    setMatchCase(value: boolean): void
-    setQuery(value: string): void
-    setReplaceText(value: string): void
+    dispatch(action: EditorWorkspaceFindAction): Promise<void>
+    state: ComputedRef<EditorWorkspaceFindState>
   }
   preview: {
     jumpToOffset(offset: number): Promise<void>
@@ -96,6 +88,29 @@ export interface EditorWorkspaceController {
   }
 }
 
+export type EditorWorkspaceFindAction =
+  | { type: 'close' }
+  | { type: 'next' }
+  | { type: 'open-replace' }
+  | { type: 'open' }
+  | { type: 'previous' }
+  | { type: 'replace-all' }
+  | { type: 'replace-current' }
+  | { type: 'set-match-case'; value: boolean }
+  | { type: 'set-query'; value: string }
+  | { type: 'set-replace-text'; value: string }
+
+export interface EditorWorkspaceFindState {
+  activeMatchIndex: number
+  isOpen: boolean
+  matchCase: boolean
+  matchCount: number
+  matches: FindMatch[]
+  query: string
+  replaceText: string
+  showReplace: boolean
+}
+
 /**
  * Controller-facing state shape consumed by the workspace view.
  *
@@ -104,7 +119,6 @@ export interface EditorWorkspaceController {
  * rather than the primary orchestration owner.
  */
 export interface EditorWorkspaceState {
-  activeMatchIndex: Readonly<Ref<number>>
   availableModes: Readonly<Ref<ViewMode[]>>
   bannerStatus: Readonly<Ref<'up-to-date' | 'update-available'>>
   bodyClasses: ComputedRef<Record<string, boolean>>
@@ -119,21 +133,14 @@ export interface EditorWorkspaceState {
   isDesktop: Readonly<Ref<boolean>>
   isDirty: Readonly<Ref<boolean>>
   isExamplesModalOpen: ShallowRef<boolean>
-  isFindReplaceOpen: Readonly<Ref<boolean>>
   isMobile: ShallowRef<boolean>
-  matchCase: Readonly<Ref<boolean>>
-  matchCount: Readonly<Ref<number>>
-  matches: Readonly<Ref<FindMatch[]>>
   needRefresh: Readonly<Ref<boolean>>
   offlineReady: Readonly<Ref<boolean>>
   pdfExportUnavailableReason: Readonly<Ref<string>>
   pwaBannerStatus: Readonly<Ref<'offline-ready' | 'update-available'>>
-  query: Readonly<Ref<string>>
   renderedHtml: Readonly<Ref<string>>
-  replaceText: Readonly<Ref<string>>
   showBanner: Readonly<Ref<boolean>>
   showPwaBanner: Readonly<Ref<boolean>>
-  showReplace: Readonly<Ref<boolean>>
   sourceMap: Readonly<Ref<MarkdownSourceMapEntry[]>>
   stats: Readonly<Ref<EditorStats>>
   statusText: Readonly<Ref<string>>

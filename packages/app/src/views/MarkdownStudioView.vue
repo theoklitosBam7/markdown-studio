@@ -14,7 +14,6 @@ import { useEditorWorkspaceController } from '@/features/markdown/composables/us
 
 const workspace = useEditorWorkspaceController()
 const {
-  activeMatchIndex,
   availableModes,
   bannerStatus,
   bodyClasses,
@@ -27,19 +26,12 @@ const {
   isCopied,
   isDirty,
   isExamplesModalOpen,
-  isFindReplaceOpen,
   isMobile,
-  matchCase,
-  matchCount,
-  matches,
   pdfExportUnavailableReason,
   pwaBannerStatus,
-  query,
   renderedHtml,
-  replaceText,
   showBanner,
   showPwaBanner,
-  showReplace,
   sourceMap,
   stats,
   statusText,
@@ -161,30 +153,15 @@ function handleStartNewDocument(): void {
     </Transition>
 
     <main class="main-content">
+      <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
       <EditorPane
         ref="editorPane"
-        :active-match-index="activeMatchIndex"
         :content="content"
-        :find-open="isFindReplaceOpen"
+        :find-state="workspace.find.state.value"
         :line-count="stats.lines"
-        :match-case="matchCase"
-        :match-count="matchCount"
-        :matches="matches"
-        :query="query"
-        :replace-text="replaceText"
-        :show-replace="showReplace"
-        @find:close="workspace.find.close"
-        @find:next="workspace.find.next"
-        @find:previous="workspace.find.previous"
-        @find:replace-all="workspace.find.replaceAll"
-        @find:replace-current="workspace.find.replaceCurrent"
-        @request-find="workspace.find.open"
-        @request-replace="workspace.find.openReplace"
+        @find-action="workspace.find.dispatch"
         @scroll="handleEditorScroll"
         @update:content="workspace.editor.updateContent"
-        @update:match-case="workspace.find.setMatchCase"
-        @update:query="workspace.find.setQuery"
-        @update:replace-text="workspace.find.setReplaceText"
       />
       <PreviewPane
         ref="previewPane"

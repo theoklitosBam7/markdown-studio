@@ -7,6 +7,7 @@ import type { AppWindow } from '@/browser-window'
 import type {
   EditorPaneAdapter,
   EditorWorkspaceController,
+  EditorWorkspaceFindAction,
   PreviewPaneAdapter,
 } from '@/features/markdown/types'
 
@@ -111,8 +112,8 @@ describe('useEditorWorkspaceController', () => {
     )
     await nextTick()
 
-    expect(workspace.state.isFindReplaceOpen.value).toBe(true)
-    expect(workspace.state.showReplace.value).toBe(true)
+    expect(workspace.find.state.value.isOpen).toBe(true)
+    expect(workspace.find.state.value.showReplace).toBe(true)
     expect(editor.focusFindQuery).toHaveBeenCalledTimes(1)
 
     wrapper.unmount()
@@ -124,14 +125,14 @@ describe('useEditorWorkspaceController', () => {
     workspace.attach.editor(editor)
 
     workspace.editor.updateContent('cat dog cat')
-    workspace.find.setQuery('cat')
-    workspace.find.setReplaceText('fox')
+    await workspace.find.dispatch({ type: 'set-query', value: 'cat' })
+    await workspace.find.dispatch({ type: 'set-replace-text', value: 'fox' })
 
-    await workspace.find.replaceCurrent()
+    await workspace.find.dispatch({ type: 'replace-current' })
 
     expect(editor.replaceRange).toHaveBeenCalledWith(0, 3, 'fox')
     expect(editor.focus).toHaveBeenCalledTimes(1)
-    expect(workspace.state.activeMatchIndex.value).toBe(0)
+    expect(workspace.find.state.value.activeMatchIndex).toBe(0)
 
     wrapper.unmount()
   })
@@ -181,6 +182,38 @@ describe('useEditorWorkspaceController', () => {
     workspace.editor.setViewMode('editor')
     await workspace.preview.jumpToOffset(24)
     expect(editor.focusAtOffset).not.toHaveBeenCalled()
+
+    workspace.editor.setViewMode('split')
+    workspace.system.handleViewportResize(640)
+    await workspace.preview.jumpToOffset(32)
+    expect(editor.focusAtOffset).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('handles all supported find actions without throwing', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    workspace.attach.editor(editor)
+
+    workspace.editor.updateContent('cat dog cat')
+
+    const actions: EditorWorkspaceFindAction[] = [
+      { type: 'open' },
+      { type: 'open-replace' },
+      { type: 'close' },
+      { type: 'next' },
+      { type: 'previous' },
+      { type: 'set-query', value: 'cat' },
+      { type: 'set-match-case', value: true },
+      { type: 'set-replace-text', value: 'fox' },
+      { type: 'replace-current' },
+      { type: 'replace-all' },
+    ]
+
+    for (const action of actions) {
+      await expect(workspace.find.dispatch(action)).resolves.toBeUndefined()
+    }
 
     wrapper.unmount()
   })
