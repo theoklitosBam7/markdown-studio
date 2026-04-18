@@ -185,6 +185,23 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
+  it('loads an example and restores editor focus after the update flushes', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    workspace.attach.editor(editor)
+
+    await workspace.editor.loadExample({
+      content: '# Example content',
+      desc: 'Example description',
+      title: 'Example title',
+    })
+
+    expect(workspace.state.content.value).toBe('# Example content')
+    expect(editor.focus).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+  })
+
   it('collapses split view to editor mode on mobile viewport changes', async () => {
     const { workspace, wrapper } = await mountWorkspace()
 
@@ -209,15 +226,53 @@ describe('useEditorWorkspaceController', () => {
     )
 
     const { workspace, wrapper } = await mountWorkspace()
-
-    await workspace.system.start()
     await flushPromises()
 
     expect(workspace.state.content.value).toBe('# Restored draft')
     expect(workspace.state.displayName.value).toBe('notes.md')
     expect(workspace.state.isDirty.value).toBe(true)
 
-    workspace.system.stop()
     wrapper.unmount()
+  })
+
+  it('auto-starts on mount and stops desktop command subscriptions on unmount', async () => {
+    const removeDesktopCommandListener = vi.fn()
+    const onAppCommand = vi.fn(() => removeDesktopCommandListener)
+
+    appWindow.desktop = {
+      commands: {
+        onAppCommand,
+      },
+      documents: {
+        open: async () => null,
+        save: async () => null,
+        saveAs: async () => null,
+      },
+      editing: {
+        insertText: async () => undefined,
+      },
+      exports: {
+        exportHtml: async () => null,
+        exportPdf: async () => null,
+      },
+      isDesktop: true,
+      shell: {
+        openExternal: async () => undefined,
+      },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    await flushPromises()
+
+    expect(onAppCommand).toHaveBeenCalledTimes(1)
+    expect(workspace.state.isDesktop.value).toBe(true)
+
+    // Verify idempotency: calling start() again should not re-register listeners
+    await workspace.system.start()
+    expect(onAppCommand).toHaveBeenCalledTimes(1) // Still only called once from the first start
+
+    wrapper.unmount()
+
+    expect(removeDesktopCommandListener).toHaveBeenCalledTimes(1)
   })
 })

@@ -1,6 +1,6 @@
 import type { AppCommand } from '@markdown-studio/desktop-contract/types'
 
-import { computed, nextTick, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 
 import { useDesktop } from '@/composables/useDesktop'
 import { usePwa } from '@/composables/usePwa'
@@ -36,6 +36,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   const previewPane = shallowRef<null | PreviewPaneAdapter>(null)
   const isExamplesModalOpen = shallowRef(false)
   const isMobile = shallowRef(false)
+  const isStarted = shallowRef(false)
 
   const {
     content,
@@ -166,18 +167,17 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       await nextTick()
       syncPreviewToEditorPosition()
     },
-    { deep: true },
   )
 
   watch(requestSelectionSync, () => {
     syncFindSelection()
   })
 
-  function attachEditor(adapter: EditorPaneAdapter): void {
+  function attachEditor(adapter: EditorPaneAdapter | null): void {
     editorPane.value = adapter
   }
 
-  function attachPreview(adapter: PreviewPaneAdapter): void {
+  function attachPreview(adapter: null | PreviewPaneAdapter): void {
     previewPane.value = adapter
   }
 
@@ -286,9 +286,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       return
     }
 
-    await editorPane.value?.replaceAllContent(replacementPlan.nextContent)
+    const editorAdapter = editorPane.value
+    await editorAdapter?.replaceAllContent(replacementPlan.nextContent)
     commitReplacement(replacementPlan.nextActiveIndex)
-    editorPane.value?.focus()
+    editorAdapter?.focus()
   }
 
   async function replaceCurrent(): Promise<void> {
@@ -297,13 +298,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       return
     }
 
-    await editorPane.value?.replaceRange(
+    const editorAdapter = editorPane.value
+    await editorAdapter?.replaceRange(
       replacementPlan.match.index,
       replacementPlan.match.end,
       replacementPlan.replacement,
     )
     commitReplacement(replacementPlan.nextActiveIndex)
-    editorPane.value?.focus()
+    editorAdapter?.focus()
   }
 
   async function startNew(): Promise<void> {
@@ -323,9 +325,8 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
   async function loadWorkspaceExample(example: Parameters<typeof loadExample>[0]): Promise<void> {
     loadExample(example)
-    setTimeout(() => {
-      editorPane.value?.focus()
-    }, 0)
+    await nextTick()
+    editorPane.value?.focus()
   }
 
   async function jumpToOffset(offset: number): Promise<void> {
@@ -335,29 +336,48 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   }
 
   async function start(): Promise<void> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || isStarted.value === true) {
       return
     }
 
-    syncViewport(window.innerWidth)
-    window.addEventListener('resize', handleWindowResize)
-    window.addEventListener('keydown', handleGlobalKeydown)
-    startUpdateChecks()
-    await restoreStoredDraft()
+    // Set flag immediately to prevent concurrent start attempts
+    isStarted.value = true
 
-    const onAppCommand = desktop.value?.commands?.onAppCommand
-    if (onAppCommand) {
-      removeDesktopCommandListener = onAppCommand((command: AppCommand) => {
-        void handleDesktopCommand(command).catch((error: unknown) => {
-          console.error('Failed to handle desktop app command:', error)
+    try {
+      window.addEventListener('resize', handleWindowResize)
+      window.addEventListener('keydown', handleGlobalKeydown)
+      startUpdateChecks()
+      syncViewport(window.innerWidth)
+      await restoreStoredDraft()
+
+      const onAppCommand = desktop.value?.commands?.onAppCommand
+      if (onAppCommand) {
+        removeDesktopCommandListener = onAppCommand((command: AppCommand) => {
+          void handleDesktopCommand(command).catch((error: unknown) => {
+            console.error('Failed to handle desktop app command:', error)
+          })
         })
-      })
-    } else {
+      } else {
+        removeDesktopCommandListener = () => undefined
+      }
+    } catch (error) {
+      window.removeEventListener('resize', handleWindowResize)
+      window.removeEventListener('keydown', handleGlobalKeydown)
+      removeDesktopCommandListener()
       removeDesktopCommandListener = () => undefined
+      stopUpdateChecks()
+      isStarted.value = false
+      throw error
     }
   }
 
   function stop(): void {
+    if (isStarted.value !== true) {
+      return
+    }
+
+    isStarted.value = false
+
     if (typeof window !== 'undefined') {
       window.removeEventListener('resize', handleWindowResize)
       window.removeEventListener('keydown', handleGlobalKeydown)
@@ -428,6 +448,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   async function installApp(): Promise<void> {
     await install()
   }
+
+  onMounted(() => {
+    void start()
+  })
+
+  onUnmounted(() => {
+    stop()
+  })
 
   return {
     attach: {

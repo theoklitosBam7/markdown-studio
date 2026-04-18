@@ -2,7 +2,7 @@ import type { AppCommand } from '@markdown-studio/desktop-contract/types'
 import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
 import type { FindMatch } from '../composables/useFindReplace'
-import type { EditorStats, Example, MarkdownSourceMapEntry, Theme, ViewMode } from './index'
+import type { EditorStats, Example, MarkdownSourceMapEntry, Theme, ViewMode } from './common'
 
 /**
  * Imperative capabilities exposed by the editor pane.
@@ -38,8 +38,8 @@ export interface EditorScrollPayload {
 
 export interface EditorWorkspaceController {
   attach: {
-    editor(adapter: EditorPaneAdapter): void
-    preview(adapter: PreviewPaneAdapter): void
+    editor(adapter: EditorPaneAdapter | null): void
+    preview(adapter: null | PreviewPaneAdapter): void
   }
   document: {
     handleAppCommand(command: AppCommand): Promise<void>
