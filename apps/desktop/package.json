@@ -42,8 +42,10 @@
     "appId": "com.markdownstudio.app",
     "productName": "Markdown Studio",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
+    "icon": "build/icon",
     "files": [
       "out/**",
       "package.json"
