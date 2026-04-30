@@ -42,6 +42,9 @@ async function createMainWindow(): Promise<BrowserWindow> {
     void openExternal(url)
   })
 
+  registerDesktopIpc(window)
+  Menu.setApplicationMenu(buildAppMenu(window))
+
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
     await window.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
@@ -51,9 +54,6 @@ async function createMainWindow(): Promise<BrowserWindow> {
   if (!app.isPackaged) {
     window.webContents.openDevTools({ mode: 'detach' })
   }
-
-  registerDesktopIpc(window)
-  Menu.setApplicationMenu(buildAppMenu(window))
 
   return window
 }

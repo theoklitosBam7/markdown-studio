@@ -15,6 +15,18 @@
 ## Changesets Validation
 
 - `markdown-studio` package is always affected when `@markdown-studio/app`, `@markdown-studio/web` have changes.
+- Use the following format for generated changesets:
+
+  ```
+  Summary sentence describing the change
+
+  - Action verb describing one logical change
+  - Action verb describing another logical change
+  - Action verb describing yet another logical change
+  ```
+
+  Start with a summary line (no bullet), then a blank line, then unordered list items each beginning with a present-tense verb.
+
 - Run `pnpm changeset:validate-scopes` after you perform changeset actions.
 
 ## Project Snapshot

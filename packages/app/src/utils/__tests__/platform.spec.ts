@@ -9,7 +9,9 @@ const desktopBridgeMock = {
     onAppCommand: () => () => undefined,
   },
   documents: {
+    clearLastOpened: async () => undefined,
     open: async () => null,
+    restoreLastOpened: async () => null,
     save: async () => null,
     saveAs: async () => null,
   },

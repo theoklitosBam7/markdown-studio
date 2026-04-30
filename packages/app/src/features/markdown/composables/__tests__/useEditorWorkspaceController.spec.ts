@@ -287,6 +287,99 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
+  it('restores the last opened desktop document during startup', async () => {
+    const restoreLastOpened = vi.fn(async () => ({
+      content: '# Desktop restored',
+      path: '/tmp/desktop-restored.md',
+    }))
+
+    window.localStorage.setItem(
+      'markdown-studio:web-draft',
+      JSON.stringify({
+        content: '# Web draft should be ignored',
+        label: 'draft.md',
+      }),
+    )
+    appWindow.desktop = {
+      commands: {
+        onAppCommand: vi.fn(() => () => undefined),
+      },
+      documents: {
+        clearLastOpened: async () => undefined,
+        open: async () => null,
+        restoreLastOpened,
+        save: async () => null,
+        saveAs: async () => null,
+      },
+      editing: {
+        insertText: async () => undefined,
+      },
+      exports: {
+        exportHtml: async () => null,
+        exportPdf: async () => null,
+      },
+      isDesktop: true,
+      shell: {
+        openExternal: async () => undefined,
+      },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    await flushPromises()
+
+    expect(restoreLastOpened).toHaveBeenCalledTimes(1)
+    expect(workspace.state.content.value).toBe('# Desktop restored')
+    expect(workspace.state.displayName.value).toBe('desktop-restored.md')
+    expect(workspace.state.isDirty.value).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('does not fall back to web draft storage during desktop startup', async () => {
+    const restoreLastOpened = vi.fn(async () => null)
+
+    window.localStorage.setItem(
+      'markdown-studio:web-draft',
+      JSON.stringify({
+        content: '# Web draft should be ignored',
+        label: 'draft.md',
+      }),
+    )
+    appWindow.desktop = {
+      commands: {
+        onAppCommand: vi.fn(() => () => undefined),
+      },
+      documents: {
+        clearLastOpened: async () => undefined,
+        open: async () => null,
+        restoreLastOpened,
+        save: async () => null,
+        saveAs: async () => null,
+      },
+      editing: {
+        insertText: async () => undefined,
+      },
+      exports: {
+        exportHtml: async () => null,
+        exportPdf: async () => null,
+      },
+      isDesktop: true,
+      shell: {
+        openExternal: async () => undefined,
+      },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    await flushPromises()
+
+    expect(restoreLastOpened).toHaveBeenCalledTimes(1)
+    expect(workspace.state.content.value).not.toBe('# Web draft should be ignored')
+    expect(workspace.state.displayName.value).toBe('Untitled.md')
+    expect(workspace.state.isDirty.value).toBe(false)
+
+    wrapper.unmount()
+  })
+
   it('restores editor focus after every document lifecycle action', async () => {
     const open = vi.fn(async () => ({ content: '# Opened', path: 'opened.md' }))
     const save = vi.fn(async () => ({ path: 'saved.md' }))
@@ -296,7 +389,9 @@ describe('useEditorWorkspaceController', () => {
         onAppCommand: vi.fn(() => () => undefined),
       },
       documents: {
+        clearLastOpened: async () => undefined,
         open,
+        restoreLastOpened: async () => null,
         save,
         saveAs: async () => null,
       },
@@ -350,7 +445,9 @@ describe('useEditorWorkspaceController', () => {
         onAppCommand,
       },
       documents: {
+        clearLastOpened: vi.fn(async () => undefined),
         open: async () => null,
+        restoreLastOpened: async () => null,
         save: async () => null,
         saveAs: async () => null,
       },

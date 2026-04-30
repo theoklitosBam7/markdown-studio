@@ -13,9 +13,10 @@ interface BrowserOpenResult {
 interface DocumentActions {
   canOpenDocuments: ComputedRef<boolean>
   canSaveDocuments: ComputedRef<boolean>
-  clearCurrentDocumentReference: () => void
+  clearCurrentDocumentReference: () => Promise<void>
   isDesktop: ComputedRef<boolean>
   open: () => Promise<DocumentHandle | null>
+  restoreLastOpened: () => Promise<DocumentHandle | null>
   save: (input: SaveDocumentInput) => Promise<{ path: string } | null>
   saveAs: (input: SaveDocumentAsInput) => Promise<{ path: string } | null>
 }
@@ -103,12 +104,21 @@ export function useDocumentActions(): DocumentActions {
     return { path: suggestedPath }
   }
 
+  async function restoreLastOpened(): Promise<DocumentHandle | null> {
+    if (!isDesktop.value) {
+      return null
+    }
+
+    return desktop.value.documents.restoreLastOpened()
+  }
+
   return {
     canOpenDocuments,
     canSaveDocuments,
     clearCurrentDocumentReference,
     isDesktop,
     open,
+    restoreLastOpened,
     save,
     saveAs,
   }
@@ -119,11 +129,18 @@ const browserSession: { handle: FileSystemFileHandle | null } = {
 }
 
 export function resetBrowserDocumentSessionForTests(): void {
-  clearCurrentDocumentReference()
+  browserSession.handle = null
 }
 
-function clearCurrentDocumentReference(): void {
+async function clearCurrentDocumentReference(): Promise<void> {
   browserSession.handle = null
+
+  if (typeof window === 'undefined') return
+
+  const desktop = (window as AppWindow).desktop
+  if (desktop?.isDesktop) {
+    await desktop.documents.clearLastOpened()
+  }
 }
 
 function downloadDocument(content: string, fileName: string): void {

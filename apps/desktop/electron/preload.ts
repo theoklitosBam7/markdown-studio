@@ -2,7 +2,9 @@ import type { DesktopApi } from '@markdown-studio/desktop-contract/types'
 
 import {
   APP_COMMAND_CHANNEL,
+  DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
+  DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   EDITING_INSERT_TEXT_CHANNEL,
@@ -31,7 +33,9 @@ function createDesktopApi(): DesktopApi {
       },
     },
     documents: {
+      clearLastOpened: () => ipcRenderer.invoke(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL),
       open: () => ipcRenderer.invoke(DOCUMENTS_OPEN_CHANNEL),
+      restoreLastOpened: () => ipcRenderer.invoke(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL),
       save: (input) => ipcRenderer.invoke(DOCUMENTS_SAVE_CHANNEL, input),
       saveAs: (input) => ipcRenderer.invoke(DOCUMENTS_SAVE_AS_CHANNEL, input),
     },

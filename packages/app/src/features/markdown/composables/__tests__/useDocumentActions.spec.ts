@@ -9,7 +9,9 @@ const desktopMock = {
     onAppCommand: vi.fn(() => () => undefined),
   },
   documents: {
+    clearLastOpened: vi.fn(async () => undefined),
     open: vi.fn(async () => ({ content: '# Loaded', path: '/tmp/loaded.md' })),
+    restoreLastOpened: vi.fn(async () => null),
     save: vi.fn(async () => ({ path: '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
   },
@@ -87,16 +89,20 @@ describe('useDocumentActions', () => {
     const actions = useDocumentActions()
 
     await actions.open()
+    await actions.restoreLastOpened()
     await actions.save({ content: '# Draft', path: null })
     await actions.saveAs({ content: '# Draft', suggestedPath: 'draft.md' })
+    await actions.clearCurrentDocumentReference()
 
     expect(actions.isDesktop.value).toBe(true)
     expect(desktopMock.documents.open).toHaveBeenCalled()
+    expect(desktopMock.documents.restoreLastOpened).toHaveBeenCalled()
     expect(desktopMock.documents.save).toHaveBeenCalledWith({ content: '# Draft', path: null })
     expect(desktopMock.documents.saveAs).toHaveBeenCalledWith({
       content: '# Draft',
       suggestedPath: 'draft.md',
     })
+    expect(desktopMock.documents.clearLastOpened).toHaveBeenCalled()
   })
 
   it('falls back to download when the browser save picker is unavailable', async () => {

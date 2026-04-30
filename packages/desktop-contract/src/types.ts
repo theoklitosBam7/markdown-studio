@@ -27,7 +27,9 @@ export interface DesktopDocumentHandle {
 }
 
 export interface DesktopDocumentsApi {
+  clearLastOpened: () => Promise<void>
   open: () => Promise<DesktopDocumentHandle | null>
+  restoreLastOpened: () => Promise<DesktopDocumentHandle | null>
   save: (input: DesktopSaveInput) => Promise<{ path: string } | null>
   saveAs: (input: DesktopSaveAsInput) => Promise<{ path: string } | null>
 }

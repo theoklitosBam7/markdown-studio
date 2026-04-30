@@ -66,6 +66,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     loadExampleDocument,
     openDocument,
     restoreDraft,
+    restoreLastOpenedDocument,
     saveDocument,
     startNewDocument,
     statusText,
@@ -349,7 +350,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   }
 
   async function restoreWorkspaceDraft(): Promise<void> {
-    await performDocumentAction(restoreStoredDraft)
+    await performDocumentAction(async () => {
+      if (isDesktop.value) {
+        await restoreLastOpenedDocument()
+        return
+      }
+
+      await restoreStoredDraft()
+    })
   }
 
   async function setWorkspaceTheme(request: ThemeChangeRequest): Promise<void> {
