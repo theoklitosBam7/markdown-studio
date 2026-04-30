@@ -1,11 +1,17 @@
-import type { DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
+import type {
+  DesktopDocumentHandle,
+  DesktopWorkspaceDraft,
+} from '@markdown-studio/desktop-contract/types'
 
 import {
   DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
+  DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
   DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL,
+  DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
+  DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL,
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
@@ -16,11 +22,13 @@ import {
   assertExternalUrl,
   assertSaveAsInput,
   assertSaveInput,
+  assertWorkspaceDraft,
+  assertWorkspaceDraftInput,
   getDefaultExportPath,
   getDefaultMarkdownPath,
 } from '@markdown-studio/desktop-contract/validation'
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 const HTML_FILTERS = [
@@ -39,6 +47,7 @@ const DOCUMENT_STATE_FILE = 'document-state.json'
 
 interface DocumentState {
   lastOpenedPath?: string
+  workspaceDraft?: DesktopWorkspaceDraft
 }
 
 export async function exportHtml(
@@ -126,26 +135,39 @@ export async function openDocument(
   }
 
   await rememberLastOpenedPathSafe(selectedPath)
+  await clearDocumentState('workspaceDraft')
   return { content, path: selectedPath }
 }
 
 export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.removeHandler(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_OPEN_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_AS_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(EDITING_INSERT_TEXT_CHANNEL)
   ipcMain.removeHandler(EXPORTS_HTML_CHANNEL)
   ipcMain.removeHandler(EXPORTS_PDF_CHANNEL)
   ipcMain.removeHandler(SHELL_OPEN_EXTERNAL_CHANNEL)
 
-  ipcMain.handle(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL, async () => clearLastOpenedPath())
+  ipcMain.handle(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL, async () =>
+    clearDocumentState('lastOpenedPath'),
+  )
+  ipcMain.handle(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL, async () =>
+    clearDocumentState('workspaceDraft'),
+  )
   ipcMain.handle(DOCUMENTS_OPEN_CHANNEL, async () => openDocument(mainWindow))
   ipcMain.handle(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL, async () => restoreLastOpenedDocument())
+  ipcMain.handle(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL, async () => restoreWorkspaceDraft())
   ipcMain.handle(DOCUMENTS_SAVE_CHANNEL, async (_, payload) => saveDocument(mainWindow, payload))
   ipcMain.handle(DOCUMENTS_SAVE_AS_CHANNEL, async (_, payload) =>
     saveDocumentAs(mainWindow, payload),
+  )
+  ipcMain.handle(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL, async (_, payload) =>
+    saveWorkspaceDraft(payload),
   )
   ipcMain.handle(EDITING_INSERT_TEXT_CHANNEL, async (_, text) => {
     await mainWindow.webContents.insertText(String(text))
@@ -167,9 +189,14 @@ export async function restoreLastOpenedDocument(): Promise<DesktopDocumentHandle
     const content = await readFile(state.lastOpenedPath, 'utf8')
     return { content, path: state.lastOpenedPath }
   } catch {
-    await clearLastOpenedPath()
+    await clearDocumentState('lastOpenedPath')
     return null
   }
+}
+
+export async function restoreWorkspaceDraft(): Promise<DesktopWorkspaceDraft | null> {
+  const state = await readDocumentState()
+  return state.workspaceDraft ?? null
 }
 
 export async function saveDocument(
@@ -189,6 +216,7 @@ export async function saveDocument(
   }
 
   await rememberLastOpenedPathSafe(input.path)
+  await clearDocumentState('workspaceDraft')
   return { path: input.path }
 }
 
@@ -214,16 +242,17 @@ export async function saveDocumentAs(
   }
 
   await rememberLastOpenedPathSafe(result.filePath)
+  await clearDocumentState('workspaceDraft')
   return { path: result.filePath }
 }
 
-async function clearLastOpenedPath(): Promise<void> {
+async function clearDocumentState<K extends keyof DocumentState>(key: K): Promise<void> {
   try {
-    await unlink(getDocumentStatePath())
+    const state = await readDocumentState()
+    delete state[key]
+    await writeDocumentState(state)
   } catch (error) {
-    if (!isMissingFileError(error)) {
-      console.warn('Failed to clear last opened document state:', error)
-    }
+    console.warn(`Failed to clear document state (${key}):`, error)
   }
 }
 
@@ -231,31 +260,40 @@ function getDocumentStatePath(): string {
   return join(app.getPath('userData'), DOCUMENT_STATE_FILE)
 }
 
-function isMissingFileError(error: unknown): boolean {
-  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
-}
-
 async function readDocumentState(): Promise<DocumentState> {
   try {
     const raw = await readFile(getDocumentStatePath(), 'utf8')
     const parsed = JSON.parse(raw) as unknown
 
-    if (typeof parsed !== 'object' || parsed === null || !('lastOpenedPath' in parsed)) {
+    if (typeof parsed !== 'object' || parsed === null) {
       return {}
     }
 
-    return typeof parsed.lastOpenedPath === 'string'
-      ? { lastOpenedPath: parsed.lastOpenedPath }
-      : {}
+    const record = parsed as Record<string, unknown>
+    const state: DocumentState = {}
+
+    if (typeof record.lastOpenedPath === 'string') {
+      state.lastOpenedPath = record.lastOpenedPath
+    }
+
+    if ('workspaceDraft' in record) {
+      try {
+        state.workspaceDraft = assertWorkspaceDraft(record.workspaceDraft)
+      } catch {
+        state.workspaceDraft = undefined
+      }
+    }
+
+    return state
   } catch {
     return {}
   }
 }
 
 async function rememberLastOpenedPath(filePath: string): Promise<void> {
-  const statePath = getDocumentStatePath()
-  await mkdir(dirname(statePath), { recursive: true })
-  await writeFile(statePath, JSON.stringify({ lastOpenedPath: filePath }), 'utf8')
+  const state = await readDocumentState()
+  state.lastOpenedPath = filePath
+  await writeDocumentState(state)
 }
 
 async function rememberLastOpenedPathSafe(filePath: string): Promise<void> {
@@ -266,6 +304,23 @@ async function rememberLastOpenedPathSafe(filePath: string): Promise<void> {
   }
 }
 
+async function saveWorkspaceDraft(payload: unknown): Promise<void> {
+  const input = assertWorkspaceDraftInput(payload)
+  const state = await readDocumentState()
+  state.workspaceDraft = {
+    activeDocument: input.activeDocument,
+    updatedAt: new Date().toISOString(),
+    version: 1,
+  }
+  await writeDocumentState(state)
+}
+
 function toDataUrl(documentHtml: string): string {
   return `data:text/html;charset=utf-8,${encodeURIComponent(documentHtml)}`
+}
+
+async function writeDocumentState(state: DocumentState): Promise<void> {
+  const statePath = getDocumentStatePath()
+  await mkdir(dirname(statePath), { recursive: true })
+  await writeFile(statePath, JSON.stringify(state), 'utf8')
 }

@@ -12,12 +12,15 @@ const desktopMock = {
   },
   documents: {
     clearLastOpened: vi.fn(async () => undefined),
+    clearWorkspaceDraft: vi.fn(async () => undefined),
     open: vi.fn(async () => ({ content: '# Loaded', path: '/tmp/loaded.md' })),
     restoreLastOpened: vi.fn<() => Promise<{ content: string; path: string } | null>>(
       async () => null,
     ),
+    restoreWorkspaceDraft: vi.fn(async () => null),
     save: vi.fn(async ({ path }: { path: null | string }) => ({ path: path ?? '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
+    saveWorkspaceDraft: vi.fn(async () => undefined),
   },
   editing: {
     insertText: vi.fn(async () => undefined),
@@ -116,6 +119,24 @@ describe('useDocumentSession', () => {
     expect(session.displayName.value).toBe('notes.md')
     expect(session.isDirty.value).toBe(true)
     expect(session.statusText.value).toContain('Restored local draft')
+  })
+
+  it('restores a desktop workspace draft against its saved baseline', async () => {
+    const { content, session } = createSession()
+
+    await session.restoreWorkspaceDraft({
+      content: '# Unsaved desktop edit',
+      label: 'notes.md',
+      path: '/tmp/notes.md',
+      savedContent: '# Saved file',
+    })
+    await nextTick()
+
+    expect(content.value).toBe('# Unsaved desktop edit')
+    expect(session.currentPath.value).toBe('/tmp/notes.md')
+    expect(session.displayName.value).toBe('notes.md')
+    expect(session.isDirty.value).toBe(true)
+    expect(session.statusText.value).toContain('Restored unsaved changes')
   })
 
   it('tracks dirty state and save branching in desktop mode', async () => {

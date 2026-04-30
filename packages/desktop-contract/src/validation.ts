@@ -1,4 +1,10 @@
-import type { DesktopExportInput, DesktopSaveAsInput, DesktopSaveInput } from './types'
+import type {
+  DesktopExportInput,
+  DesktopSaveAsInput,
+  DesktopSaveInput,
+  DesktopWorkspaceDraft,
+  DesktopWorkspaceDraftInput,
+} from './types'
 
 export function assertExportInput(value: unknown): DesktopExportInput {
   assertObject(value, 'Export payload must be an object.')
@@ -50,6 +56,30 @@ export function assertSaveInput(value: unknown): DesktopSaveInput {
   }
 }
 
+export function assertWorkspaceDraft(value: unknown): DesktopWorkspaceDraft {
+  assertObject(value, 'Workspace draft must be an object.')
+  const draft = value as Record<string, unknown>
+
+  if (draft.version !== 1) {
+    throw new Error('Unsupported workspace draft version.')
+  }
+
+  return {
+    activeDocument: assertWorkspaceDraftDocument(draft.activeDocument),
+    updatedAt: assertIsoDateString(draft.updatedAt),
+    version: 1,
+  }
+}
+
+export function assertWorkspaceDraftInput(value: unknown): DesktopWorkspaceDraftInput {
+  assertObject(value, 'Workspace draft payload must be an object.')
+  const input = value as Record<string, unknown>
+
+  return {
+    activeDocument: assertWorkspaceDraftDocument(input.activeDocument),
+  }
+}
+
 export function getDefaultExportPath(extension: 'html' | 'pdf', inputPath?: null | string): string {
   const normalizedExtension = `.${extension}`
 
@@ -67,6 +97,14 @@ export function getDefaultMarkdownPath(inputPath?: null | string): string {
   }
 
   return inputPath.toLowerCase().endsWith('.md') ? inputPath : `${inputPath}.md`
+}
+
+function assertIsoDateString(value: unknown): string {
+  if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
+    throw new TypeError('Workspace draft timestamp must be an ISO date string.')
+  }
+
+  return value
 }
 
 function assertNonEmptyPath(value: unknown): string {
@@ -95,4 +133,16 @@ function assertTextContent(value: unknown): string {
   }
 
   return value
+}
+
+function assertWorkspaceDraftDocument(value: unknown): DesktopWorkspaceDraft['activeDocument'] {
+  assertObject(value, 'Workspace draft document must be an object.')
+  const document = value as Record<string, unknown>
+
+  return {
+    content: assertTextContent(document.content),
+    label: assertTextContent(document.label).trim() || 'Untitled.md',
+    path: document.path === null ? null : assertNonEmptyPath(document.path),
+    savedContent: assertTextContent(document.savedContent),
+  }
 }

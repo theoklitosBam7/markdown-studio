@@ -10,10 +10,13 @@ const fallbackDesktopApi: DesktopApi = {
   },
   documents: {
     clearLastOpened: async () => undefined,
+    clearWorkspaceDraft: async () => undefined,
     open: async () => null,
     restoreLastOpened: async () => null,
+    restoreWorkspaceDraft: async () => null,
     save: async () => null,
     saveAs: async () => null,
+    saveWorkspaceDraft: async () => undefined,
   },
   editing: {
     insertText: async () => undefined,

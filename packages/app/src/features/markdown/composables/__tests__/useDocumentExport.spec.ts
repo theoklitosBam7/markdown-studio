@@ -180,10 +180,13 @@ describe('useDocumentExport', () => {
       },
       documents: {
         clearLastOpened: vi.fn(async () => undefined),
+        clearWorkspaceDraft: vi.fn(async () => undefined),
         open: async () => null,
         restoreLastOpened: async () => null,
+        restoreWorkspaceDraft: async () => null,
         save: async () => null,
         saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
       },
       editing: {
         insertText: async () => undefined,

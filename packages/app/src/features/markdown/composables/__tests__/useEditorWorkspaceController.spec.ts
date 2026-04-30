@@ -306,10 +306,13 @@ describe('useEditorWorkspaceController', () => {
       },
       documents: {
         clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
         open: async () => null,
         restoreLastOpened,
+        restoreWorkspaceDraft: async () => null,
         save: async () => null,
         saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
       },
       editing: {
         insertText: async () => undefined,
@@ -335,6 +338,62 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
+  it('restores an unsaved desktop draft before the last opened document during startup', async () => {
+    const restoreLastOpened = vi.fn(async () => ({
+      content: '# Saved file',
+      path: '/tmp/saved-file.md',
+    }))
+    const restoreWorkspaceDraft = vi.fn(async () => ({
+      activeDocument: {
+        content: '# Unsaved desktop edit',
+        label: 'saved-file.md',
+        path: '/tmp/saved-file.md',
+        savedContent: '# Saved file',
+      },
+      updatedAt: '2026-04-30T00:00:00.000Z',
+      version: 1 as const,
+    }))
+
+    appWindow.desktop = {
+      commands: {
+        onAppCommand: vi.fn(() => () => undefined),
+      },
+      documents: {
+        clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
+        open: async () => null,
+        restoreLastOpened,
+        restoreWorkspaceDraft,
+        save: async () => null,
+        saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
+      },
+      editing: {
+        insertText: async () => undefined,
+      },
+      exports: {
+        exportHtml: async () => null,
+        exportPdf: async () => null,
+      },
+      isDesktop: true,
+      shell: {
+        openExternal: async () => undefined,
+      },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    await flushPromises()
+
+    expect(restoreWorkspaceDraft).toHaveBeenCalledTimes(1)
+    expect(restoreLastOpened).not.toHaveBeenCalled()
+    expect(workspace.state.content.value).toBe('# Unsaved desktop edit')
+    expect(workspace.state.displayName.value).toBe('saved-file.md')
+    expect(workspace.state.isDirty.value).toBe(true)
+    expect(workspace.state.statusText.value).toContain('Restored unsaved changes')
+
+    wrapper.unmount()
+  })
+
   it('does not fall back to web draft storage during desktop startup', async () => {
     const restoreLastOpened = vi.fn(async () => null)
 
@@ -351,10 +410,13 @@ describe('useEditorWorkspaceController', () => {
       },
       documents: {
         clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
         open: async () => null,
         restoreLastOpened,
+        restoreWorkspaceDraft: async () => null,
         save: async () => null,
         saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
       },
       editing: {
         insertText: async () => undefined,
@@ -390,10 +452,13 @@ describe('useEditorWorkspaceController', () => {
       },
       documents: {
         clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
         open,
         restoreLastOpened: async () => null,
+        restoreWorkspaceDraft: async () => null,
         save,
         saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
       },
       editing: {
         insertText: async () => undefined,
@@ -446,10 +511,13 @@ describe('useEditorWorkspaceController', () => {
       },
       documents: {
         clearLastOpened: vi.fn(async () => undefined),
+        clearWorkspaceDraft: vi.fn(async () => undefined),
         open: async () => null,
         restoreLastOpened: async () => null,
+        restoreWorkspaceDraft: async () => null,
         save: async () => null,
         saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
       },
       editing: {
         insertText: async () => undefined,

@@ -18,6 +18,7 @@ import type {
 } from '../types/workspace'
 
 import { EXAMPLES } from './examples'
+import { useDesktopDraftPersistence } from './useDesktopDraftPersistence'
 import { useDocumentExport } from './useDocumentExport'
 import { useDocumentSession } from './useDocumentSession'
 import { useFindReplace } from './useFindReplace'
@@ -67,6 +68,8 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     openDocument,
     restoreDraft,
     restoreLastOpenedDocument,
+    restoreWorkspaceDraft: restoreDocumentWorkspaceDraft,
+    savedContent,
     saveDocument,
     startNewDocument,
     statusText,
@@ -125,6 +128,16 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     displayName,
     isMobile,
   })
+  const { clearDraft: clearDesktopDraft, restoreStoredDraft: restoreStoredDesktopDraft } =
+    useDesktopDraftPersistence({
+      content,
+      currentPath,
+      displayName,
+      isDesktop,
+      isDirty,
+      restoreDraft: restoreDocumentWorkspaceDraft,
+      savedContent,
+    })
   const { clearDraft, restoreStoredDraft } = useWebDraftPersistence({
     content,
     displayName,
@@ -345,6 +358,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
       if (!content.value) {
         clearDraft()
+        await clearDesktopDraft()
       }
     })
   }
@@ -352,6 +366,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   async function restoreWorkspaceDraft(): Promise<void> {
     await performDocumentAction(async () => {
       if (isDesktop.value) {
+        if (await restoreStoredDesktopDraft()) {
+          return
+        }
+
         await restoreLastOpenedDocument()
         return
       }

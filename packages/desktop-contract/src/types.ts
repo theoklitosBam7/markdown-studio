@@ -28,10 +28,13 @@ export interface DesktopDocumentHandle {
 
 export interface DesktopDocumentsApi {
   clearLastOpened: () => Promise<void>
+  clearWorkspaceDraft: () => Promise<void>
   open: () => Promise<DesktopDocumentHandle | null>
   restoreLastOpened: () => Promise<DesktopDocumentHandle | null>
+  restoreWorkspaceDraft: () => Promise<DesktopWorkspaceDraft | null>
   save: (input: DesktopSaveInput) => Promise<{ path: string } | null>
   saveAs: (input: DesktopSaveAsInput) => Promise<{ path: string } | null>
+  saveWorkspaceDraft: (input: DesktopWorkspaceDraftInput) => Promise<void>
 }
 
 export interface DesktopEditingApi {
@@ -61,4 +64,21 @@ export interface DesktopSaveInput {
 
 export interface DesktopShellApi {
   openExternal: (url: string) => Promise<void>
+}
+
+export interface DesktopWorkspaceDraft {
+  activeDocument: DesktopWorkspaceDraftDocument
+  updatedAt: string
+  version: 1
+}
+
+export interface DesktopWorkspaceDraftDocument {
+  content: string
+  label: string
+  path: null | string
+  savedContent: string
+}
+
+export interface DesktopWorkspaceDraftInput {
+  activeDocument: DesktopWorkspaceDraftDocument
 }
