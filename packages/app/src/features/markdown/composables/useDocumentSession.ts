@@ -28,6 +28,7 @@ interface UseDocumentSessionReturn {
   loadExampleDocument: (input: { content: string; title: string }) => Promise<void>
   openDocument: () => Promise<void>
   restoreDraft: (input: { content: string; label: string }) => Promise<void>
+  restoreLastOpenedDocument: () => Promise<void>
   saveDocument: () => Promise<void>
   saveDocumentAs: () => Promise<void>
   startNewDocument: () => Promise<void>
@@ -93,8 +94,20 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     syncDocumentTitle()
   }
 
+  async function restoreLastOpenedDocument(): Promise<void> {
+    const restored = await documents.restoreLastOpened()
+    if (!restored) return
+
+    options.replaceContent(restored.content)
+    currentPath.value = restored.path
+    draftLabel.value = null
+    savedContent.value = restored.content
+    lastAction.value = `Restored ${getFileName(restored.path)}`
+    syncDocumentTitle()
+  }
+
   async function loadExampleDocument(input: { content: string; title: string }): Promise<void> {
-    documents.clearCurrentDocumentReference()
+    await documents.clearCurrentDocumentReference()
     options.replaceContent(input.content)
     currentPath.value = null
     draftLabel.value = null
@@ -136,7 +149,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   async function startNewDocument(): Promise<void> {
     if (!(await confirmDiscardChanges())) return
 
-    documents.clearCurrentDocumentReference()
+    await documents.clearCurrentDocumentReference()
     options.replaceContent('')
     currentPath.value = null
     draftLabel.value = null
@@ -175,6 +188,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     loadExampleDocument,
     openDocument,
     restoreDraft,
+    restoreLastOpenedDocument,
     saveDocument,
     saveDocumentAs,
     startNewDocument,

@@ -11,7 +11,11 @@ const desktopMock = {
     onAppCommand: vi.fn(() => () => undefined),
   },
   documents: {
+    clearLastOpened: vi.fn(async () => undefined),
     open: vi.fn(async () => ({ content: '# Loaded', path: '/tmp/loaded.md' })),
+    restoreLastOpened: vi.fn<() => Promise<{ content: string; path: string } | null>>(
+      async () => null,
+    ),
     save: vi.fn(async ({ path }: { path: null | string }) => ({ path: path ?? '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
   },
@@ -81,6 +85,23 @@ describe('useDocumentSession', () => {
     expect(session.canSaveDocuments.value).toBe(true)
   })
 
+  it('restores the last opened desktop document as clean saved work', async () => {
+    desktopMock.documents.restoreLastOpened.mockResolvedValueOnce({
+      content: '# Restored file',
+      path: '/tmp/restored.md',
+    })
+    const { content, session } = createSession()
+
+    await session.restoreLastOpenedDocument()
+    await nextTick()
+
+    expect(content.value).toBe('# Restored file')
+    expect(session.currentPath.value).toBe('/tmp/restored.md')
+    expect(session.displayName.value).toBe('restored.md')
+    expect(session.isDirty.value).toBe(false)
+    expect(session.statusText.value).toBe('Restored restored.md')
+  })
+
   it('restores a saved web draft as unsaved work', async () => {
     const { content, session } = createSession()
 
@@ -137,6 +158,7 @@ describe('useDocumentSession', () => {
     expect(session.displayName.value).toBe('Untitled.md')
     expect(session.isDirty.value).toBe(false)
     expect(session.statusText.value).toBe('Loaded example: Flowchart diagram')
+    expect(desktopMock.documents.clearLastOpened).toHaveBeenCalled()
   })
 
   it('handles app command routing', async () => {

@@ -91,7 +91,9 @@ describe('PreviewPane', () => {
         onAppCommand: () => () => undefined,
       },
       documents: {
+        clearLastOpened: vi.fn(async () => undefined),
         open: async () => null,
+        restoreLastOpened: async () => null,
         save: async () => null,
         saveAs: async () => null,
       },

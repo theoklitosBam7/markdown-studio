@@ -1,7 +1,9 @@
 import type { DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
 
 import {
+  DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
+  DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   EDITING_INSERT_TEXT_CHANNEL,
@@ -17,8 +19,9 @@ import {
   getDefaultExportPath,
   getDefaultMarkdownPath,
 } from '@markdown-studio/desktop-contract/validation'
-import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
-import { readFile, writeFile } from 'node:fs/promises'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 
 const HTML_FILTERS = [
   { extensions: ['html'], name: 'HTML Files' },
@@ -32,6 +35,11 @@ const PDF_FILTERS = [
   { extensions: ['pdf'], name: 'PDF Files' },
   { extensions: ['*'], name: 'All Files' },
 ]
+const DOCUMENT_STATE_FILE = 'document-state.json'
+
+interface DocumentState {
+  lastOpenedPath?: string
+}
 
 export async function exportHtml(
   mainWindow: BrowserWindow,
@@ -110,16 +118,21 @@ export async function openDocument(
     return null
   }
 
+  let content: string
   try {
-    const content = await readFile(selectedPath, 'utf8')
-    return { content, path: selectedPath }
+    content = await readFile(selectedPath, 'utf8')
   } catch {
     throw new Error(`Failed to read file: ${selectedPath}`)
   }
+
+  await rememberLastOpenedPathSafe(selectedPath)
+  return { content, path: selectedPath }
 }
 
 export function registerDesktopIpc(mainWindow: BrowserWindow): void {
+  ipcMain.removeHandler(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_OPEN_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_AS_CHANNEL)
   ipcMain.removeHandler(EDITING_INSERT_TEXT_CHANNEL)
@@ -127,7 +140,9 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.removeHandler(EXPORTS_PDF_CHANNEL)
   ipcMain.removeHandler(SHELL_OPEN_EXTERNAL_CHANNEL)
 
+  ipcMain.handle(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL, async () => clearLastOpenedPath())
   ipcMain.handle(DOCUMENTS_OPEN_CHANNEL, async () => openDocument(mainWindow))
+  ipcMain.handle(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL, async () => restoreLastOpenedDocument())
   ipcMain.handle(DOCUMENTS_SAVE_CHANNEL, async (_, payload) => saveDocument(mainWindow, payload))
   ipcMain.handle(DOCUMENTS_SAVE_AS_CHANNEL, async (_, payload) =>
     saveDocumentAs(mainWindow, payload),
@@ -142,6 +157,21 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   )
 }
 
+export async function restoreLastOpenedDocument(): Promise<DesktopDocumentHandle | null> {
+  const state = await readDocumentState()
+  if (!state.lastOpenedPath) {
+    return null
+  }
+
+  try {
+    const content = await readFile(state.lastOpenedPath, 'utf8')
+    return { content, path: state.lastOpenedPath }
+  } catch {
+    await clearLastOpenedPath()
+    return null
+  }
+}
+
 export async function saveDocument(
   mainWindow: BrowserWindow,
   payload: unknown,
@@ -154,10 +184,12 @@ export async function saveDocument(
 
   try {
     await writeFile(input.path, input.content, 'utf8')
-    return { path: input.path }
   } catch {
     throw new Error(`Failed to save file: ${input.path}`)
   }
+
+  await rememberLastOpenedPathSafe(input.path)
+  return { path: input.path }
 }
 
 export async function saveDocumentAs(
@@ -177,9 +209,60 @@ export async function saveDocumentAs(
 
   try {
     await writeFile(result.filePath, input.content, 'utf8')
-    return { path: result.filePath }
   } catch {
     throw new Error(`Failed to save file: ${result.filePath}`)
+  }
+
+  await rememberLastOpenedPathSafe(result.filePath)
+  return { path: result.filePath }
+}
+
+async function clearLastOpenedPath(): Promise<void> {
+  try {
+    await unlink(getDocumentStatePath())
+  } catch (error) {
+    if (!isMissingFileError(error)) {
+      console.warn('Failed to clear last opened document state:', error)
+    }
+  }
+}
+
+function getDocumentStatePath(): string {
+  return join(app.getPath('userData'), DOCUMENT_STATE_FILE)
+}
+
+function isMissingFileError(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
+}
+
+async function readDocumentState(): Promise<DocumentState> {
+  try {
+    const raw = await readFile(getDocumentStatePath(), 'utf8')
+    const parsed = JSON.parse(raw) as unknown
+
+    if (typeof parsed !== 'object' || parsed === null || !('lastOpenedPath' in parsed)) {
+      return {}
+    }
+
+    return typeof parsed.lastOpenedPath === 'string'
+      ? { lastOpenedPath: parsed.lastOpenedPath }
+      : {}
+  } catch {
+    return {}
+  }
+}
+
+async function rememberLastOpenedPath(filePath: string): Promise<void> {
+  const statePath = getDocumentStatePath()
+  await mkdir(dirname(statePath), { recursive: true })
+  await writeFile(statePath, JSON.stringify({ lastOpenedPath: filePath }), 'utf8')
+}
+
+async function rememberLastOpenedPathSafe(filePath: string): Promise<void> {
+  try {
+    await rememberLastOpenedPath(filePath)
+  } catch (error) {
+    console.warn('Failed to remember last opened document:', error)
   }
 }
 
