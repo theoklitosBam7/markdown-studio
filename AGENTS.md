@@ -14,7 +14,8 @@
 
 ## Changesets Validation
 
-- `markdown-studio` package is always affected when `@markdown-studio/app`, `@markdown-studio/web` have changes.
+- `@markdown-studio/desktop` for desktop-only behavior and packaging changes.
+- `markdown-studio` for the published npm package and browser launcher behavior. It is affected from changes in `@markdown-studio/app`, `@markdown-studio/web` when they are not desktop-only.
 - Use the following format for generated changesets:
 
   ```

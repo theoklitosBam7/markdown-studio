@@ -29,6 +29,13 @@ interface UseDocumentSessionReturn {
   openDocument: () => Promise<void>
   restoreDraft: (input: { content: string; label: string }) => Promise<void>
   restoreLastOpenedDocument: () => Promise<void>
+  restoreWorkspaceDraft: (input: {
+    content: string
+    label: string
+    path: null | string
+    savedContent: string
+  }) => Promise<void>
+  savedContent: DeepReadonly<ShallowRef<string>>
   saveDocument: () => Promise<void>
   saveDocumentAs: () => Promise<void>
   startNewDocument: () => Promise<void>
@@ -91,6 +98,22 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     draftLabel.value = input.label || 'Untitled.md'
     savedContent.value = ''
     lastAction.value = 'Restored local draft'
+    syncDocumentTitle()
+  }
+
+  async function restoreWorkspaceDraft(input: {
+    content: string
+    label: string
+    path: null | string
+    savedContent: string
+  }): Promise<void> {
+    if (!(await confirmDiscardChanges())) return
+
+    options.replaceContent(input.content)
+    currentPath.value = input.path
+    draftLabel.value = input.path ? null : input.label || 'Untitled.md'
+    savedContent.value = input.savedContent
+    lastAction.value = 'Restored unsaved changes'
     syncDocumentTitle()
   }
 
@@ -189,6 +212,8 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     openDocument,
     restoreDraft,
     restoreLastOpenedDocument,
+    restoreWorkspaceDraft,
+    savedContent: readonly(savedContent),
     saveDocument,
     saveDocumentAs,
     startNewDocument,

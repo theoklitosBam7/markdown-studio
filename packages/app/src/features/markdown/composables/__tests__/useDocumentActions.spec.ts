@@ -10,10 +10,13 @@ const desktopMock = {
   },
   documents: {
     clearLastOpened: vi.fn(async () => undefined),
+    clearWorkspaceDraft: vi.fn(async () => undefined),
     open: vi.fn(async () => ({ content: '# Loaded', path: '/tmp/loaded.md' })),
     restoreLastOpened: vi.fn(async () => null),
+    restoreWorkspaceDraft: vi.fn(async () => null),
     save: vi.fn(async () => ({ path: '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
+    saveWorkspaceDraft: vi.fn(async () => undefined),
   },
   editing: {
     insertText: vi.fn(async () => undefined),

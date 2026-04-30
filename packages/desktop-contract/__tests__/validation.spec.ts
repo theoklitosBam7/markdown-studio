@@ -7,6 +7,8 @@ import {
   assertExternalUrl,
   assertSaveAsInput,
   assertSaveInput,
+  assertWorkspaceDraft,
+  assertWorkspaceDraftInput,
   getDefaultExportPath,
   getDefaultMarkdownPath,
 } from '../src/validation'
@@ -46,5 +48,47 @@ describe('desktop validation', () => {
     })
     expect(getDefaultExportPath('html', 'notes.md')).toBe('notes.html')
     expect(getDefaultExportPath('pdf')).toBe('Untitled.pdf')
+  })
+
+  it('normalizes workspace draft payloads', () => {
+    expect(
+      assertWorkspaceDraftInput({
+        activeDocument: {
+          content: '# Edited',
+          label: ' notes.md ',
+          path: '/tmp/notes.md',
+          savedContent: '# Saved',
+        },
+      }),
+    ).toEqual({
+      activeDocument: {
+        content: '# Edited',
+        label: 'notes.md',
+        path: '/tmp/notes.md',
+        savedContent: '# Saved',
+      },
+    })
+
+    expect(
+      assertWorkspaceDraft({
+        activeDocument: {
+          content: '# Edited',
+          label: '',
+          path: null,
+          savedContent: '',
+        },
+        updatedAt: '2026-04-30T00:00:00.000Z',
+        version: 1,
+      }),
+    ).toEqual({
+      activeDocument: {
+        content: '# Edited',
+        label: 'Untitled.md',
+        path: null,
+        savedContent: '',
+      },
+      updatedAt: '2026-04-30T00:00:00.000Z',
+      version: 1,
+    })
   })
 })
