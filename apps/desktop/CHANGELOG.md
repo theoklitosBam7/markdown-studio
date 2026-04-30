@@ -1,5 +1,22 @@
 # @markdown-studio/desktop
 
+## 0.6.0
+
+### Minor Changes
+
+- e63259f: Restore unsaved desktop edits after reloads or restarts
+
+  - Persist the active desktop document draft while it has unsaved edits
+  - Restore unsaved desktop edits before falling back to the last opened file
+  - Clear stale desktop drafts after successful saves and intentional document changes
+
+- 8d09ef2: Persist and restore the last opened document across desktop app restarts
+
+  - Add two new IPC channels (`documents:restoreLastOpened`, `documents:clearLastOpened`)
+  - Persist last opened file path to `document-state.json` in Electron's `userData` directory
+  - Restore the previously opened file on desktop startup
+  - Skip web draft fallback when running in desktop mode
+
 ## 0.5.0
 
 ### Minor Changes
