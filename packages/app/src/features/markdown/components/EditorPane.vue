@@ -5,11 +5,19 @@ import type { AppWindow } from '@/browser-window'
 
 import { insertTextAtSelection } from '@/utils/insertTextAtSelection'
 
-import type {
-  EditorScrollPayload,
-  EditorWorkspaceFindAction,
-  EditorWorkspaceFindState,
-} from '../types'
+import type { EditorScrollPayload, EditorWorkspaceFindState } from '../types'
+
+type FindAction =
+  | { type: 'close' }
+  | { type: 'next' }
+  | { type: 'open-replace' }
+  | { type: 'open' }
+  | { type: 'previous' }
+  | { type: 'replace-all' }
+  | { type: 'replace-current' }
+  | { type: 'set-match-case'; value: boolean }
+  | { type: 'set-query'; value: string }
+  | { type: 'set-replace-text'; value: string }
 
 import FindReplaceBar from './FindReplaceBar.vue'
 import MatchOverlay from './MatchOverlay.vue'
@@ -34,7 +42,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'find-action': [action: EditorWorkspaceFindAction]
+  'find-action': [action: FindAction]
   scroll: [payload: EditorScrollPayload]
   'update:content': [value: string]
 }>()

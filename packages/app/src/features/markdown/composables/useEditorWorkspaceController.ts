@@ -12,7 +12,6 @@ import type {
   EditorPaneAdapter,
   EditorScrollPayload,
   EditorWorkspaceController,
-  EditorWorkspaceFindAction,
   PreviewPaneAdapter,
   ThemeChangeRequest,
 } from '../types/workspace'
@@ -576,42 +575,16 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
     },
     find: {
-      async dispatch(action: EditorWorkspaceFindAction): Promise<void> {
-        switch (action.type) {
-          case 'close':
-            closeFindPanel()
-            return
-          case 'next':
-            findNext()
-            return
-          case 'open':
-            openFindPanel()
-            return
-          case 'open-replace':
-            openReplacePanel()
-            return
-          case 'previous':
-            findPrevious()
-            return
-          case 'replace-all':
-            await replaceAll()
-            return
-          case 'replace-current':
-            await replaceCurrent()
-            return
-          case 'set-match-case':
-            setMatchCase(action.value)
-            return
-          case 'set-query':
-            setQuery(action.value)
-            return
-          case 'set-replace-text':
-            setReplaceText(action.value)
-            return
-          default:
-            action satisfies never
-        }
-      },
+      close: closeFindPanel,
+      next: findNext,
+      open: openFindPanel,
+      openReplace: openReplacePanel,
+      previous: findPrevious,
+      replaceAll,
+      replaceCurrent,
+      setMatchCase,
+      setQuery,
+      setReplaceText,
       state: findState,
     },
     preview: {
@@ -631,15 +604,12 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       canOpenDocuments,
       canSaveDocuments,
       content,
-      currentPath,
       displayName,
       isCopied,
       isDesktop,
       isDirty,
       isExamplesModalOpen,
       isMobile,
-      needRefresh,
-      offlineReady,
       pdfExportUnavailableReason,
       pwaBannerStatus,
       renderedHtml,
@@ -649,7 +619,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       stats,
       statusText,
       theme,
-      updateAvailable,
       updateInfo,
       viewMode,
     },

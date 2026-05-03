@@ -11,6 +11,7 @@ export type {
   EditorScrollPayload,
   EditorStats,
   EditorWorkspaceController,
+  EditorWorkspaceFindApi,
   EditorWorkspaceState,
   Example,
   MarkdownSourceMapEntry,
@@ -19,4 +20,5 @@ export type {
   ThemeChangeRequest,
   ViewMode,
 } from './types'
+
 export { buildMarkdownDocumentHtml, renderMarkdownDocument } from './utils/renderMarkdownDocument'

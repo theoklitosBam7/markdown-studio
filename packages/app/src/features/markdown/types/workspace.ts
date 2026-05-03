@@ -63,10 +63,7 @@ export interface EditorWorkspaceController {
     html(): Promise<void>
     pdf(): Promise<void>
   }
-  find: {
-    dispatch(action: EditorWorkspaceFindAction): Promise<void>
-    state: ComputedRef<EditorWorkspaceFindState>
-  }
+  find: EditorWorkspaceFindApi
   preview: {
     jumpToOffset(offset: number): Promise<void>
     renderDiagrams(container: HTMLElement): Promise<void>
@@ -88,17 +85,19 @@ export interface EditorWorkspaceController {
   }
 }
 
-export type EditorWorkspaceFindAction =
-  | { type: 'close' }
-  | { type: 'next' }
-  | { type: 'open-replace' }
-  | { type: 'open' }
-  | { type: 'previous' }
-  | { type: 'replace-all' }
-  | { type: 'replace-current' }
-  | { type: 'set-match-case'; value: boolean }
-  | { type: 'set-query'; value: string }
-  | { type: 'set-replace-text'; value: string }
+export interface EditorWorkspaceFindApi {
+  close(): void
+  next(): void
+  open(): void
+  openReplace(): void
+  previous(): void
+  replaceAll(): Promise<void>
+  replaceCurrent(): Promise<void>
+  setMatchCase(value: boolean): void
+  setQuery(value: string): void
+  setReplaceText(value: string): void
+  state: ComputedRef<EditorWorkspaceFindState>
+}
 
 export interface EditorWorkspaceFindState {
   activeMatchIndex: number
@@ -119,7 +118,7 @@ export interface EditorWorkspaceFindState {
  * rather than the primary orchestration owner.
  */
 export interface EditorWorkspaceState {
-  availableModes: Readonly<Ref<ViewMode[]>>
+  availableModes: ComputedRef<ViewMode[]>
   bannerStatus: Readonly<Ref<'up-to-date' | 'update-available'>>
   bodyClasses: ComputedRef<Record<string, boolean>>
   canExportPdf: Readonly<Ref<boolean>>
@@ -127,15 +126,12 @@ export interface EditorWorkspaceState {
   canOpenDocuments: Readonly<Ref<boolean>>
   canSaveDocuments: Readonly<Ref<boolean>>
   content: Readonly<Ref<string>>
-  currentPath: Readonly<Ref<null | string>>
   displayName: Readonly<Ref<string>>
   isCopied: Readonly<Ref<boolean>>
   isDesktop: Readonly<Ref<boolean>>
   isDirty: Readonly<Ref<boolean>>
   isExamplesModalOpen: ShallowRef<boolean>
   isMobile: ShallowRef<boolean>
-  needRefresh: Readonly<Ref<boolean>>
-  offlineReady: Readonly<Ref<boolean>>
   pdfExportUnavailableReason: Readonly<Ref<string>>
   pwaBannerStatus: Readonly<Ref<'offline-ready' | 'update-available'>>
   renderedHtml: Readonly<Ref<string>>
@@ -145,7 +141,6 @@ export interface EditorWorkspaceState {
   stats: Readonly<Ref<EditorStats>>
   statusText: Readonly<Ref<string>>
   theme: Readonly<Ref<Theme>>
-  updateAvailable: Readonly<Ref<boolean>>
   updateInfo: Readonly<Ref<null | WorkspaceUpdateInfo>>
   viewMode: Readonly<Ref<ViewMode>>
 }
