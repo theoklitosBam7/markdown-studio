@@ -49,36 +49,36 @@
     "format:check": "oxfmt --check"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.30.0",
+    "@changesets/cli": "^2.31.0",
     "@tsconfig/node24": "^24.0.4",
-    "@types/node": "^24.12.0",
+    "@types/node": "catalog:",
     "@types/semver": "^7.7.1",
     "@vite-pwa/assets-generator": "^1.0.2",
-    "@vitejs/plugin-vue": "^6.0.5",
-    "@vitest/eslint-plugin": "^1.6.13",
+    "@vitejs/plugin-vue": "catalog:",
+    "@vitest/eslint-plugin": "^1.6.17",
     "@vue/eslint-config-typescript": "^14.7.0",
     "@vue/tsconfig": "^0.9.1",
-    "cypress": "^15.13.0",
-    "eslint": "^10.1.0",
+    "cypress": "^15.14.2",
+    "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-boundaries": "^6.0.1",
-    "eslint-plugin-cypress": "^6.2.1",
-    "eslint-plugin-oxlint": "~1.56.0",
-    "eslint-plugin-perfectionist": "^5.7.0",
-    "eslint-plugin-vue": "~10.8.0",
-    "jiti": "^2.6.1",
+    "eslint-plugin-boundaries": "^6.0.2",
+    "eslint-plugin-cypress": "^6.4.1",
+    "eslint-plugin-oxlint": "~1.63.0",
+    "eslint-plugin-perfectionist": "^5.9.0",
+    "eslint-plugin-vue": "~10.9.1",
+    "jiti": "^2.7.0",
     "npm-run-all2": "^8.0.4",
-    "oxfmt": "^0.41.0",
-    "oxlint": "~1.56.0",
+    "oxfmt": "^0.48.0",
+    "oxlint": "~1.63.0",
     "png-to-ico": "^3.0.1",
-    "semver": "^7.7.4",
+    "semver": "^7.8.0",
     "sharp": "^0.34.5",
-    "start-server-and-test": "^2.1.5",
-    "typescript": "~5.9.3",
-    "vue-tsc": "^3.2.6"
+    "start-server-and-test": "^3.0.4",
+    "typescript": "catalog:",
+    "vue-tsc": "catalog:"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.12.0"
   },
-  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"
+  "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800"
 }

@@ -6,5 +6,16 @@
   },
   "categories": {
     "correctness": "error"
-  }
+  },
+  "rules": {
+    "vitest/require-mock-type-parameters": "off"
+  },
+  "overrides": [
+    {
+      "files": ["cypress/**/*"],
+      "rules": {
+        "vitest/valid-expect": "off"
+      }
+    }
+  ]
 }

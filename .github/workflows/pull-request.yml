@@ -127,7 +127,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           cache: pnpm
-          node-version-file: package.json
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -169,7 +169,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           cache: pnpm
-          node-version-file: package.json
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -204,7 +204,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           cache: pnpm
-          node-version-file: package.json
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -233,7 +233,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           cache: pnpm
-          node-version-file: package.json
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
