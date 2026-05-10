@@ -1,4 +1,5 @@
 ---
+"@markdown-studio/desktop": patch
 "markdown-studio": patch
 ---
 
