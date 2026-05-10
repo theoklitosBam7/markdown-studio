@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           cache: pnpm
-          node-version: 24
+          node-version-file: .node-version
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies

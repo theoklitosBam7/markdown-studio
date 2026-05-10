@@ -45,11 +45,11 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "^24.12.0",
-    "typescript": "~5.9.3",
-    "vitest": "^4.1.1"
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.12.0"
   }
 }
