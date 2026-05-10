@@ -53,8 +53,8 @@ export interface DraftPersistenceAdapter<TPayload> {
   readonly maxSizeBytes: number
   /** Read a previously stored draft, or null if none exists. */
   read(): Promise<null | TPayload>
-  /** Persist the payload. Called after the debounce delay. */
-  write(payload: TPayload): Promise<void>
+  /** Persist the payload. Receives the pre-serialized string to avoid double JSON.stringify. */
+  write(payload: TPayload, serialized: string): Promise<void>
 }
 
 /**
@@ -83,7 +83,7 @@ export function useDebouncedDraftPersistence<TPayload>(
         return
       }
 
-      await options.adapter.write(payload)
+      await options.adapter.write(payload, serialized)
 
       if (generation !== writeGeneration) {
         return

@@ -40,8 +40,8 @@ export function useDesktopDraftPersistence(options: UseDesktopDraftPersistenceOp
       return stored?.activeDocument ?? null
     },
 
-    async write(payload) {
-      await desktop.value.documents.saveWorkspaceDraft({ activeDocument: payload })
+    async write(_payload, _serialized) {
+      await desktop.value.documents.saveWorkspaceDraft({ activeDocument: _payload })
     },
   }
 

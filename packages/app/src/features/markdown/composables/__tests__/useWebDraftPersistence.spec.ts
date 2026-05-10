@@ -114,7 +114,7 @@ describe('useWebDraftPersistence', () => {
 
     expect(window.localStorage.getItem('markdown-studio:web-draft')).not.toBeNull()
 
-    persistence.clearDraft()
+    await persistence.clearDraft()
 
     expect(window.localStorage.getItem('markdown-studio:web-draft')).toBeNull()
   })

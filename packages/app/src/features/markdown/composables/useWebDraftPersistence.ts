@@ -18,6 +18,7 @@ interface UseWebDraftPersistenceOptions {
 }
 
 const STORAGE_KEY = 'markdown-studio:web-draft'
+// 1MB limit to stay well under typical 5-10MB localStorage quotas
 const MAX_DRAFT_SIZE_BYTES = 1024 * 1024
 
 export function clearStoredWebDraft(): void {
@@ -63,8 +64,8 @@ export function useWebDraftPersistence(options: UseWebDraftPersistenceOptions) {
       return readStoredWebDraft()
     },
 
-    async write(payload) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    async write(_payload, serialized) {
+      localStorage.setItem(STORAGE_KEY, serialized)
     },
   }
 
