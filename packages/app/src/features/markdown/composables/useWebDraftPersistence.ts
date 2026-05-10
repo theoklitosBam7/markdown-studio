@@ -1,4 +1,8 @@
-import { type ComputedRef, readonly, shallowRef, watch } from 'vue'
+import type { ComputedRef } from 'vue'
+
+import type { DraftPersistenceAdapter } from './useDebouncedDraftPersistence'
+
+import { useDebouncedDraftPersistence } from './useDebouncedDraftPersistence'
 
 interface StoredDraftPayload {
   content: string
@@ -13,16 +17,9 @@ interface UseWebDraftPersistenceOptions {
   restoreDraft: (payload: StoredDraftPayload) => Promise<void>
 }
 
-interface UseWebDraftPersistenceReturn {
-  clearDraft: () => void
-  persistFailed: Readonly<ReturnType<typeof shallowRef<boolean>>>
-  restored: Readonly<ReturnType<typeof shallowRef<boolean>>>
-  restoreStoredDraft: () => Promise<void>
-}
-
 const STORAGE_KEY = 'markdown-studio:web-draft'
-const WRITE_DELAY_MS = 250
-const MAX_DRAFT_SIZE_BYTES = 1024 * 1024 // 1MB limit to stay well under typical 5-10MB localStorage quotas
+// 1MB limit to stay well under typical 5-10MB localStorage quotas
+const MAX_DRAFT_SIZE_BYTES = 1024 * 1024
 
 export function clearStoredWebDraft(): void {
   if (typeof localStorage !== 'undefined') {
@@ -55,97 +52,38 @@ export function readStoredWebDraft(): null | StoredDraftPayload {
   }
 }
 
-export function useWebDraftPersistence(
-  options: UseWebDraftPersistenceOptions,
-): UseWebDraftPersistenceReturn {
-  const restored = shallowRef(false)
-  const persistFailed = shallowRef(false)
-  let writeTimeoutId: ReturnType<typeof setTimeout> | undefined
+export function useWebDraftPersistence(options: UseWebDraftPersistenceOptions) {
+  const adapter: DraftPersistenceAdapter<StoredDraftPayload> = {
+    async clear() {
+      clearStoredWebDraft()
+    },
 
-  function persistDraft(payload: StoredDraftPayload): void {
-    if (typeof localStorage === 'undefined') {
-      return
-    }
+    maxSizeBytes: MAX_DRAFT_SIZE_BYTES,
 
-    try {
-      const serialized = JSON.stringify(payload)
+    async read() {
+      return readStoredWebDraft()
+    },
 
-      if (serialized.length > MAX_DRAFT_SIZE_BYTES) {
-        console.warn('Draft too large to persist to localStorage')
-        persistFailed.value = true
-        return
-      }
-
+    async write(_payload, serialized) {
       localStorage.setItem(STORAGE_KEY, serialized)
-      persistFailed.value = false
-    } catch {
-      console.warn('Failed to persist draft to localStorage')
-      persistFailed.value = true
-    }
+    },
   }
 
-  async function restoreStoredDraft(): Promise<void> {
-    if (options.isDesktop.value || restored.value) {
-      return
-    }
-
-    const storedDraft = readStoredWebDraft()
-
-    if (!storedDraft) {
-      restored.value = true
-      return
-    }
-
-    await options.restoreDraft(storedDraft)
-    restored.value = true
-  }
-
-  function clearDraft(): void {
-    if (writeTimeoutId !== undefined) {
-      clearTimeout(writeTimeoutId)
-      writeTimeoutId = undefined
-    }
-
-    clearStoredWebDraft()
-  }
-
-  watch(
-    () =>
+  return useDebouncedDraftPersistence({
+    active: () => !options.isDesktop.value,
+    adapter,
+    buildPayload: () => ({
+      content: options.content.value,
+      label: options.displayName.value,
+    }),
+    isDirty: () => options.isDirty.value,
+    onRestore: options.restoreDraft,
+    watchSources: () =>
       [
         options.content.value,
         options.displayName.value,
         options.isDesktop.value,
         options.isDirty.value,
       ] as const,
-    ([content, displayName, isDesktop, isDirty]) => {
-      if (isDesktop || !restored.value) {
-        return
-      }
-
-      if (!isDirty) {
-        clearDraft()
-        return
-      }
-
-      if (writeTimeoutId !== undefined) {
-        clearTimeout(writeTimeoutId)
-      }
-
-      writeTimeoutId = setTimeout(() => {
-        persistDraft({
-          content,
-          label: displayName,
-        })
-        writeTimeoutId = undefined
-      }, WRITE_DELAY_MS)
-    },
-    { immediate: true },
-  )
-
-  return {
-    clearDraft,
-    persistFailed: readonly(persistFailed),
-    restored: readonly(restored),
-    restoreStoredDraft,
-  }
+  })
 }

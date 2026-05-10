@@ -356,7 +356,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       await startNewDocument()
 
       if (!content.value) {
-        clearDraft()
+        await clearDraft()
         await clearDesktopDraft()
       }
     })

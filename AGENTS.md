@@ -9,6 +9,7 @@
 
 ## Issue and PR Templates
 
+- Before creating a PR, make sure to run `pnpm changeset:validate-scopes` to validate the changeset scopes. If there is no changeset file, create one. If the changeset file is not valid, update it to match the new use case.
 - Use the appropriate issue or PR template when creating a new issue or PR located in the `.github` directory.
 - If the template doesn't fit, update it to match the new use case.
 
