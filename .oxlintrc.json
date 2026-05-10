@@ -7,8 +7,15 @@
   "categories": {
     "correctness": "error"
   },
-  "ignorePatterns": ["cypress/"],
   "rules": {
     "vitest/require-mock-type-parameters": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["cypress/**/*"],
+      "rules": {
+        "vitest/valid-expect": "off"
+      }
+    }
+  ]
 }
