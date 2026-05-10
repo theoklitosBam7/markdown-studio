@@ -7,7 +7,6 @@ import type { AppWindow } from '@/browser-window'
 import type {
   EditorPaneAdapter,
   EditorWorkspaceController,
-  EditorWorkspaceFindAction,
   PreviewPaneAdapter,
 } from '@/features/markdown/types'
 
@@ -127,10 +126,10 @@ describe('useEditorWorkspaceController', () => {
     vi.mocked(editor.focus).mockClear()
 
     workspace.editor.updateContent('cat dog cat')
-    await workspace.find.dispatch({ type: 'set-query', value: 'cat' })
-    await workspace.find.dispatch({ type: 'set-replace-text', value: 'fox' })
+    workspace.find.setQuery('cat')
+    workspace.find.setReplaceText('fox')
 
-    await workspace.find.dispatch({ type: 'replace-current' })
+    await workspace.find.replaceCurrent()
 
     expect(editor.replaceRange).toHaveBeenCalledWith(0, 3, 'fox')
     expect(editor.focus).toHaveBeenCalledTimes(1)
@@ -200,22 +199,34 @@ describe('useEditorWorkspaceController', () => {
 
     workspace.editor.updateContent('cat dog cat')
 
-    const actions: EditorWorkspaceFindAction[] = [
-      { type: 'open' },
-      { type: 'open-replace' },
-      { type: 'close' },
-      { type: 'next' },
-      { type: 'previous' },
-      { type: 'set-query', value: 'cat' },
-      { type: 'set-match-case', value: true },
-      { type: 'set-replace-text', value: 'fox' },
-      { type: 'replace-current' },
-      { type: 'replace-all' },
-    ]
+    workspace.find.open()
+    expect(workspace.find.state.value.isOpen).toBe(true)
 
-    for (const action of actions) {
-      await expect(workspace.find.dispatch(action)).resolves.toBeUndefined()
-    }
+    workspace.find.openReplace()
+    expect(workspace.find.state.value.showReplace).toBe(true)
+
+    workspace.find.close()
+    expect(workspace.find.state.value.isOpen).toBe(false)
+
+    workspace.find.setQuery('cat')
+    expect(workspace.find.state.value.query).toBe('cat')
+
+    workspace.find.setMatchCase(true)
+    expect(workspace.find.state.value.matchCase).toBe(true)
+
+    workspace.find.setReplaceText('fox')
+    expect(workspace.find.state.value.replaceText).toBe('fox')
+
+    workspace.find.open()
+    workspace.find.next()
+    expect(workspace.find.state.value.activeMatchIndex).toBe(1)
+
+    workspace.find.previous()
+    expect(workspace.find.state.value.activeMatchIndex).toBe(0)
+
+    workspace.find.setReplaceText('fox')
+    await workspace.find.replaceCurrent()
+    await workspace.find.replaceAll()
 
     wrapper.unmount()
   })

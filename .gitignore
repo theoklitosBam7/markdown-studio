@@ -45,3 +45,9 @@ __screenshots__/
 # Packaged npm launcher outputs
 packages/cli/dist
 packages/cli/public
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.pi/cache/

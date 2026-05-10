@@ -4,7 +4,7 @@ export type {
   EditorPaneAdapter,
   EditorScrollPayload,
   EditorWorkspaceController,
-  EditorWorkspaceFindAction,
+  EditorWorkspaceFindApi,
   EditorWorkspaceFindState,
   EditorWorkspaceState,
   PreviewPaneAdapter,

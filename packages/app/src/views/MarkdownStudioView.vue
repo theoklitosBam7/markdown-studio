@@ -94,6 +94,41 @@ function handleExportPdf(): void {
   })
 }
 
+function handleFindAction(action: { type: string; value?: unknown }): void {
+  switch (action.type) {
+    case 'close':
+      workspace.find.close()
+      return
+    case 'next':
+      workspace.find.next()
+      return
+    case 'open':
+      workspace.find.open()
+      return
+    case 'open-replace':
+      workspace.find.openReplace()
+      return
+    case 'previous':
+      workspace.find.previous()
+      return
+    case 'replace-all':
+      void workspace.find.replaceAll()
+      return
+    case 'replace-current':
+      void workspace.find.replaceCurrent()
+      return
+    case 'set-match-case':
+      workspace.find.setMatchCase(action.value as boolean)
+      return
+    case 'set-query':
+      workspace.find.setQuery(action.value as string)
+      return
+    case 'set-replace-text':
+      workspace.find.setReplaceText(action.value as string)
+      return
+  }
+}
+
 function handleInstall(): void {
   void workspace.toolbar.install().catch((error: unknown) => {
     console.error('Failed to trigger web app install:', error)
@@ -159,7 +194,7 @@ function handleStartNewDocument(): void {
         :content="content"
         :find-state="workspace.find.state.value"
         :line-count="stats.lines"
-        @find-action="workspace.find.dispatch"
+        @find-action="handleFindAction"
         @scroll="handleEditorScroll"
         @update:content="workspace.editor.updateContent"
       />
