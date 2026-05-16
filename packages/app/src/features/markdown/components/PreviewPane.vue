@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import DOMPurify from 'dompurify'
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { useDesktop } from '@/composables/useDesktop'
 import { isSafeExternalUrl } from '@/utils/platform'
 
 import type { MarkdownSourceMapEntry, Theme } from '../types'
+
+import { sanitizeRenderedMarkdownPreviewHtml } from '../rendered-document'
 
 interface Props {
   html: string
@@ -27,13 +28,7 @@ const previewScrollRef = useTemplateRef<HTMLDivElement>('previewScroll')
 const renderKey = ref(0)
 
 const sanitizedHtml = computed(() =>
-  DOMPurify.sanitize(props.html, {
-    ADD_ATTR: ['data-source-end', 'data-source-id', 'data-source-start', 'id'],
-    FORBID_ATTR: desktop.value.isDesktop
-      ? ['allow', 'allowfullscreen', 'frameborder', 'scrolling']
-      : [],
-    FORBID_TAGS: desktop.value.isDesktop ? ['iframe'] : [],
-  }),
+  sanitizeRenderedMarkdownPreviewHtml(props.html, desktop.value.isDesktop ? 'desktop' : 'web'),
 )
 
 function getAnchorTop(element: HTMLElement, scrollContainer: HTMLDivElement): number {

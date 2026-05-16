@@ -7,11 +7,11 @@ import { useDesktop } from '@/composables/useDesktop'
 import { revokeObjectUrlLater } from '@/utils/objectUrl'
 
 import {
-  buildMarkdownDocumentHtml,
-  getDefaultExportTitle,
-  getSuggestedExportFileName,
-  renderMarkdownDocument,
-} from '../utils/renderMarkdownDocument'
+  buildExportHtml,
+  getDefaultTitle,
+  getSuggestedFileName,
+  renderExport,
+} from '../rendered-document'
 
 interface UseDocumentExportOptions {
   content: DeepReadonly<ShallowRef<string>>
@@ -141,8 +141,8 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
 
   async function exportHtml(): Promise<void> {
     const rendered = await renderCurrentDocument()
-    const documentHtml = buildMarkdownDocumentHtml(rendered)
-    const suggestedPath = getSuggestedExportFileName(getDocumentPath(), 'html')
+    const documentHtml = buildExportHtml(rendered)
+    const suggestedPath = getSuggestedFileName(getDocumentPath(), 'html')
 
     if (desktop.value.isDesktop) {
       await desktop.value.exports.exportHtml({
@@ -162,8 +162,8 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
     }
 
     const rendered = await renderCurrentDocument()
-    const documentHtml = buildMarkdownDocumentHtml(rendered)
-    const suggestedPath = getSuggestedExportFileName(getDocumentPath(), 'pdf')
+    const documentHtml = buildExportHtml(rendered)
+    const suggestedPath = getSuggestedFileName(getDocumentPath(), 'pdf')
 
     if (desktop.value.isDesktop) {
       await desktop.value.exports.exportPdf({
@@ -210,9 +210,9 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
   }
 
   async function renderCurrentDocument() {
-    return renderMarkdownDocument({
+    return renderExport({
       content: options.content.value,
-      title: getDefaultExportTitle(getDocumentPath()),
+      title: getDefaultTitle(getDocumentPath()),
     })
   }
 }
