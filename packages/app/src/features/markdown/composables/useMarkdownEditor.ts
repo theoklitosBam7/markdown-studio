@@ -8,8 +8,8 @@ import { escapeHtml } from '@/utils/escapeHtml'
 
 import type { EditorStats, Example, MarkdownSourceMapEntry, Theme, ViewMode } from '../types'
 
+import { renderPreview } from '../rendered-document'
 import { DEFAULT_EXAMPLE_INDEX, EXAMPLES } from './examples'
-import { renderMarkdownWithSourceMap } from './renderMarkdownWithSourceMap'
 
 interface UseMarkdownEditorOptions {
   initialContent?: string
@@ -67,8 +67,8 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}): UseMa
   })
 
   // Computed
-  const renderedMarkdown = computed(() => renderMarkdownWithSourceMap(_content.value))
-  const renderedHtml = computed(() => renderedMarkdown.value.html)
+  const renderedMarkdown = computed(() => renderPreview({ content: _content.value }))
+  const renderedHtml = computed(() => renderedMarkdown.value.bodyHtml)
   const sourceMap = computed(() => renderedMarkdown.value.sourceMap)
 
   const stats = computed<EditorStats>(() => {
