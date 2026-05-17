@@ -1,5 +1,43 @@
 # @markdown-studio/desktop
 
+## 0.7.0
+
+### Minor Changes
+
+- cbc3457: Add a keyboard-first command palette to the editor workspace
+
+  - Add searchable workspace commands for document, editor, view, theme, export, and examples workflows
+  - Add an accessible command palette overlay with keyboard navigation, disabled reasons, and current-state markers
+  - Add shortcut label formatting and focused command palette tests
+
+### Patch Changes
+
+- 6baa5e4: Update tooling and dependencies across the monorepo
+
+  - Migrate shared devDependencies to pnpm catalogs for version consistency
+  - Bump Node.js engine requirement to >=22.12.0 and add .node-version pin
+  - Update CI workflows to use .node-version for Node resolution
+  - Expand .npmrc with workspace, peer dependency, and performance settings
+  - Bump core dependencies (Vue 3.5.34, Vite 8.0.11, Vitest 4.1.5, Electron 41.5.1, and others)
+
+- f5c9c53: Extract shared draft persistence debounce logic into reusable composable
+
+  - Introduce `useDebouncedDraftPersistence` with adapter interface to consolidate duplicated debounce, generation-tracking, and flag logic
+  - Eliminate double JSON.stringify on the web write path by passing pre-serialized string to adapters
+
+- dcf6517: Replace find dispatch with direct method API
+
+  - Replace `EditorWorkspaceFindAction` discriminated union with `EditorWorkspaceFindApi` interface
+  - Expose named methods (`open`, `close`, `setQuery`, etc.) instead of `dispatch(action)`
+  - Remove unused state properties from `EditorWorkspaceState`
+
+- c25a5f2: Extract rendered Markdown Document domain module and add project glossary
+
+  - Introduce `rendered-document/` module consolidating preview rendering, export rendering, sanitization, Mermaid export, source marker cleanup, standalone HTML assembly, and export filename helpers
+  - Move `renderMarkdownWithSourceMap` from composables into the rendered-document module
+  - Retain `utils/renderMarkdownDocument` as a compatibility wrapper for existing consumers
+  - Add CONTEXT.md with domain glossary establishing shared vocabulary (Markdown Document, Rendered Markdown Document, Product Surface, Runtime, Workspace Draft, etc.)
+
 ## 0.6.0
 
 ### Minor Changes
