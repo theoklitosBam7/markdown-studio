@@ -403,6 +403,33 @@ describe('Markdown Studio responsive shell', () => {
     })
   })
 
+  it('opens the command palette and runs Find from the editor', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('textarea').trigger('keydown', { ctrlKey: true, key: 'k' })
+    cy.get('.command-palette__input').should('be.focused').type('find{enter}')
+
+    cy.get('.command-palette').should('not.exist')
+    cy.get('.find-replace-bar__input').first().should('be.focused')
+  })
+
+  it('scrolls the command palette results with arrow-key navigation', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('textarea').trigger('keydown', { ctrlKey: true, key: 'k' })
+    cy.get('.command-palette__input').should('be.focused')
+
+    for (let index = 0; index < 12; index += 1) {
+      cy.get('.command-palette__input').type('{downArrow}')
+    }
+
+    cy.get('.command-palette__results').should(($results) => {
+      expect(($results[0] as HTMLElement).scrollTop).to.be.greaterThan(0)
+    })
+  })
+
   it('focuses the editor at the clicked preview block in split mode', () => {
     cy.viewport(1280, 900)
     cy.visit('/')

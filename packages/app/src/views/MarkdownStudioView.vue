@@ -3,6 +3,7 @@ import { useTemplateRef, watch } from 'vue'
 
 import type { EditorScrollPayload } from '@/features/markdown/types'
 
+import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
@@ -10,9 +11,13 @@ import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
+import { useCommandPalette } from '@/features/markdown/composables/useCommandPalette'
+import { useEditorWorkspaceCommands } from '@/features/markdown/composables/useEditorWorkspaceCommands'
 import { useEditorWorkspaceController } from '@/features/markdown/composables/useEditorWorkspaceController'
 
 const workspace = useEditorWorkspaceController()
+const commands = useEditorWorkspaceCommands(workspace)
+const commandPalette = useCommandPalette({ commands })
 const {
   availableModes,
   bannerStatus,
@@ -140,10 +145,23 @@ function handleStartNewDocument(): void {
     console.error('Failed to start new document:', error)
   })
 }
+
+function handleWorkspaceKeydown(event: KeyboardEvent): void {
+  const hasCommandModifier = event.metaKey || event.ctrlKey
+
+  if (!hasCommandModifier || event.key.toLowerCase() !== 'k' || event.isComposing) {
+    return
+  }
+
+  event.preventDefault()
+  if (!isExamplesModalOpen.value) {
+    commandPalette.open()
+  }
+}
 </script>
 
 <template>
-  <div class="markdown-studio" :class="bodyClasses">
+  <div class="markdown-studio" :class="bodyClasses" @keydown.capture="handleWorkspaceKeydown">
     <Toolbar
       :available-modes="availableModes"
       :can-export-pdf="canExportPdf"
@@ -221,6 +239,17 @@ function handleStartNewDocument(): void {
       :is-open="isExamplesModalOpen"
       @close="workspace.examples.close"
       @select="workspace.document.loadExample"
+    />
+
+    <CommandPalette
+      :active-command-id="commandPalette.activeCommandId.value"
+      :is-open="commandPalette.isOpen.value"
+      :query="commandPalette.query.value"
+      :results="commandPalette.results.value"
+      @close="commandPalette.close"
+      @execute="commandPalette.execute"
+      @move-active="commandPalette.moveActive"
+      @update:query="commandPalette.setQuery"
     />
   </div>
 </template>
