@@ -7,6 +7,14 @@ Markdown Studio is a Markdown editing context centered on authoring, previewing,
 **Markdown Document**:
 User-authored Markdown content plus its document identity, such as a display name or saved file path.
 
+**Command**:
+A searchable user intention that invokes an existing **Editor Workspace** capability.
+_Avoid_: action, handler, event
+
+**Command Palette**:
+A searchable **Editor Workspace** surface for discovering and invoking **Commands**.
+_Avoid_: launcher, quick actions
+
 **Document Identity**:
 The name or saved file path Markdown Studio uses to recognize a **Markdown Document** across editing, saving, restoring, and exporting.
 _Avoid_: display name, current path
@@ -57,6 +65,8 @@ _Avoid_: route, layout
 ## Relationships
 
 - A **Markdown Document** may have a **Document Identity**.
+- A **Command Palette** belongs to the **Editor Workspace**.
+- A **Command** invokes an existing **Editor Workspace** capability.
 - A **Markdown Document** can produce one or more **Rendered Markdown Documents**.
 - A **Markdown Document** may contain zero or more **Embedded Diagrams**.
 - An **Editor Workspace** has at most one active **Markdown Document**.

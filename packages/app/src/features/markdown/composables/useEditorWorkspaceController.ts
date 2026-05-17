@@ -70,6 +70,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     restoreWorkspaceDraft: restoreDocumentWorkspaceDraft,
     savedContent,
     saveDocument,
+    saveDocumentAs,
     startNewDocument,
     statusText,
   } = useDocumentSession({
@@ -351,6 +352,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     await performDocumentAction(saveDocument)
   }
 
+  async function saveWorkspaceDocumentAs(): Promise<void> {
+    await performDocumentAction(saveDocumentAs)
+  }
+
   async function startNew(): Promise<void> {
     await performDocumentAction(async () => {
       await startNewDocument()
@@ -488,6 +493,13 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       return
     }
 
+    // Consumed so Cmd/Ctrl+K doesn't fall through to find/replace handling;
+    // the command palette opens via a capture-phase handler in the view.
+    if (hasCommandModifier && normalizedKey === 'k') {
+      event.preventDefault()
+      return
+    }
+
     if (!isFindReplaceOpen.value) {
       return
     }
@@ -549,6 +561,9 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
       async save(): Promise<void> {
         await saveWorkspaceDocument()
+      },
+      async saveAs(): Promise<void> {
+        await saveWorkspaceDocumentAs()
       },
       async startNew(): Promise<void> {
         await startNew()

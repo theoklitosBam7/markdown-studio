@@ -47,6 +47,7 @@ export interface EditorWorkspaceController {
     open(): Promise<void>
     restoreDraft(): Promise<void>
     save(): Promise<void>
+    saveAs(): Promise<void>
     startNew(): Promise<void>
   }
   editor: {
