@@ -1,4 +1,5 @@
 export const APP_COMMAND_CHANNEL = 'app:command'
+export const INSTALL_IS_HOMEBREW_CHANNEL = 'install:isHomebrew'
 export const DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL = 'documents:clearLastOpened'
 export const DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL = 'documents:clearWorkspaceDraft'
 export const DOCUMENTS_OPEN_CHANNEL = 'documents:open'

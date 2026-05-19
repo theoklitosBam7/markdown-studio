@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 
 import { registerDesktopIpc } from './ipc/documents'
+import { registerInstallIpc } from './ipc/install-method'
 import { buildAppMenu } from './menu/appMenu'
 
 const preloadPath = fileURLToPath(new URL('../preload/preload.cjs', import.meta.url))
@@ -43,6 +44,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
   })
 
   registerDesktopIpc(window)
+  registerInstallIpc()
   Menu.setApplicationMenu(buildAppMenu(window))
 
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {

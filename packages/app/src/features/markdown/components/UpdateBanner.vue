@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import { onUnmounted, shallowRef } from 'vue'
+
 import { coerce } from '@/utils/semver'
 
 interface Props {
   currentVersion?: string
+  homebrewUpgradeCommand?: string
+  isHomebrewInstall?: boolean
   latestVersion?: string
   status: 'up-to-date' | 'update-available'
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   dismiss: []
@@ -15,6 +19,34 @@ const emit = defineEmits<{
 }>()
 
 const normalizeVersion = (v?: string) => (v ? coerce(v) : undefined)
+
+const isCopied = shallowRef(false)
+const COPY_FEEDBACK_MS = 2000
+let copyFeedbackTimeoutId: ReturnType<typeof setTimeout> | undefined
+
+function clearCopyFeedbackTimer(): void {
+  if (copyFeedbackTimeoutId !== undefined) {
+    clearTimeout(copyFeedbackTimeoutId)
+    copyFeedbackTimeoutId = undefined
+  }
+}
+
+async function copyBrewCommand(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(props.homebrewUpgradeCommand ?? '')
+    isCopied.value = true
+    clearCopyFeedbackTimer()
+    copyFeedbackTimeoutId = setTimeout(() => {
+      isCopied.value = false
+    }, COPY_FEEDBACK_MS)
+  } catch {
+    // Clipboard may be unavailable in some contexts
+  }
+}
+
+onUnmounted(() => {
+  clearCopyFeedbackTimer()
+})
 </script>
 
 <template>
@@ -59,8 +91,22 @@ const normalizeVersion = (v?: string) => (v ? coerce(v) : undefined)
         v{{ normalizeVersion(currentVersion) }} &rarr; v{{ normalizeVersion(latestVersion) }}
       </span>
 
+      <!-- Homebrew install: show copyable upgrade command -->
+      <template v-if="status === 'update-available' && isHomebrewInstall">
+        <code class="update-banner__command">{{ homebrewUpgradeCommand }}</code>
+        <button
+          class="update-banner__copy-btn"
+          :class="{ 'update-banner__copy-btn--copied': isCopied }"
+          type="button"
+          @click="copyBrewCommand"
+        >
+          {{ isCopied ? 'Copied!' : 'Copy' }}
+        </button>
+      </template>
+
+      <!-- Direct download install: show download button -->
       <button
-        v-if="status === 'update-available'"
+        v-if="status === 'update-available' && !isHomebrewInstall"
         class="update-banner__download-btn"
         type="button"
         @click="emit('download')"
@@ -122,6 +168,44 @@ const normalizeVersion = (v?: string) => (v ? coerce(v) : undefined)
 .update-banner__versions {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.update-banner__command {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.update-banner__copy-btn {
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.update-banner__copy-btn:hover {
+  opacity: 0.85;
+}
+
+.update-banner__copy-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.update-banner__copy-btn--copied {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .update-banner__download-btn {

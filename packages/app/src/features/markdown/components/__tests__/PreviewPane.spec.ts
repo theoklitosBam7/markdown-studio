@@ -107,6 +107,9 @@ describe('PreviewPane', () => {
         exportHtml: async () => null,
         exportPdf: async () => null,
       },
+      install: {
+        isHomebrew: async () => false,
+      },
       isDesktop: true,
       shell: {
         openExternal,

@@ -18,12 +18,14 @@ const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
 const INITIAL_DELAY_MS = 5000
 
 const RELEASES_URL = 'https://api.github.com/repos/theoklitosBam7/markdown-studio/releases/latest'
+const HOMEBREW_UPGRADE_COMMAND = 'brew upgrade --cask theoklitosBam7/tap/markdown-studio'
 
 export function useUpdateChecker() {
   const desktop = useDesktop()
   const updateInfo = shallowRef<null | UpdateInfo>(null)
   const isDismissed = shallowRef(false)
   const manualCheckStatus = shallowRef<ManualCheckStatus>('idle')
+  const isHomebrewInstall = shallowRef(false)
 
   let upToDateTimeoutId: ReturnType<typeof setTimeout> | undefined
   let timeoutId: ReturnType<typeof setTimeout> | undefined
@@ -147,6 +149,16 @@ export function useUpdateChecker() {
   }
 
   function startChecking(): void {
+    // Detect install method on startup
+    desktop.value.install
+      .isHomebrew()
+      .then((isHomebrew) => {
+        isHomebrewInstall.value = isHomebrew
+      })
+      .catch(() => {
+        isHomebrewInstall.value = false
+      })
+
     const elapsed = Date.now() - readLastCheck()
     const remaining = Math.max(0, CHECK_INTERVAL_MS - elapsed)
     const firstCheck = remaining === 0 ? INITIAL_DELAY_MS : remaining + INITIAL_DELAY_MS
@@ -177,10 +189,14 @@ export function useUpdateChecker() {
     () => updateAvailable.value || manualCheckStatus.value === 'up-to-date',
   )
 
+  const homebrewUpgradeCommand = computed(() => HOMEBREW_UPGRADE_COMMAND)
+
   return {
     checkNow,
     dismiss,
     download,
+    homebrewUpgradeCommand,
+    isHomebrewInstall: readonly(isHomebrewInstall),
     manualCheckStatus: readonly(manualCheckStatus),
     showBanner,
     startChecking,

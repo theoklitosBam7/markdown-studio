@@ -13,6 +13,7 @@ export interface DesktopApi {
   documents: DesktopDocumentsApi
   editing: DesktopEditingApi
   exports: DesktopExportsApi
+  install: DesktopInstallApi
   isDesktop: boolean
   shell: DesktopShellApi
 }
@@ -50,6 +51,10 @@ export interface DesktopExportInput {
 export interface DesktopExportsApi {
   exportHtml: (input: DesktopExportInput) => Promise<{ path: string } | null>
   exportPdf: (input: DesktopExportInput) => Promise<{ path: string } | null>
+}
+
+export interface DesktopInstallApi {
+  isHomebrew: () => Promise<boolean>
 }
 
 export interface DesktopSaveAsInput {

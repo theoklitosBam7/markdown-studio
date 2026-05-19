@@ -72,7 +72,28 @@ npx markdown-studio@latest --version
 
 ### Download Desktop App
 
-Get the native macOS application from GitHub Releases:
+Markdown Studio is available as a native macOS application.
+
+**Install via Homebrew (Recommended)**
+
+If you have [Homebrew](https://brew.sh/) installed, this is the easiest way to install and update:
+
+```sh
+brew install --cask theoklitosBam7/tap/markdown-studio
+```
+
+To update to the latest version:
+
+```sh
+brew upgrade --cask theoklitosBam7/tap/markdown-studio
+```
+
+> [!NOTE]
+> If you previously installed Markdown Studio by downloading the DMG directly, uninstall it first by dragging `Markdown Studio.app` from `/Applications` to the Trash before switching to the Homebrew install. Otherwise you may end up with two copies.
+
+**Direct Download**
+
+Get the macOS application from GitHub Releases:
 
 **[Download latest release →](https://github.com/theoklitosBam7/markdown-studio/releases/latest)**
 
@@ -83,10 +104,10 @@ Download `Markdown-Studio-darwin-arm64.dmg` (Apple Silicon), open the DMG, and d
 >
 > macOS may show a warning that `Markdown Studio.app` is **damaged and can't be opened**. This happens because the app is unsigned.
 >
-> **Fix:** Clear the quarantine flag in Terminal:
+> **Fix:** Clear the quarantine attribute in Terminal:
 >
 > ```sh
-> xattr -cr /Applications/Markdown\ Studio.app
+> xattr -dr com.apple.quarantine /Applications/Markdown\ Studio.app
 > ```
 >
 > **Alternative:** Open `System Settings` → `Privacy & Security` and allow the app to run from there.
