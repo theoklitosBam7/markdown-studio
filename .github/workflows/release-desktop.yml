@@ -123,10 +123,13 @@ jobs:
 
       - name: Update Homebrew tap
         if: ${{ !inputs.dry_run }}
+        continue-on-error: true
         env:
           TAP_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
         shell: bash
         run: |
+          echo "::warning::Homebrew tap updates are best-effort and will not fail the desktop release."
+
           if [[ -z "$TAP_TOKEN" ]]; then
             echo "TAP_REPO_TOKEN secret is not set. Skipping Homebrew tap update."
             echo "Set the secret to a PAT with repo scope for theoklitosBam7/homebrew-tap to enable automatic cask updates."
