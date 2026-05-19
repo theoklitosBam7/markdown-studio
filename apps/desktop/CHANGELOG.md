@@ -1,5 +1,16 @@
 # @markdown-studio/desktop
 
+## 0.8.0
+
+### Minor Changes
+
+- 180639e: Add Homebrew Cask distribution channel for macOS
+
+  - Detect Homebrew install via marker file and show upgrade command in UpdateBanner
+  - Add IPC channel for install-method detection through desktop contract
+  - Auto-update Homebrew tap repo in CI release workflow
+  - Add ADR-0001 documenting the distribution decision
+
 ## 0.7.0
 
 ### Minor Changes
