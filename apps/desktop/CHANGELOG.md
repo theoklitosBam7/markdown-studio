@@ -1,5 +1,15 @@
 # @markdown-studio/desktop
 
+## 0.8.1
+
+### Patch Changes
+
+- 20c2dff: Decouple Homebrew tap updates from immutable desktop releases
+
+  - Add a manual Homebrew tap update workflow for published desktop releases
+  - Keep release publishing successful when the best-effort tap update fails
+  - Allow tap updates to be retried without recreating desktop release tags
+
 ## 0.8.0
 
 ### Minor Changes
