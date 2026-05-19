@@ -128,10 +128,12 @@ export interface EditorWorkspaceState {
   canSaveDocuments: Readonly<Ref<boolean>>
   content: Readonly<Ref<string>>
   displayName: Readonly<Ref<string>>
+  homebrewUpgradeCommand: Readonly<ComputedRef<string>>
   isCopied: Readonly<Ref<boolean>>
   isDesktop: Readonly<Ref<boolean>>
   isDirty: Readonly<Ref<boolean>>
   isExamplesModalOpen: ShallowRef<boolean>
+  isHomebrewInstall: Readonly<Ref<boolean>>
   isMobile: ShallowRef<boolean>
   pdfExportUnavailableReason: Readonly<Ref<string>>
   pwaBannerStatus: Readonly<Ref<'offline-ready' | 'update-available'>>

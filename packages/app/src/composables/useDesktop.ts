@@ -25,6 +25,9 @@ const fallbackDesktopApi: DesktopApi = {
     exportHtml: async () => null,
     exportPdf: async () => null,
   },
+  install: {
+    isHomebrew: async () => false,
+  },
   isDesktop: false,
   shell: {
     openExternal: async () => undefined,

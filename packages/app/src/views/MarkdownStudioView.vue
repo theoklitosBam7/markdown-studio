@@ -28,9 +28,11 @@ const {
   canSaveDocuments,
   content,
   displayName,
+  homebrewUpgradeCommand,
   isCopied,
   isDirty,
   isExamplesModalOpen,
+  isHomebrewInstall,
   isMobile,
   pdfExportUnavailableReason,
   pwaBannerStatus,
@@ -191,6 +193,8 @@ function handleWorkspaceKeydown(event: KeyboardEvent): void {
         :status="bannerStatus"
         :current-version="updateInfo?.currentVersion"
         :latest-version="updateInfo?.latestVersion"
+        :is-homebrew-install="isHomebrewInstall"
+        :homebrew-upgrade-command="homebrewUpgradeCommand"
         @dismiss="workspace.toolbar.dismissUpdateBanner"
         @download="workspace.toolbar.downloadUpdate"
       />

@@ -29,6 +29,9 @@ function createDesktopMock(): DesktopApi {
       exportHtml: vi.fn(async () => null),
       exportPdf: vi.fn(async () => null),
     },
+    install: {
+      isHomebrew: async () => false,
+    },
     isDesktop: true,
     shell: {
       openExternal: vi.fn(async () => undefined),

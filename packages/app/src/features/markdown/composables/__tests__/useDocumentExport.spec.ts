@@ -195,6 +195,9 @@ describe('useDocumentExport', () => {
         exportHtml,
         exportPdf,
       },
+      install: {
+        isHomebrew: async () => false,
+      },
       isDesktop: true,
       shell: {
         openExternal: async () => undefined,

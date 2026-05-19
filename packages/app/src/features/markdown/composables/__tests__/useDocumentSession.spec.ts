@@ -29,6 +29,9 @@ const desktopMock = {
     exportHtml: vi.fn(async () => ({ path: '/tmp/exported.html' })),
     exportPdf: vi.fn(async () => ({ path: '/tmp/exported.pdf' })),
   },
+  install: {
+    isHomebrew: async () => false,
+  },
   isDesktop: true,
   shell: {
     openExternal: vi.fn(async () => undefined),

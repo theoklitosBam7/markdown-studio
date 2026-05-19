@@ -332,6 +332,9 @@ describe('useEditorWorkspaceController', () => {
         exportHtml: async () => null,
         exportPdf: async () => null,
       },
+      install: {
+        isHomebrew: async () => false,
+      },
       isDesktop: true,
       shell: {
         openExternal: async () => undefined,
@@ -386,6 +389,9 @@ describe('useEditorWorkspaceController', () => {
         exportHtml: async () => null,
         exportPdf: async () => null,
       },
+      install: {
+        isHomebrew: async () => false,
+      },
       isDesktop: true,
       shell: {
         openExternal: async () => undefined,
@@ -436,6 +442,9 @@ describe('useEditorWorkspaceController', () => {
         exportHtml: async () => null,
         exportPdf: async () => null,
       },
+      install: {
+        isHomebrew: async () => false,
+      },
       isDesktop: true,
       shell: {
         openExternal: async () => undefined,
@@ -477,6 +486,9 @@ describe('useEditorWorkspaceController', () => {
       exports: {
         exportHtml: async () => null,
         exportPdf: async () => null,
+      },
+      install: {
+        isHomebrew: async () => false,
       },
       isDesktop: true,
       shell: {
@@ -536,6 +548,9 @@ describe('useEditorWorkspaceController', () => {
       exports: {
         exportHtml: async () => null,
         exportPdf: async () => null,
+      },
+      install: {
+        isHomebrew: async () => false,
       },
       isDesktop: true,
       shell: {
