@@ -1,0 +1,95 @@
+name: Update Homebrew Tap
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Desktop version to publish to the Homebrew tap
+        required: true
+        type: string
+      tag:
+        description: GitHub release tag. Defaults to desktop-v<version>
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update-homebrew-tap:
+    name: Update Homebrew tap
+    runs-on: macos-latest
+    steps:
+      - name: Resolve release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          version="${{ inputs.version }}"
+          tag="${{ inputs.tag }}"
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid desktop version: $version" >&2
+            exit 1
+          fi
+
+          if [[ -z "$tag" ]]; then
+            tag="desktop-v$version"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Download release DMG
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
+        shell: bash
+        run: |
+          mkdir -p "${{ runner.temp }}/release-assets"
+          gh release download "$RELEASE_TAG" \
+            --repo "${{ github.repository }}" \
+            --pattern "*.dmg" \
+            --dir "${{ runner.temp }}/release-assets"
+
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
+          VERSION: ${{ steps.release_meta.outputs.version }}
+        shell: bash
+        run: |
+          if [[ -z "$TAP_TOKEN" ]]; then
+            echo "TAP_REPO_TOKEN secret is not set."
+            echo "Set the secret to a PAT with repo scope for theoklitosBam7/homebrew-tap to enable automatic cask updates."
+            exit 1
+          fi
+
+          DMG_FILE=$(find "${{ runner.temp }}/release-assets" -maxdepth 1 -type f -name '*arm64*.dmg' | sort | head -n 1)
+          if [[ -z "$DMG_FILE" ]]; then
+            DMG_FILE=$(find "${{ runner.temp }}/release-assets" -maxdepth 1 -type f -name '*.dmg' | sort | head -n 1)
+          fi
+          if [[ -z "$DMG_FILE" ]]; then
+            echo "No DMG asset found on the release."
+            exit 1
+          fi
+
+          git clone --depth 1 https://github.com/theoklitosBam7/homebrew-tap.git /tmp/homebrew-tap
+
+          SHA256=$(shasum -a 256 "$DMG_FILE" | awk '{print $1}')
+          CASK_FILE="/tmp/homebrew-tap/Casks/markdown-studio.rb"
+
+          if [[ ! -f "$CASK_FILE" ]]; then
+            echo "Cask file not found at $CASK_FILE"
+            exit 1
+          fi
+
+          sed -i '' "s/^  version \".*\"/  version \"${VERSION}\"/" "$CASK_FILE"
+          sed -i '' "s/^  sha256 \".*\"/  sha256 \"${SHA256}\"/" "$CASK_FILE"
+
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Update markdown-studio to ${VERSION}"
+          git remote set-url origin "https://x-access-token:${TAP_TOKEN}@github.com/theoklitosBam7/homebrew-tap.git"
+          git push origin HEAD:main
