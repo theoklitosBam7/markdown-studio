@@ -166,4 +166,5 @@ jobs:
           git add -A
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "Update markdown-studio to ${VERSION}"
-          git -c http.extraheader="AUTHORIZATION: bearer ${TAP_TOKEN}" push origin HEAD:main
+          git remote set-url origin "https://x-access-token:${TAP_TOKEN}@github.com/theoklitosBam7/homebrew-tap.git"
+          git push origin HEAD:main
