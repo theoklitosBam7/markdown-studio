@@ -8,13 +8,14 @@ import './styles/components.css'
 import './styles/main.css'
 
 const npmCommand = 'npx markdown-studio@latest'
+const brewCommand = 'brew install --cask theoklitosBam7/tap/markdown-studio'
 
-async function copyNpmCommand(button: HTMLElement): Promise<void> {
+async function copyToClipboard(text: string, button: HTMLElement): Promise<void> {
   try {
-    await navigator.clipboard.writeText(npmCommand)
+    await navigator.clipboard.writeText(text)
     updateCopyButtonLabel(button, 'Copied!')
   } catch (error) {
-    console.error('Failed to copy npm command to clipboard:', error)
+    console.error('Failed to copy command to clipboard:', error)
     updateCopyButtonLabel(button, 'Copy failed')
   }
 }
@@ -24,9 +25,16 @@ function handleCopyCommandClick(event: MouseEvent): void {
   if (!(target instanceof Element)) return
 
   const button = target.closest<HTMLElement>('[data-action="copy-npm"]')
-  if (!button) return
+  if (button) {
+    void copyToClipboard(npmCommand, button)
+    return
+  }
 
-  void copyNpmCommand(button)
+  const brewButton = target.closest<HTMLElement>('[data-action="copy-brew"]')
+  if (brewButton) {
+    void copyToClipboard(brewCommand, brewButton)
+    return
+  }
 }
 
 // Render the app
@@ -48,7 +56,7 @@ function updateCopyButtonLabel(button: HTMLElement, label: string): void {
   const commandSpan = button.querySelector<HTMLElement>('.npm-command')
   if (!commandSpan) return
 
-  const originalText = commandSpan.textContent ?? npmCommand
+  const originalText = commandSpan.textContent ?? ''
   commandSpan.textContent = label
 
   window.setTimeout(() => {
