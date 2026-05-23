@@ -43,9 +43,10 @@ const features: Feature[] = [
     title: 'PWA Support',
   },
   {
-    description: 'Download the desktop app for macOS and enjoy a native editing experience.',
+    description:
+      'Install the desktop app on macOS for a dedicated editing environment with full file system integration.',
     icon: '🖥️',
-    title: 'Native Desktop App',
+    title: 'Desktop App',
   },
   {
     description:

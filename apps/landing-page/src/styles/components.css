@@ -57,16 +57,27 @@
 .hero-ctas {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
   align-items: center;
   justify-content: center;
 }
 
-@media (min-width: 640px) {
-  .hero-ctas {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
+.hero-cta-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 440px;
+}
+
+.hero-cta-wrapper .btn {
+  width: 100%;
+}
+
+.hero-cta-hint {
+  font-size: 0.8rem;
+  color: var(--text-faint);
 }
 
 .hero-ctas-hint {
@@ -384,17 +395,35 @@
 .cta-buttons {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-12);
 }
 
-@media (min-width: 640px) {
-  .cta-buttons {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
+.cta-button-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 440px;
+}
+
+.cta-button-wrapper .btn {
+  width: 100%;
+}
+
+.cta-button-hint {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.cta-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: calc(-1 * var(--space-8));
+  margin-bottom: var(--space-8);
 }
 
 .cta-github {
@@ -606,6 +635,17 @@
 .usage-cta {
   width: 100%;
   justify-content: center;
+}
+
+.usage-fallback-link {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: var(--space-3);
+}
+
+.usage-fallback-link:hover {
+  color: var(--accent);
 }
 
 @media (min-width: 768px) {
