@@ -36,6 +36,8 @@ jobs:
               - 'cypress/**/*'
               - '**/__tests__/**'
               - '**/*.spec.ts'
+              - '**/*.spec.mjs'
+              - 'scripts/**/*'
               - 'pnpm-workspace.yaml'
               - 'package.json'
               - '**/vite.config.ts'
@@ -182,6 +184,9 @@ jobs:
 
       - name: Type check
         run: pnpm type-check
+
+      - name: Run script tests
+        run: pnpm test:scripts
 
       - name: Run unit tests
         run: pnpm test:unit

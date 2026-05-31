@@ -35,6 +35,7 @@
     "preview": "pnpm --filter @markdown-studio/web preview",
     "preview:desktop": "pnpm --filter @markdown-studio/desktop preview",
     "test:unit": "pnpm -r test",
+    "test:scripts": "vitest run scripts/",
     "prepare": "cypress install",
     "generate-pwa-assets": "pwa-assets-generator",
     "generate-desktop-icons": "node scripts/generate-desktop-icons.mjs",
@@ -75,6 +76,7 @@
     "sharp": "^0.34.5",
     "start-server-and-test": "^3.0.4",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "vue-tsc": "catalog:"
   },
   "engines": {

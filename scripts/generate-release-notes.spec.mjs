@@ -64,14 +64,24 @@ describe('renderReleaseNotes', () => {
 describe('parseConventionalCommitSubject', () => {
   it('exposes the supported release-note scopes', () => {
     expect(allowedReleaseNoteScopes).toEqual([
-      'app',
-      'ci',
-      'cli',
-      'desktop',
-      'electron',
+      'editor',
+      'preview',
+      'diagrams',
       'export',
-      'landing-page',
-      'markdown',
+      'file-operations',
+      'command-palette',
+      'workspace-drafts',
+      'ui',
+      'performance',
+      'accessibility',
+      'desktop',
+      'web',
+      'cli',
+      'release',
+      'testing',
+      'docs',
+      'general',
+      'other',
     ])
   })
 
@@ -99,7 +109,7 @@ describe('parseConventionalCommitSubject', () => {
     expect(parseConventionalCommitSubject('fix(workflows): clean up release flow')).toEqual({
       description: 'clean up release flow',
       rawScope: 'workflows',
-      scope: 'ci',
+      scope: 'release',
       subject: 'fix(workflows): clean up release flow',
       type: 'fix',
     })
@@ -107,8 +117,24 @@ describe('parseConventionalCommitSubject', () => {
     expect(parseConventionalCommitSubject('fix(markdown-editor): improve toolbar')).toEqual({
       description: 'improve toolbar',
       rawScope: 'markdown-editor',
-      scope: 'markdown',
+      scope: 'editor',
       subject: 'fix(markdown-editor): improve toolbar',
+      type: 'fix',
+    })
+
+    expect(parseConventionalCommitSubject('fix(useDocumentActions): handle save errors')).toEqual({
+      description: 'handle save errors',
+      rawScope: 'useDocumentActions',
+      scope: 'file-operations',
+      subject: 'fix(useDocumentActions): handle save errors',
+      type: 'fix',
+    })
+
+    expect(parseConventionalCommitSubject('fix(ci): remove redundant token')).toEqual({
+      description: 'remove redundant token',
+      rawScope: 'ci',
+      scope: 'release',
+      subject: 'fix(ci): remove redundant token',
       type: 'fix',
     })
   })
@@ -120,6 +146,14 @@ describe('parseConventionalCommitSubject', () => {
       scope: 'other',
       subject: 'fix(router): clean up history mode',
       type: 'fix',
+    })
+
+    expect(parseConventionalCommitSubject('feat(landing-page): update hero section')).toEqual({
+      description: 'update hero section',
+      rawScope: 'landing-page',
+      scope: 'other',
+      subject: 'feat(landing-page): update hero section',
+      type: 'feat',
     })
   })
 
@@ -144,29 +178,34 @@ describe('shouldIncludeCommitSubject', () => {
     expect(shouldIncludeCommitSubject('chore(cli): standardize package metadata')).toBe(true)
     expect(shouldIncludeCommitSubject('feat(export): add PDF export')).toBe(true)
   })
+
+  it('includes ci-scoped commits under the release scope instead of filtering them', () => {
+    expect(shouldIncludeCommitSubject('fix(ci): remove redundant token')).toBe(true)
+    expect(shouldIncludeCommitSubject('fix(ci): remove redundant token', 'desktop')).toBe(true)
+    expect(shouldIncludeCommitSubject('fix(ci): remove redundant token', 'npm')).toBe(true)
+  })
+
+  it('filters artifact-specific commits after aliasing scopes', () => {
+    expect(shouldIncludeCommitSubject('fix(electron): handle native save dialog', 'desktop')).toBe(
+      true,
+    )
+    expect(shouldIncludeCommitSubject('fix(web): refresh service worker', 'desktop')).toBe(false)
+    expect(shouldIncludeCommitSubject('fix(electron): handle native save dialog', 'npm')).toBe(
+      false,
+    )
+    expect(shouldIncludeCommitSubject('fix(router): clean up history mode', 'npm')).toBe(false)
+  })
 })
 
 describe('groupCommitSubjectsByScope', () => {
   it('groups and sorts commit subjects by scope', () => {
     expect(
       groupCommitSubjectsByScope([
-        'fix(ci): remove redundant token',
+        'fix(workflows): remove redundant token',
         'feat(export): add PDF export',
         'feat: update og url',
       ]),
     ).toEqual([
-      {
-        entries: [
-          {
-            description: 'remove redundant token',
-            rawScope: 'ci',
-            scope: 'ci',
-            subject: 'fix(ci): remove redundant token',
-            type: 'fix',
-          },
-        ],
-        scope: 'ci',
-      },
       {
         entries: [
           {
@@ -182,6 +221,18 @@ describe('groupCommitSubjectsByScope', () => {
       {
         entries: [
           {
+            description: 'remove redundant token',
+            rawScope: 'workflows',
+            scope: 'release',
+            subject: 'fix(workflows): remove redundant token',
+            type: 'fix',
+          },
+        ],
+        scope: 'release',
+      },
+      {
+        entries: [
+          {
             description: 'update og url',
             rawScope: null,
             scope: 'general',
@@ -193,6 +244,32 @@ describe('groupCommitSubjectsByScope', () => {
       },
     ])
   })
+
+  it('excludes unknown scopes from artifact-specific groups', () => {
+    expect(
+      groupCommitSubjectsByScope(
+        [
+          'fix(router): clean up history mode',
+          'fix(electron): handle native save dialog',
+          'fix(web): refresh service worker',
+        ],
+        'desktop',
+      ),
+    ).toEqual([
+      {
+        entries: [
+          {
+            description: 'handle native save dialog',
+            rawScope: 'electron',
+            scope: 'desktop',
+            subject: 'fix(electron): handle native save dialog',
+            type: 'fix',
+          },
+        ],
+        scope: 'desktop',
+      },
+    ])
+  })
 })
 
 describe('renderCommitsByScopeSection', () => {
@@ -200,20 +277,39 @@ describe('renderCommitsByScopeSection', () => {
     expect(
       renderCommitsByScopeSection([
         'chore(release): version packages',
-        'fix(ci): remove redundant token',
         'feat(export): add PDF export',
+        'fix(workflows): remove redundant token',
         'feat: update og url',
       ]),
     ).toBe(`## Commits by scope
 
-### ci
-- fix(ci): remove redundant token
-
-### export
+### Export
 - feat(export): add PDF export
 
-### general
+### Release
+- fix(workflows): remove redundant token
+
+### General
 - feat: update og url`)
+  })
+
+  it('renders display headings and artifact filtering together', () => {
+    expect(
+      renderCommitsByScopeSection(
+        [
+          'fix(useDocumentActions): handle save errors',
+          'fix(electron): handle native save dialog',
+          'fix(web): refresh service worker',
+        ],
+        'npm',
+      ),
+    ).toBe(`## Commits by scope
+
+### File operations
+- fix(useDocumentActions): handle save errors
+
+### Web
+- fix(web): refresh service worker`)
   })
 
   it('renders an empty-state message when no commits are available', () => {
