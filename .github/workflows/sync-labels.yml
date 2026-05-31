@@ -1,0 +1,43 @@
+name: Sync labels
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview label changes without writing to GitHub.
+        required: true
+        type: boolean
+        default: true
+      delete_missing:
+        description: Delete labels that are absent from .github/labels.yml.
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: sync-labels
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync repository labels
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/labels.yml
+            .github/scripts/sync-labels.rb
+
+      - name: Sync labels
+        env:
+          DELETE_MISSING: ${{ inputs.delete_missing }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ruby .github/scripts/sync-labels.rb

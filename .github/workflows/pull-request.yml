@@ -18,6 +18,7 @@ jobs:
     name: Detect changed areas
     runs-on: ubuntu-24.04
     outputs:
+      run_label_validation: ${{ steps.compute.outputs.run_label_validation }}
       run_changeset_check: ${{ steps.compute.outputs.run_changeset_check }}
       run_full_workflow: ${{ steps.compute.outputs.run_full_workflow }}
     steps:
@@ -43,6 +44,10 @@ jobs:
               - '**/vite.config.ts'
               - '**/tsconfig.json'
               - '.github/workflows/*.yml'
+            label_taxonomy_changes:
+              - '.github/labels.yml'
+              - '.github/scripts/sync-labels.rb'
+              - '.github/workflows/sync-labels.yml'
 
       - name: Filter release changed paths
         if: github.event_name == 'pull_request'
@@ -82,6 +87,7 @@ jobs:
       - name: Compute workflow scope
         id: compute
         env:
+          LABEL_TAXONOMY_CHANGED: ${{ steps.meaningful_filter.outputs.label_taxonomy_changes }}
           MEANINGFUL_CHANGED: ${{ steps.meaningful_filter.outputs.meaningful_changes }}
           DESKTOP_RELEASE_CHANGED: ${{ steps.release_filter.outputs.desktop_release_changes }}
           WEB_RELEASE_CHANGED: ${{ steps.release_filter.outputs.web_release_changes }}
@@ -89,8 +95,13 @@ jobs:
           APP_RELEASE_CHANGED: ${{ steps.release_filter.outputs.app_release_changes }}
           DESKTOP_CONTRACT_RELEASE_CHANGED: ${{ steps.release_filter.outputs.desktop_contract_release_changes }}
         run: |
+          run_label_validation=false
           run_changeset_check=false
           run_full_workflow=false
+
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$LABEL_TAXONOMY_CHANGED" = "true" ]; then
+            run_label_validation=true
+          fi
 
           if [ "${{ github.event_name }}" = "pull_request" ] && [ "$MEANINGFUL_CHANGED" = "true" ]; then
             run_full_workflow=true
@@ -106,8 +117,28 @@ jobs:
             run_changeset_check=true
           fi
 
+          echo "run_label_validation=$run_label_validation" >> "$GITHUB_OUTPUT"
           echo "run_changeset_check=$run_changeset_check" >> "$GITHUB_OUTPUT"
           echo "run_full_workflow=$run_full_workflow" >> "$GITHUB_OUTPUT"
+
+  label_taxonomy:
+    name: Label taxonomy validation
+    runs-on: ubuntu-24.04
+    if: needs.changes.outputs.run_label_validation == 'true'
+    needs: changes
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/labels.yml
+            .github/scripts/sync-labels.rb
+
+      - name: Validate labels
+        env:
+          VALIDATE_ONLY: true
+        run: ruby .github/scripts/sync-labels.rb
 
   changeset_check:
     name: Changeset validation
