@@ -344,8 +344,9 @@ GitHub Release notes are generated from the artifact changelogs, not from GitHub
 
 - `desktop-v*` releases use the matching version section from `apps/desktop/CHANGELOG.md`
 - `npm-v*` releases use the matching version section from `packages/cli/CHANGELOG.md`
-- the generated `Commits by scope` section groups commit subjects into these release-note scopes: `app`, `ci`, `cli`, `desktop`, `electron`, `export`, `landing-page`, and `markdown`
-- alias scopes such as `workflows`, `markdown-editor`, and `useDocumentActions` are normalized into the stable buckets above
+- the generated `Commits by scope` section groups commit subjects into reader-facing release-note scopes such as `editor`, `preview`, `diagrams`, `export`, `file-operations`, `command-palette`, `workspace-drafts`, `ui`, `performance`, `accessibility`, `desktop`, `web`, `cli`, `release`, `testing`, and `docs`
+- alias scopes such as `app`, `markdown`, `electron`, `workflows`, `markdown-editor`, and `useDocumentActions` are normalized into the stable buckets above
+- desktop and npm release notes filter commits after scope normalization so runtime-specific and unknown `other` scopes do not leak into unrelated artifacts
 - `chore(release): ...` commits are intentionally excluded from generated release notes
 
 Prereleases should be prepared through Changesets prerelease mode. The manual publish workflows read the existing manifest versions and publish prereleases to the appropriate channels automatically.

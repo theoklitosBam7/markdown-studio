@@ -9,26 +9,48 @@ import { promisify } from 'node:util'
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
 const execFile = promisify(execFileCallback)
 export const allowedReleaseNoteScopes = [
-  'app',
-  'ci',
-  'cli',
-  'common',
+  'editor',
+  'preview',
+  'diagrams',
+  'export',
+  'file-operations',
+  'command-palette',
+  'workspace-drafts',
+  'ui',
+  'performance',
+  'accessibility',
   'desktop',
-  'electron',
-  'landing-page',
-  'markdown',
   'web',
+  'cli',
+  'release',
+  'testing',
+  'docs',
+  'general',
+  'other',
 ]
 
-const artifactRelevantScopes = {
-  desktop: ['app', 'cli', 'common', 'desktop', 'electron', 'markdown'],
-  npm: ['app', 'cli', 'common', 'markdown', 'web'],
+const scopeSortOrder = new Map(allowedReleaseNoteScopes.map((scope, index) => [scope, index]))
+
+const artifactExcludedScopes = {
+  desktop: ['cli', 'other', 'web'],
+  npm: ['desktop', 'other'],
 }
 
 const releaseNoteScopeAliases = new Map([
-  ['markdown-editor', 'markdown'],
-  ['workflows', 'ci'],
+  ['a11y', 'accessibility'],
+  ['app', 'editor'],
+  ['ci', 'release'],
+  ['documentation', 'docs'],
+  ['electron', 'desktop'],
+  ['markdown-editor', 'editor'],
+  ['markdown', 'preview'],
+  ['test', 'testing'],
+  ['tests', 'testing'],
+  ['useDocumentActions', 'file-operations'],
+  ['workflows', 'release'],
 ])
+
+const scopeTitleOverrides = { cli: 'CLI', ui: 'UI' }
 
 export function extractChangelogSection(source, version) {
   const heading = `## ${version}`
@@ -145,7 +167,9 @@ export function groupCommitSubjectsByScope(subjects, artifactType = null) {
   }
 
   return [...groups.entries()]
-    .sort(([leftScope], [rightScope]) => leftScope.localeCompare(rightScope))
+    .sort(
+      ([leftScope], [rightScope]) => scopeSortOrder.get(leftScope) - scopeSortOrder.get(rightScope),
+    )
     .map(([scope, entries]) => ({
       entries,
       scope,
@@ -191,7 +215,7 @@ export function renderCommitsByScopeSection(subjects, artifactType = null) {
   const lines = ['## Commits by scope']
 
   for (const group of groups) {
-    lines.push('', `### ${group.scope}`)
+    lines.push('', `### ${formatReleaseNoteScopeTitle(group.scope)}`)
 
     for (const entry of group.entries) {
       lines.push(`- ${entry.subject}`)
@@ -231,15 +255,16 @@ export function shouldIncludeCommitSubject(subject, artifactType = null) {
   const entry = parseConventionalCommitSubject(subject)
 
   if (entry.type === 'chore' && entry.rawScope === 'release') return false
-  if (entry.scope === 'landing-page' || entry.scope === 'ci') return false
 
-  // Filter by artifact type if specified - only include relevant scopes
-  if (artifactType && artifactRelevantScopes[artifactType]) {
-    const relevantScopes = artifactRelevantScopes[artifactType]
-    if (!relevantScopes.includes(entry.scope)) return false
-  }
+  if (artifactType && artifactExcludedScopes[artifactType]?.includes(entry.scope)) return false
 
   return true
+}
+
+function formatReleaseNoteScopeTitle(scope) {
+  return (
+    scopeTitleOverrides[scope] ?? scope.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
+  )
 }
 
 function normalizeReleaseNoteScope(scope) {

@@ -1,0 +1,155 @@
+# Canonical label definitions for markdown-studio.
+#
+# Labels are lightweight navigation and triage signals. Keep issue templates
+# minimal, and do not use labels for resolution outcomes.
+
+labels:
+  # Type: what kind of work this is.
+  - name: type:bug
+    color: '5B5BD6'
+    description: Something is not working correctly
+
+  - name: type:feature
+    color: '5B5BD6'
+    description: New feature or user-facing improvement
+
+  - name: type:refactor
+    color: '5B5BD6'
+    description: Code restructuring without behavior change
+
+  - name: type:docs
+    color: '5B5BD6'
+    description: Documentation improvements
+
+  - name: type:test
+    color: '5B5BD6'
+    description: Test coverage or test infrastructure
+
+  - name: type:ci
+    color: '5B5BD6'
+    description: CI/CD configuration or automation
+
+  - name: type:chore
+    color: '5B5BD6'
+    description: Maintenance work that does not fit another type
+
+  - name: type:dependencies
+    color: '5B5BD6'
+    description: Dependency updates
+
+  - name: type:rfc
+    color: '5B5BD6'
+    description: Request for comments or design discussion
+
+  # Area: product capability or stable maintenance concern.
+  - name: area:editor-workspace
+    color: '138A72'
+    description: Core editing workspace behavior
+
+  - name: area:live-preview
+    color: '138A72'
+    description: Preview pane behavior and synchronization
+
+  - name: area:markdown-rendering
+    color: '138A72'
+    description: Markdown parsing and rendered output
+
+  - name: area:embedded-diagrams
+    color: '138A72'
+    description: Mermaid and other embedded diagram behavior
+
+  - name: area:source-navigation
+    color: '138A72'
+    description: Source mapping, scrolling, and navigation
+
+  - name: area:workspace-drafts
+    color: '138A72'
+    description: Draft persistence and restoration
+
+  - name: area:file-operations
+    color: '138A72'
+    description: Opening, saving, importing, or managing files
+
+  - name: area:export
+    color: '138A72'
+    description: Exporting documents or generated output
+
+  - name: area:command-palette
+    color: '138A72'
+    description: Command palette actions and shortcuts
+
+  - name: area:examples
+    color: '138A72'
+    description: Example documents and starter content
+
+  - name: area:release
+    color: '138A72'
+    description: Release automation, packaging, or notes
+
+  - name: area:docs
+    color: '138A72'
+    description: Project documentation
+
+  - name: area:accessibility
+    color: '138A72'
+    description: Accessibility behavior or affordances
+
+  - name: area:ui
+    color: '138A72'
+    description: Visual design, layout, or interaction polish
+
+  - name: area:performance
+    color: '138A72'
+    description: Responsiveness, rendering speed, or resource usage
+
+  - name: area:testing
+    color: '138A72'
+    description: Test strategy, fixtures, or coverage
+
+  # Runtime: where the behavior is observed.
+  - name: runtime:web
+    color: 'B56B00'
+    description: Browser or PWA runtime behavior
+
+  - name: runtime:desktop
+    color: 'B56B00'
+    description: Electron desktop runtime behavior
+
+  - name: runtime:cli
+    color: 'B56B00'
+    description: Browser launcher CLI behavior
+
+  # Status: current actionability, not final resolution.
+  - name: status:needs-info
+    color: 'C24162'
+    description: More information is needed before this can move forward
+
+  - name: status:accepted
+    color: 'C24162'
+    description: Accepted and ready for implementation
+
+  - name: status:blocked
+    color: 'C24162'
+    description: Blocked by another task, dependency, or decision
+
+  # Priority: relative urgency.
+  - name: priority:high
+    color: 'C0362C'
+    description: Important and should be prioritized
+
+  - name: priority:normal
+    color: 'D29922'
+    description: Normal priority
+
+  - name: priority:low
+    color: '6A737D'
+    description: Low priority or nice-to-have
+
+  # Contributor signals: keep familiar GitHub community labels unprefixed.
+  - name: good first issue
+    color: '7057FF'
+    description: Good for newcomers with clear implementation guidance
+
+  - name: help wanted
+    color: '008672'
+    description: Extra attention or external contribution is welcome
