@@ -132,6 +132,17 @@ pnpm build:desktop # Production build
 pnpm dist:mac      # Create macOS distribution package (unsigned)
 ```
 
+## Repository Maintenance
+
+The canonical GitHub label taxonomy lives in `.github/labels.yml`. Labels are
+triage and navigation signals only; they are not release-note inputs.
+
+Maintainers can run the manual **Sync labels** workflow from GitHub Actions to
+apply the taxonomy. Keep `dry_run` enabled for the first run to review the
+planned creates and updates in the logs. Leave `delete_missing` disabled unless
+you have already reviewed legacy labels such as `bug` and `enhancement` and
+intentionally want to remove labels that are absent from `.github/labels.yml`.
+
 ## Features
 
 ### For Writers
