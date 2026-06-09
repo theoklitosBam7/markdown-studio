@@ -1,5 +1,16 @@
 # markdown-studio
 
+## 0.7.0
+
+### Minor Changes
+
+- 2d770d6: Add keyboard shortcuts help overlay
+
+  - Add useShortcuts composable for declarative shortcut binding and dispatch
+  - Add ShortcutsHelp modal with grouped shortcut display
+  - Replace ad-hoc keydown handling in workspace controller with normalized binding system
+  - Add toolbar button and mobile menu item to trigger the shortcuts help overlay
+
 ## 0.6.0
 
 ### Minor Changes
