@@ -39,6 +39,7 @@ const emit = defineEmits<{
   install: []
   openDocument: []
   openExamples: []
+  openShortcuts: []
   saveDocument: []
   'update:theme': [payload: { origin: { x: number; y: number }; theme: Theme }]
   'update:viewMode': [mode: ViewMode]
@@ -122,6 +123,12 @@ const secondaryActions = computed(() => {
     icon: '🐙',
     label: 'View on GitHub',
     variant: 'primary',
+  })
+
+  actions.push({
+    action: () => emit('openShortcuts'),
+    icon: '⌨️',
+    label: 'Keyboard Shortcuts',
   })
 
   return actions

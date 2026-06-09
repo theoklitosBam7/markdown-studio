@@ -424,7 +424,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
     try {
       window.addEventListener('resize', handleWindowResize)
-      window.addEventListener('keydown', handleGlobalKeydown)
       startUpdateChecks()
       syncViewport(window.innerWidth)
       await restoreWorkspaceDraft()
@@ -441,7 +440,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       }
     } catch (error) {
       window.removeEventListener('resize', handleWindowResize)
-      window.removeEventListener('keydown', handleGlobalKeydown)
       removeDesktopCommandListener()
       removeDesktopCommandListener = () => undefined
       stopUpdateChecks()
@@ -459,7 +457,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
     if (typeof window !== 'undefined') {
       window.removeEventListener('resize', handleWindowResize)
-      window.removeEventListener('keydown', handleGlobalKeydown)
     }
 
     removeDesktopCommandListener()
@@ -473,48 +470,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
   function handleViewportResize(width: number): void {
     syncViewport(width)
-  }
-
-  function handleGlobalKeydown(event: KeyboardEvent): void {
-    if (event.defaultPrevented) {
-      return
-    }
-
-    const normalizedKey = event.key.toLowerCase()
-    const hasCommandModifier = event.metaKey || event.ctrlKey
-
-    if (hasCommandModifier && normalizedKey === 'f') {
-      event.preventDefault()
-      openFindPanel()
-      return
-    }
-
-    if (hasCommandModifier && normalizedKey === 'h') {
-      event.preventDefault()
-      openReplacePanel()
-      return
-    }
-
-    // Consumed so Cmd/Ctrl+K doesn't fall through to find/replace handling;
-    // the command palette opens via a capture-phase handler in the view.
-    if (hasCommandModifier && normalizedKey === 'k') {
-      event.preventDefault()
-      return
-    }
-
-    if (!isFindReplaceOpen.value) {
-      return
-    }
-
-    if ((hasCommandModifier && normalizedKey === 'g') || event.key === 'F3') {
-      event.preventDefault()
-      if (event.shiftKey) {
-        findPrevious()
-        return
-      }
-
-      findNext()
-    }
   }
 
   function closeFindPanel(): void {
@@ -642,7 +597,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       viewMode,
     },
     system: {
-      handleGlobalKeydown,
       handleViewportResize,
       start,
       stop,

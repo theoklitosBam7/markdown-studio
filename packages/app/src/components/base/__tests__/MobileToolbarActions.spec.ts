@@ -231,4 +231,21 @@ describe('MobileToolbarActions', () => {
 
     windowOpenSpy.mockRestore()
   })
+
+  it('emits openShortcuts when Keyboard Shortcuts action is clicked', async () => {
+    const wrapper = mountToolbar()
+
+    const menuButton = document.querySelector('button[aria-label="Menu"]')
+    await menuButton?.dispatchEvent(new MouseEvent('click'))
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const shortcutsAction = Array.from(actions).find((el) =>
+      el.textContent?.includes('Keyboard Shortcuts'),
+    )
+
+    expect(shortcutsAction).not.toBeNull()
+    await shortcutsAction?.dispatchEvent(new MouseEvent('click'))
+
+    expect(wrapper.emitted('openShortcuts')).toHaveLength(1)
+  })
 })

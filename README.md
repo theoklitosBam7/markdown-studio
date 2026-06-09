@@ -134,6 +134,25 @@ pnpm dist:mac      # Create macOS distribution package (unsigned)
 
 ## Repository Maintenance
 
+### Project language
+
+`CONTEXT.md` is the canonical project-language reference generated from domain review sessions. Use its terms when naming concepts, writing documentation, opening issues, and describing changes. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
+
+### Commit scopes and release notes
+
+Release notes group commits by Conventional Commit scope. The supported scopes and aliases are defined in `scripts/generate-release-notes.mjs`; prefer those scopes when writing commit subjects, especially while the project does not have commitlint enforcement.
+
+Recommended examples:
+
+- `feat(editor): add keyboard shortcuts help`
+- `fix(file-operations): preserve document identity on save`
+- `docs(docs): clarify release-note scopes`
+- `test(testing): cover shortcut dispatch rules`
+
+Avoid relying on aliases unless the mapping is intentional. For example, `markdown` currently normalizes to `preview`, so editor-workspace changes should usually use `editor` instead.
+
+### Labels
+
 The canonical GitHub label taxonomy lives in `.github/labels.yml`. Labels are
 triage and navigation signals only; they are not release-note inputs.
 
