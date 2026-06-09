@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import type { AppWindow } from '@/browser-window'
@@ -96,26 +96,6 @@ describe('useEditorWorkspaceController', () => {
     window.confirm = originalConfirm
     vi.useRealTimers()
     vi.restoreAllMocks()
-  })
-
-  it('opens replace from the global shortcut and focuses the editor find query', async () => {
-    const { workspace, wrapper } = await mountWorkspace()
-    const editor = createEditorAdapter()
-    workspace.attach.editor(editor)
-
-    workspace.system.handleGlobalKeydown(
-      new KeyboardEvent('keydown', {
-        ctrlKey: true,
-        key: 'h',
-      }),
-    )
-    await nextTick()
-
-    expect(workspace.find.state.value.isOpen).toBe(true)
-    expect(workspace.find.state.value.showReplace).toBe(true)
-    expect(editor.focusFindQuery).toHaveBeenCalledTimes(1)
-
-    wrapper.unmount()
   })
 
   it('replaces the current match through the editor adapter and restores editor focus', async () => {

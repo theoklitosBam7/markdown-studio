@@ -71,7 +71,6 @@ export interface EditorWorkspaceController {
   }
   state: EditorWorkspaceState
   system: {
-    handleGlobalKeydown(event: KeyboardEvent): void
     handleViewportResize(width: number): void
     start(): Promise<void>
     stop(): void

@@ -40,6 +40,7 @@ const emit = defineEmits<{
   install: []
   openDocument: []
   openExamples: []
+  openShortcuts: []
   saveDocument: []
   'update:theme': [payload: ThemeChangeRequest]
   'update:viewMode': [mode: ViewMode]
@@ -67,6 +68,10 @@ function openDocument(): void {
 
 function openExamples(): void {
   emit('openExamples')
+}
+
+function openShortcuts(): void {
+  emit('openShortcuts')
 }
 
 function saveDocument(): void {
@@ -144,6 +149,7 @@ onUnmounted(() => {
       @install="install"
       @open-document="openDocument"
       @open-examples="openExamples"
+      @open-shortcuts="openShortcuts"
       @save-document="saveDocument"
       @update:theme="handleThemeChange"
       @update:view-mode="handleViewModeChange"
@@ -268,6 +274,24 @@ onUnmounted(() => {
             :model-value="props.viewMode"
             @update:model-value="handleViewModeChange"
           />
+          <ToolbarButton
+            class="shortcuts-button"
+            icon-only
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts"
+            @click="openShortcuts"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">
+              <circle cx="8" cy="8" r="5.75" stroke-width="1.5" />
+              <path
+                d="M6.35 6.25a1.85 1.85 0 013.52.82c0 1.37-1.87 1.54-1.87 2.68"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+              <path d="M8 11.45h.01" stroke-linecap="round" stroke-width="2" />
+            </svg>
+          </ToolbarButton>
           <ThemeToggle :theme="props.theme" @toggle="handleThemeChange" />
         </div>
       </div>
@@ -352,6 +376,15 @@ onUnmounted(() => {
   gap: 10px;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+.shortcuts-button {
+  border-radius: 999px;
+}
+
+.shortcuts-button.shortcuts-button :deep(svg) {
+  width: 16px;
+  height: 16px;
 }
 
 .export-menu {

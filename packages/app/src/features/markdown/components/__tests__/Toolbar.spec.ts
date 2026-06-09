@@ -49,6 +49,18 @@ describe('Toolbar', () => {
     expect(githubLink.text()).toContain('GitHub')
   })
 
+  it('renders keyboard shortcuts as an accessible icon control', async () => {
+    const wrapper = mountToolbar()
+
+    const shortcutsButton = wrapper.get('button[aria-label="Keyboard shortcuts"]')
+    expect(shortcutsButton.attributes('title')).toBe('Keyboard shortcuts')
+    expect(shortcutsButton.find('svg[aria-hidden="true"]').exists()).toBe(true)
+
+    await shortcutsButton.trigger('click')
+
+    expect(wrapper.emitted('openShortcuts')).toHaveLength(1)
+  })
+
   it('renders mobile layout with hamburger menu', () => {
     const wrapper = mountToolbar({
       availableModes: ['editor', 'preview'],

@@ -58,6 +58,11 @@ _Avoid_: source map
 Recoverable unsaved work for the current **Markdown Document**.
 _Avoid_: autosave file, backup file
 
+**Shortcut**:
+A keyboard binding that invokes a capability in the **Editor Workspace**.
+A **Shortcut** may or may not be attached to a **Command**.
+_Avoid_: keybind, hotkey, accelerator
+
 **Workspace View Mode**:
 The way the **Editor Workspace** allocates attention between Markdown editing and the **Live Preview**.
 _Avoid_: route, layout

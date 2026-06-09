@@ -1,11 +1,37 @@
 # AGENTS.md
 
+## Package manager
+
+Always use **pnpm** for this repo:
+
+- Install dependencies: `pnpm install` (not `npm install` or `yarn`)
+- Run scripts: `pnpm <script>` or `pnpm exec <bin>` (not `npm run`, `npx`, or `yarn`)
+
+The root `package.json` pins the package manager via `packageManager`; respect it.
+
 ## Task Completion Requirements
 
 - Run `pnpm format`, `pnpm lint`, and `pnpm type-check` before considering a task complete.
 - Before running a script command that uses `vite preview` or `electron-vite preview`, don't forget to build the corresponding app first.
 - If tests are relevant to the change, run the smallest targeted suite first, then expand only if needed. Prefer `pnpm test:unit`, `pnpm test:e2e:dev`, or `pnpm test:e2e` over ad hoc commands.
 - Do not use outdated or redundant scripts when a repo-specific command already exists.
+
+## Project Language
+
+`CONTEXT.md` is the canonical project-language reference generated from domain review sessions. Use its terms when naming concepts, writing documentation, opening issues, and describing changes. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
+
+## Commit Scopes and Release Notes
+
+Release notes group commits by Conventional Commit scope. The supported scopes and aliases are defined in `scripts/generate-release-notes.mjs`; prefer those scopes when writing commit subjects, especially while the project does not have commitlint enforcement.
+
+Recommended examples:
+
+- `feat(editor): add keyboard shortcuts help`
+- `fix(file-operations): preserve document identity on save`
+- `docs(docs): clarify release-note scopes`
+- `test(testing): cover shortcut dispatch rules`
+
+Avoid relying on aliases unless the mapping is intentional. For example, `markdown` currently normalizes to `preview`, so editor-workspace changes should usually use `editor` instead.
 
 ## Issue and PR Templates
 
@@ -50,47 +76,3 @@ Long-term maintainability is a core priority. If you add new functionality, firs
 Duplicate logic across components, composables, Electron IPC handlers, and helpers is a code smell and should be avoided. Prefer small, reusable abstractions over local one-off fixes.
 
 Do not take shortcuts by putting framework-specific logic in places that are meant to stay generic, and do not introduce parallel implementations for the same behavior unless there is a clear platform boundary.
-
-## Project Areas
-
-- `packages/app/src`: Shared Vue application code for the editor, preview, routing, composables, and shared UI.
-- `packages/app/src/features/markdown`: Markdown-specific UI and behavior, including editor, preview, toolbar, examples, and status surfaces.
-- `packages/app/src/components`: Shared UI components used across the app.
-- `packages/app/src/composables`: Reusable Vue logic shared across features and views.
-- `packages/app/src/router`: Vue Router setup and route definitions.
-- `packages/app/src/utils`: Pure utility functions. Keep this layer framework-free.
-- `apps/web`: Browser app workspace and Vite entrypoint.
-- `apps/desktop`: Electron desktop workspace, including the renderer entrypoint and Electron main/preload/ipc code.
-- `packages/desktop-contract`: Shared desktop channel/types/validation contract used by the renderer and Electron shell.
-- `cypress`: End-to-end tests and support files.
-
-Keep framework boundaries clean. Vue-specific state and behavior should live in `packages/app`. Electron-only code should stay in `apps/desktop/electron/`. Pure helpers should remain free of Vue, Pinia, and router dependencies.
-
-## App Architecture
-
-Markdown Studio is split between the browser renderer and the Electron desktop shell.
-
-How the codebase is organized:
-
-- `packages/app/src/createMarkdownStudioApp.ts` bootstraps the shared Vue app.
-- `packages/app/src/App.vue` stays lean and delegates real behavior to the app and feature layers.
-- `packages/app/src/router/index.ts` owns route setup and environment-specific history selection.
-- `apps/web/src/main.ts` and `apps/desktop/src/main.ts` are thin runtime entrypoints that mount the shared app.
-- `apps/desktop/electron/main.ts` and `apps/desktop/electron/preload.ts` own desktop integration and IPC exposure.
-- `apps/desktop/electron/ipc/*` contains IPC handlers for file and shell operations.
-- `packages/desktop-contract/src/*` contains the shared desktop IPC contract.
-- `packages/app/src/features/markdown/*` contains the main writing experience and should own most Markdown-specific logic.
-
-Docs:
-
-- README: [README.md](README.md)
-
-## Reference Libraries
-
-- Vue 3 docs: https://vuejs.org/
-- Pinia docs: https://pinia.vuejs.org/
-- Vue Router docs: https://router.vuejs.org/
-- Electron docs: https://www.electronjs.org/docs/latest/
-- Vite docs: https://vite.dev/
-
-Use these as implementation references when designing application structure, reactivity, routing, and desktop integration.

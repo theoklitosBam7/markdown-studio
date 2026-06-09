@@ -1,23 +1,82 @@
 <script setup lang="ts">
-import { useTemplateRef, watch } from 'vue'
+import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
-import type { EditorScrollPayload } from '@/features/markdown/types'
+import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/types'
 
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
+import ShortcutsHelp from '@/features/markdown/components/ShortcutsHelp.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
 import { useCommandPalette } from '@/features/markdown/composables/useCommandPalette'
 import { useEditorWorkspaceCommands } from '@/features/markdown/composables/useEditorWorkspaceCommands'
 import { useEditorWorkspaceController } from '@/features/markdown/composables/useEditorWorkspaceController'
+import { useShortcuts } from '@/features/markdown/composables/useShortcuts'
 
 const workspace = useEditorWorkspaceController()
 const commands = useEditorWorkspaceCommands(workspace)
 const commandPalette = useCommandPalette({ commands })
+const isShortcutsHelpOpen = shallowRef(false)
+
+const bindings = computed<ShortcutBinding[]>(() => [
+  ...commands.value
+    .filter((command) => command.shortcut)
+    .map((command) => ({
+      condition: () => command.disabledReason === null,
+      group: command.group,
+      handler: () => void command.run(),
+      id: command.id,
+      keys: command.shortcut!,
+      label: command.title,
+    })),
+  {
+    group: 'View',
+    handler: commandPalette.open,
+    id: 'shortcuts:palette' as const,
+    keys: ['Mod', 'K'],
+    label: 'Command Palette',
+  },
+  {
+    group: 'View',
+    handler: () => {
+      isShortcutsHelpOpen.value = true
+    },
+    id: 'shortcuts:help' as const,
+    keys: ['?'],
+    label: 'Keyboard Shortcuts',
+  },
+  {
+    aliases: [['F3']],
+    condition: () => workspace.find.state.value.isOpen,
+    group: 'Editor',
+    handler: () => workspace.find.next(),
+    id: 'shortcuts:find-next' as const,
+    keys: ['Mod', 'G'],
+    label: 'Find Next',
+  },
+  {
+    aliases: [['Shift', 'F3']],
+    condition: () => workspace.find.state.value.isOpen,
+    group: 'Editor',
+    handler: () => workspace.find.previous(),
+    id: 'shortcuts:find-previous' as const,
+    keys: ['Mod', 'Shift', 'G'],
+    label: 'Find Previous',
+  },
+])
+
+const isOverlayOpen = () =>
+  isExamplesModalOpen.value || isShortcutsHelpOpen.value || commandPalette.isOpen.value
+
+const { shortcuts } = useShortcuts({
+  bindings,
+  isOverlayOpen,
+})
+
 const {
   availableModes,
   bannerStatus,
@@ -85,6 +144,10 @@ watch(
   { immediate: true },
 )
 
+function closeShortcutsHelp(): void {
+  isShortcutsHelpOpen.value = false
+}
+
 function handleEditorScroll(scrollState: EditorScrollPayload): void {
   workspace.editor.syncPreviewToEditorPosition(scrollState)
 }
@@ -147,23 +210,10 @@ function handleStartNewDocument(): void {
     console.error('Failed to start new document:', error)
   })
 }
-
-function handleWorkspaceKeydown(event: KeyboardEvent): void {
-  const hasCommandModifier = event.metaKey || event.ctrlKey
-
-  if (!hasCommandModifier || event.key.toLowerCase() !== 'k' || event.isComposing) {
-    return
-  }
-
-  event.preventDefault()
-  if (!isExamplesModalOpen.value) {
-    commandPalette.open()
-  }
-}
 </script>
 
 <template>
-  <div class="markdown-studio" :class="bodyClasses" @keydown.capture="handleWorkspaceKeydown">
+  <div class="markdown-studio" :class="bodyClasses">
     <Toolbar
       :available-modes="availableModes"
       :can-export-pdf="canExportPdf"
@@ -180,6 +230,7 @@ function handleWorkspaceKeydown(event: KeyboardEvent): void {
       @update:view-mode="workspace.editor.setViewMode"
       @update:theme="workspace.editor.setTheme"
       @open-examples="workspace.examples.open"
+      @open-shortcuts="isShortcutsHelpOpen = true"
       @clear="handleStartNewDocument"
       @copy="workspace.toolbar.copy"
       @export-html="handleExportHtml"
@@ -254,6 +305,12 @@ function handleWorkspaceKeydown(event: KeyboardEvent): void {
       @execute="commandPalette.execute"
       @move-active="commandPalette.moveActive"
       @update:query="commandPalette.setQuery"
+    />
+
+    <ShortcutsHelp
+      :is-open="isShortcutsHelpOpen"
+      :shortcuts="shortcuts"
+      @close="closeShortcutsHelp"
     />
   </div>
 </template>
