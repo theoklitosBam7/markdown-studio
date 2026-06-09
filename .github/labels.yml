@@ -76,7 +76,11 @@ labels:
 
   - name: area:command-palette
     color: '138A72'
-    description: Command palette actions and shortcuts
+    description: Command palette actions and search
+
+  - name: area:shortcuts
+    color: '138A72'
+    description: Keyboard binding dispatch, shortcut help overlay, and related UI
 
   - name: area:examples
     color: '138A72'
