@@ -2,8 +2,8 @@ packages:
   - packages/*
   - apps/*
 
-blockExoticSubdeps: true
-strictDepBuilds: true
+minimumReleaseAge: 4320
+nodeVersionFile: .node-version
 
 allowBuilds:
   cypress: true
@@ -11,6 +11,7 @@ allowBuilds:
   electron-winstaller: false
   esbuild: true
   sharp: true
+  simple-git-hooks: false
 
 catalog:
   typescript: ~5.9.3

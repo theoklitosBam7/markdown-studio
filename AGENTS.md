@@ -22,7 +22,7 @@ The root `package.json` pins the package manager via `packageManager`; respect i
 
 ## Commit Scopes and Release Notes
 
-Release notes group commits by Conventional Commit scope. The supported scopes and aliases are defined in `scripts/generate-release-notes.mjs`; prefer those scopes when writing commit subjects, especially while the project does not have commitlint enforcement.
+Release notes group commits by Conventional Commit scope. The supported scopes are defined in `commitlint.config.ts`; prefer those scopes when writing commit subjects. Commitlint enforces the allowed scopes, so commits with invalid scopes will be rejected.
 
 Recommended examples:
 

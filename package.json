@@ -36,7 +36,7 @@
     "preview:desktop": "pnpm --filter @markdown-studio/desktop preview",
     "test:unit": "pnpm -r test",
     "test:scripts": "vitest run scripts/",
-    "prepare": "cypress install",
+    "prepare": "cypress install && simple-git-hooks",
     "generate-pwa-assets": "pwa-assets-generator",
     "generate-desktop-icons": "node scripts/generate-desktop-icons.mjs",
     "test:e2e": "VITE_DISABLE_PWA=true pnpm build:web && start-server-and-test 'pnpm --filter @markdown-studio/web exec vite preview --port 4175' http://localhost:4175 'cypress run --e2e --config baseUrl=http://localhost:4175'",
@@ -51,6 +51,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "catalog:",
     "@types/semver": "^7.7.1",
@@ -68,19 +70,32 @@
     "eslint-plugin-perfectionist": "^5.9.0",
     "eslint-plugin-vue": "~10.9.1",
     "jiti": "^2.7.0",
+    "nano-staged": "^1.0.2",
     "npm-run-all2": "^8.0.4",
     "oxfmt": "^0.48.0",
     "oxlint": "~1.63.0",
     "png-to-ico": "^3.0.1",
     "semver": "^7.8.0",
     "sharp": "^0.34.5",
+    "simple-git-hooks": "^2.13.1",
     "start-server-and-test": "^3.0.4",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vue-tsc": "catalog:"
   },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec nano-staged",
+    "commit-msg": "pnpm exec commitlint --edit $1"
+  },
+  "nano-staged": {
+    "*.{js,ts,vue,css,json,md}": "pnpm run format",
+    "*.{js,ts,vue}": [
+      "oxlint --fix",
+      "eslint --fix --cache"
+    ]
+  },
   "engines": {
     "node": ">=22.12.0"
   },
-  "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800"
+  "packageManager": "pnpm@11.8.0+sha512.c1f5e7c4cb241c8f174b743851d82f42b802324afc8b0f116b96adb15aa06664948dde36960a3ba1079ba5b4b29dd0140135b94b5b5f5263592249d68e555f26"
 }
