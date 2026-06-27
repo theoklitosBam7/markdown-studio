@@ -16,6 +16,7 @@ import type {
   ThemeChangeRequest,
 } from '../types/workspace'
 
+import { generateTableTemplate } from '../utils/tableTemplate'
 import { EXAMPLES } from './examples'
 import { useDesktopDraftPersistence } from './useDesktopDraftPersistence'
 import { useDocumentExport } from './useDocumentExport'
@@ -414,6 +415,12 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     await editorPane.value?.focusAtOffset(offset)
   }
 
+  async function insertTable(): Promise<void> {
+    const tableTemplate = generateTableTemplate({ columns: 3, rows: 3 })
+    await editorPane.value?.insertText(tableTemplate)
+    editorPane.value?.focus()
+  }
+
   async function start(): Promise<void> {
     if (typeof window === 'undefined' || isStarted.value === true) {
       return
@@ -527,6 +534,9 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
     },
     editor: {
+      async insertTable(): Promise<void> {
+        await insertTable()
+      },
       async setTheme(request: ThemeChangeRequest) {
         await setWorkspaceTheme(request)
       },

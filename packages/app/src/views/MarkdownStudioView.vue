@@ -121,6 +121,7 @@ watch(
       focusAtOffset: (offset) => editorPane.focusAtOffset(offset),
       focusFindQuery: () => editorPane.focusFindQuery(),
       getScrollState: () => editorPane.getScrollState(),
+      insertText: (text) => editorPane.insertText(text),
       replaceAllContent: (content) => editorPane.replaceAllContent(content),
       replaceRange: (start, end, replacement) => editorPane.replaceRange(start, end, replacement),
       setSelectionRange: (start, end) => editorPane.setSelectionRange(start, end),

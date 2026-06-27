@@ -145,6 +145,25 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
+async function insertText(text: string): Promise<void> {
+  const editor = editorRef.value
+  if (!editor) return
+
+  const start = editor.selectionStart
+  const end = editor.selectionEnd
+
+  editor.focus()
+  await nextTick()
+  const browserWindow = window as AppWindow
+
+  if (browserWindow.desktop?.isDesktop) {
+    await browserWindow.desktop.editing.insertText(text)
+    return
+  }
+
+  insertTextAtSelection(editor, text, start, end)
+}
+
 async function replaceAllContent(nextContent: string): Promise<void> {
   const editor = editorRef.value
   if (!editor) return
@@ -215,6 +234,7 @@ defineExpose({
   focusAtOffset,
   focusFindQuery,
   getScrollState,
+  insertText,
   replaceAllContent,
   replaceRange,
   setSelectionRange,

@@ -88,8 +88,8 @@
     "commit-msg": "pnpm exec commitlint --edit $1"
   },
   "nano-staged": {
-    "*.{js,ts,vue,css,json,md}": "pnpm run format",
-    "*.{js,ts,vue}": [
+    "*.{mjs,js,ts,vue,css,json,md}": "pnpm run format",
+    "*.{mjs,js,ts,vue}": [
       "oxlint --fix",
       "eslint --fix --cache"
     ]

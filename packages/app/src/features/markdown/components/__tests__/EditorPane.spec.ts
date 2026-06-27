@@ -255,6 +255,36 @@ describe('EditorPane', () => {
     expect(wrapper.emitted('update:content')).toEqual([['entry one item two']])
   })
 
+  it('inserts text at the current cursor position on web', async () => {
+    const wrapper = mountEditorPane({
+      content: 'before after',
+      lineCount: 1,
+    })
+
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    textarea.value = 'before after'
+    textarea.setSelectionRange(6, 6)
+
+    const execCommandSpy = vi.fn((_command: string, _showUi: boolean, value?: string) => {
+      textarea.setRangeText(String(value), textarea.selectionStart, textarea.selectionEnd, 'end')
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+      return true
+    })
+
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommandSpy,
+    })
+
+    await (wrapper.vm as unknown as { insertText: (text: string) => Promise<void> }).insertText(
+      '| table |',
+    )
+
+    expect(textarea.value).toBe('before| table | after')
+    expect(execCommandSpy).toHaveBeenCalledWith('insertText', false, '| table |')
+    expect(wrapper.emitted('update:content')).toEqual([['before| table | after']])
+  })
+
   it('does not move focus away from the editor when clicking find controls', async () => {
     const wrapper = mountEditorPane({
       content: 'item one item two',

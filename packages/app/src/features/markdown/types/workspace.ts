@@ -16,6 +16,7 @@ export interface EditorPaneAdapter {
   focusAtOffset(offset: number): Promise<void>
   focusFindQuery(): void
   getScrollState(): EditorScrollPayload | null
+  insertText(text: string): Promise<void>
   replaceAllContent(content: string): Promise<void>
   replaceRange(start: number, end: number, replacement: string): Promise<void>
   setSelectionRange(start: number, end: number): Promise<void>
@@ -51,6 +52,7 @@ export interface EditorWorkspaceController {
     startNew(): Promise<void>
   }
   editor: {
+    insertTable(): Promise<void>
     setTheme(request: ThemeChangeRequest): Promise<void>
     setViewMode(mode: ViewMode): void
     syncPreviewToEditorPosition(payload?: EditorScrollPayload | null): void

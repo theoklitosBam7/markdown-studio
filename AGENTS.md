@@ -20,18 +20,9 @@ The root `package.json` pins the package manager via `packageManager`; respect i
 
 `CONTEXT.md` is the canonical project-language reference generated from domain review sessions. Use its terms when naming concepts, writing documentation, opening issues, and describing changes. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
 
-## Commit Scopes and Release Notes
+## Commit Scopes
 
-Release notes group commits by Conventional Commit scope. The supported scopes are defined in `commitlint.config.ts`; prefer those scopes when writing commit subjects. Commitlint enforces the allowed scopes, so commits with invalid scopes will be rejected.
-
-Recommended examples:
-
-- `feat(editor): add keyboard shortcuts help`
-- `fix(file-operations): preserve document identity on save`
-- `docs(docs): clarify release-note scopes`
-- `test(testing): cover shortcut dispatch rules`
-
-Avoid relying on aliases unless the mapping is intentional. For example, `markdown` currently normalizes to `preview`, so editor-workspace changes should usually use `editor` instead.
+The supported scopes are defined in `commitlint.config.ts`; prefer those scopes when writing commit subjects.
 
 ## Issue and PR Templates
 
