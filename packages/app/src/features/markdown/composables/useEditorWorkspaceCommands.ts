@@ -90,6 +90,14 @@ export function useEditorWorkspaceCommands(
       },
       {
         disabledReason: null,
+        group: 'Editor',
+        id: 'workspace:editor:insertTable',
+        keywords: ['table', 'insert', 'grid'],
+        run: workspace.editor.insertTable,
+        title: 'Insert Table',
+      },
+      {
+        disabledReason: null,
         group: 'View',
         id: 'workspace:view:editor',
         isCurrent: viewMode === 'editor',

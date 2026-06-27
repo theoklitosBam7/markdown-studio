@@ -21,6 +21,7 @@ function createEditorAdapter(): EditorPaneAdapter {
     focusAtOffset: vi.fn(async () => undefined),
     focusFindQuery: vi.fn(),
     getScrollState: vi.fn(() => null),
+    insertText: vi.fn(async () => undefined),
     replaceAllContent: vi.fn(async () => undefined),
     replaceRange: vi.fn(async () => undefined),
     setSelectionRange: vi.fn(async () => undefined),
@@ -500,6 +501,27 @@ describe('useEditorWorkspaceController', () => {
     expect(open).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledTimes(1)
     expect(editor.focus).toHaveBeenCalledTimes(5)
+
+    wrapper.unmount()
+  })
+
+  it('inserts a default table template at the cursor position', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    workspace.attach.editor(editor)
+    await flushPromises()
+
+    await workspace.editor.insertTable()
+
+    expect(editor.insertText).toHaveBeenCalledWith(
+      [
+        '| Header 1 | Header 2 | Header 3 |',
+        '| --- | --- | --- |',
+        '|  |  |  |',
+        '|  |  |  |',
+      ].join('\n'),
+    )
+    expect(editor.focus).toHaveBeenCalled()
 
     wrapper.unmount()
   })
