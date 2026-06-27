@@ -49,6 +49,20 @@ describe('Toolbar', () => {
     expect(githubLink.text()).toContain('GitHub')
   })
 
+  it('renders an accessible insert table button that emits insert-table on click', async () => {
+    const wrapper = mountToolbar()
+
+    const tableButton = wrapper.get('button[aria-label="Insert table"]')
+    expect(tableButton.text()).toContain('Table')
+    expect(tableButton.classes()).toContain('toolbar-btn')
+    expect(tableButton.element.closest('.toolbar__actions')).not.toBeNull()
+    expect(tableButton.find('svg').exists()).toBe(true)
+
+    await tableButton.trigger('click')
+
+    expect(wrapper.emitted('insertTable')).toHaveLength(1)
+  })
+
   it('renders keyboard shortcuts as an accessible icon control', async () => {
     const wrapper = mountToolbar()
 

@@ -200,6 +200,12 @@ function handleFindAction(action: { type: string; value?: unknown }): void {
   }
 }
 
+function handleInsertTable(): void {
+  void workspace.editor.insertTable().catch((error: unknown) => {
+    console.error('Failed to insert table:', error)
+  })
+}
+
 function handleInstall(): void {
   void workspace.toolbar.install().catch((error: unknown) => {
     console.error('Failed to trigger web app install:', error)
@@ -234,6 +240,7 @@ function handleStartNewDocument(): void {
       @open-shortcuts="isShortcutsHelpOpen = true"
       @clear="handleStartNewDocument"
       @copy="workspace.toolbar.copy"
+      @insert-table="handleInsertTable"
       @export-html="handleExportHtml"
       @export-pdf="handleExportPdf"
       @save-document="workspace.document.save"
