@@ -37,6 +37,7 @@ const emit = defineEmits<{
   copy: []
   exportHtml: []
   exportPdf: []
+  insertTable: []
   install: []
   openDocument: []
   openExamples: []
@@ -108,6 +109,10 @@ function handleOutsideClick(event: MouseEvent): void {
   if (!exportMenuRef.value?.contains(event.target as Node)) {
     closeExportMenu()
   }
+}
+
+function insertTable(): void {
+  emit('insertTable')
 }
 
 function install(): void {
@@ -197,6 +202,16 @@ onUnmounted(() => {
               <rect x="9" y="9" width="5" height="5" rx="1" />
             </svg>
             <span>Examples</span>
+          </ToolbarButton>
+
+          <ToolbarButton aria-label="Insert table" @click="insertTable">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="2" width="12" height="12" rx="1" />
+              <path d="M2 6h12" />
+              <path d="M6 6v8" />
+              <path d="M10 6v8" />
+            </svg>
+            <span>Table</span>
           </ToolbarButton>
 
           <ToolbarButton @click="clear">
