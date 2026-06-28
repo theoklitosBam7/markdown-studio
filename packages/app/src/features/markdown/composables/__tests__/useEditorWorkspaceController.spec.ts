@@ -505,7 +505,7 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
-  it('inserts a default table template at the cursor position', async () => {
+  it('opens the table dimension picker with a 3x3 default when insertTable is invoked', async () => {
     const { workspace, wrapper } = await mountWorkspace()
     const editor = createEditorAdapter()
     workspace.attach.editor(editor)
@@ -513,15 +513,43 @@ describe('useEditorWorkspaceController', () => {
 
     await workspace.editor.insertTable()
 
+    expect(workspace.state.isTableDimensionPickerOpen.value).toBe(true)
+    expect(workspace.state.tableDimensions.value).toEqual({ columns: 3, rows: 3 })
+    expect(editor.insertText).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('inserts a table with the chosen dimensions when table insertion is confirmed', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    workspace.attach.editor(editor)
+    await flushPromises()
+
+    await workspace.editor.insertTable()
+    workspace.editor.setTableDimensions({ columns: 2, rows: 4 })
+    await workspace.editor.confirmTableInsertion()
+
     expect(editor.insertText).toHaveBeenCalledWith(
-      [
-        '| Header 1 | Header 2 | Header 3 |',
-        '| --- | --- | --- |',
-        '|  |  |  |',
-        '|  |  |  |',
-      ].join('\n'),
+      ['| Header 1 | Header 2 |', '| --- | --- |', '|  |  |', '|  |  |', '|  |  |'].join('\n'),
     )
     expect(editor.focus).toHaveBeenCalled()
+    expect(workspace.state.isTableDimensionPickerOpen.value).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('closes the table dimension picker without inserting when cancelled', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    workspace.attach.editor(editor)
+    await flushPromises()
+
+    await workspace.editor.insertTable()
+    workspace.editor.cancelTableInsertion()
+
+    expect(workspace.state.isTableDimensionPickerOpen.value).toBe(false)
+    expect(editor.insertText).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })

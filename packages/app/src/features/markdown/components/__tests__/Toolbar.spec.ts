@@ -1,13 +1,18 @@
+import type { VueWrapper } from '@vue/test-utils'
+
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 
 import Toolbar from '../Toolbar.vue'
+
+const wrappers: VueWrapper[] = []
 
 function mountToolbar(overrides: Record<string, unknown> = {}) {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
-  return mount(Toolbar, {
+  const wrapper = mount(Toolbar, {
     attachTo: container,
     props: {
       availableModes: ['editor', 'split', 'preview'],
@@ -20,10 +25,19 @@ function mountToolbar(overrides: Record<string, unknown> = {}) {
       ...overrides,
     },
   })
+
+  wrappers.push(wrapper)
+
+  return wrapper
 }
 
 describe('Toolbar', () => {
-  afterEach(() => {
+  afterEach(async () => {
+    for (const wrapper of wrappers) {
+      wrapper.unmount()
+    }
+    wrappers.length = 0
+    await nextTick()
     document.body.innerHTML = ''
   })
 
@@ -119,6 +133,24 @@ describe('Toolbar', () => {
     // Action sheet is teleported to body, check document
     expect(document.querySelector('.mobile-action-sheet')).not.toBeNull()
     expect(document.querySelector('.mobile-action-sheet-backdrop')).not.toBeNull()
+  })
+
+  it('forwards insert-table from mobile action sheet', async () => {
+    const wrapper = mountToolbar({
+      availableModes: ['editor', 'preview'],
+      isMobile: true,
+      viewMode: 'editor',
+    })
+
+    const menuButton = wrapper.find('button[aria-label="Menu"]')
+    await menuButton.trigger('click')
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const tableAction = Array.from(actions).find((el) => el.textContent?.includes('Insert Table'))
+
+    await tableAction?.dispatchEvent(new MouseEvent('click'))
+
+    expect(wrapper.emitted('insertTable')).toHaveLength(1)
   })
 
   it('hides open and save when document actions are unavailable', () => {

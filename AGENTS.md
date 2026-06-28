@@ -47,6 +47,7 @@ The supported scopes are defined in `commitlint.config.ts`; prefer those scopes 
   Start with a summary line (no bullet), then a blank line, then unordered list items each beginning with a present-tense verb.
 
 - Run `pnpm changeset:validate-scopes` after you perform changeset actions.
+- Changesets feed Release Notes and should describe user-facing changes only. Avoid implementation details such as "add unit tests", "refactor internal helpers", or other items that do not change the released behavior.
 
 ## Project Snapshot
 

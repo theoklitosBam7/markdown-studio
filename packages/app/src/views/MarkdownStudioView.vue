@@ -10,6 +10,7 @@ import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
 import ShortcutsHelp from '@/features/markdown/components/ShortcutsHelp.vue'
 import StatusBar from '@/features/markdown/components/StatusBar.vue'
+import TableDimensionPicker from '@/features/markdown/components/TableDimensionPicker.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
 import { useCommandPalette } from '@/features/markdown/composables/useCommandPalette'
@@ -70,7 +71,10 @@ const bindings = computed<ShortcutBinding[]>(() => [
 ])
 
 const isOverlayOpen = () =>
-  isExamplesModalOpen.value || isShortcutsHelpOpen.value || commandPalette.isOpen.value
+  isExamplesModalOpen.value ||
+  isShortcutsHelpOpen.value ||
+  commandPalette.isOpen.value ||
+  workspace.state.isTableDimensionPickerOpen.value
 
 const { shortcuts } = useShortcuts({
   bindings,
@@ -217,6 +221,20 @@ function handleStartNewDocument(): void {
     console.error('Failed to start new document:', error)
   })
 }
+
+function handleTableDimensionsUpdate(dimensions: { columns: number; rows: number }): void {
+  workspace.editor.setTableDimensions(dimensions)
+}
+
+function handleTableInsertionCancel(): void {
+  workspace.editor.cancelTableInsertion()
+}
+
+function handleTableInsertionConfirm(): void {
+  void workspace.editor.confirmTableInsertion().catch((error: unknown) => {
+    console.error('Failed to confirm table insertion:', error)
+  })
+}
 </script>
 
 <template>
@@ -319,6 +337,28 @@ function handleStartNewDocument(): void {
       :is-open="isShortcutsHelpOpen"
       :shortcuts="shortcuts"
       @close="closeShortcutsHelp"
+    />
+
+    <TableDimensionPicker
+      :columns="workspace.state.tableDimensions.value.columns"
+      :is-open="workspace.state.isTableDimensionPickerOpen.value"
+      :rows="workspace.state.tableDimensions.value.rows"
+      @cancel="handleTableInsertionCancel"
+      @confirm="handleTableInsertionConfirm"
+      @update:columns="
+        (columns) =>
+          handleTableDimensionsUpdate({
+            columns,
+            rows: workspace.state.tableDimensions.value.rows,
+          })
+      "
+      @update:rows="
+        (rows) =>
+          handleTableDimensionsUpdate({
+            columns: workspace.state.tableDimensions.value.columns,
+            rows,
+          })
+      "
     />
   </div>
 </template>

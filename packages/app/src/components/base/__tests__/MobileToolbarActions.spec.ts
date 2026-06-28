@@ -93,6 +93,7 @@ describe('MobileToolbarActions', () => {
     expect(actionLabels.some((label) => label?.includes('Save'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('Install App'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('Load Examples'))).toBe(true)
+    expect(actionLabels.some((label) => label?.includes('Insert Table'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('Copy Markdown'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('Clear Document'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('Export as HTML'))).toBe(true)
@@ -144,6 +145,20 @@ describe('MobileToolbarActions', () => {
     await saveAction?.dispatchEvent(new MouseEvent('click'))
 
     expect(wrapper.emitted('saveDocument')).toHaveLength(1)
+  })
+
+  it('emits insertTable when Insert Table action is clicked', async () => {
+    const wrapper = mountToolbar()
+
+    const menuButton = document.querySelector('button[aria-label="Menu"]')
+    await menuButton?.dispatchEvent(new MouseEvent('click'))
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const tableAction = Array.from(actions).find((el) => el.textContent?.includes('Insert Table'))
+
+    await tableAction?.dispatchEvent(new MouseEvent('click'))
+
+    expect(wrapper.emitted('insertTable')).toHaveLength(1)
   })
 
   it('does not show Open/Save buttons outside action sheet', () => {

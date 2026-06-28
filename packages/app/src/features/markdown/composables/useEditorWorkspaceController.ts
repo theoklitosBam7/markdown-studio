@@ -16,13 +16,13 @@ import type {
   ThemeChangeRequest,
 } from '../types/workspace'
 
-import { generateTableTemplate } from '../utils/tableTemplate'
 import { EXAMPLES } from './examples'
 import { useDesktopDraftPersistence } from './useDesktopDraftPersistence'
 import { useDocumentExport } from './useDocumentExport'
 import { useDocumentSession } from './useDocumentSession'
 import { useFindReplace } from './useFindReplace'
 import { useMarkdownEditor } from './useMarkdownEditor'
+import { useTableInsertion } from './useTableInsertion'
 import { useWebDraftPersistence } from './useWebDraftPersistence'
 
 const MOBILE_BREAKPOINT = 700
@@ -148,6 +148,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     isDirty,
     restoreDraft,
   })
+  const tableInsertion = useTableInsertion({ editorPane })
 
   const bannerStatus = computed(() =>
     updateAvailable.value ? ('update-available' as const) : ('up-to-date' as const),
@@ -416,9 +417,19 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   }
 
   async function insertTable(): Promise<void> {
-    const tableTemplate = generateTableTemplate({ columns: 3, rows: 3 })
-    await editorPane.value?.insertText(tableTemplate)
-    editorPane.value?.focus()
+    tableInsertion.openPicker()
+  }
+
+  function cancelTableInsertion(): void {
+    tableInsertion.closePicker()
+  }
+
+  async function confirmTableInsertion(): Promise<void> {
+    await tableInsertion.confirmInsertion()
+  }
+
+  function setTableDimensions(dimensions: { columns: number; rows: number }): void {
+    tableInsertion.setDimensions(dimensions)
   }
 
   async function start(): Promise<void> {
@@ -534,9 +545,12 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
     },
     editor: {
+      cancelTableInsertion,
+      confirmTableInsertion,
       async insertTable(): Promise<void> {
         await insertTable()
       },
+      setTableDimensions,
       async setTheme(request: ThemeChangeRequest) {
         await setWorkspaceTheme(request)
       },
@@ -594,6 +608,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       isExamplesModalOpen,
       isHomebrewInstall: isHomebrewInstallRef,
       isMobile,
+      isTableDimensionPickerOpen: tableInsertion.isPickerOpen,
       pdfExportUnavailableReason,
       pwaBannerStatus,
       renderedHtml,
@@ -602,6 +617,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       sourceMap,
       stats,
       statusText,
+      tableDimensions: tableInsertion.dimensions,
       theme,
       updateInfo,
       viewMode,
