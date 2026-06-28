@@ -1,5 +1,24 @@
 # markdown-studio
 
+## 0.8.0
+
+### Minor Changes
+
+- 504d6dc: Add table insertion via the Command Palette in the Editor Workspace.
+
+  - Insert a GFM table at the current cursor position from the Command Palette
+  - Use the new "Insert Table" command while editing
+
+- a0e9b03: Add custom row and column selection when inserting a table.
+
+  - Choose any table size from 1 to 50 rows and columns
+  - Open the dimension picker from the Command Palette or the toolbar
+
+- b52cd00: Add an Insert Table button to the editor toolbar.
+
+  - Insert a table from the new toolbar button
+  - Use the toolbar button as a shortcut for table insertion
+
 ## 0.7.0
 
 ### Minor Changes
