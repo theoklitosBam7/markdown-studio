@@ -5,11 +5,10 @@
   "compilerOptions": {
     "composite": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": "./src",
     "module": "preserve",
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"]
     },
     "tsBuildInfoFile": "../../node_modules/.tmp/packages-app.tsbuildinfo"
   }
