@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, useId } from 'vue'
+import { nextTick, onMounted, onUnmounted, useId, useTemplateRef, watch } from 'vue'
 
 interface Props {
   isOpen: boolean
@@ -8,6 +8,8 @@ interface Props {
 
 const props = defineProps<Props>()
 const generatedTitleId = useId()
+const modalRef = useTemplateRef<HTMLElement>('modal')
+let previousFocus: HTMLElement | null = null
 
 const emit = defineEmits<{
   close: []
@@ -25,6 +27,19 @@ function handleKeydown(e: KeyboardEvent): void {
   }
 }
 
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      void nextTick(() => modalRef.value?.focus())
+    } else if (previousFocus) {
+      previousFocus.focus()
+      previousFocus = null
+    }
+  },
+)
+
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
 })
@@ -36,7 +51,14 @@ onUnmounted(() => {
 
 <template>
   <div :class="['modal-overlay', { open: props.isOpen }]">
-    <div class="modal" role="dialog" aria-modal="true" :aria-labelledby="titleId">
+    <div
+      ref="modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      :aria-labelledby="titleId"
+    >
       <div class="modal-header">
         <slot name="header" :title-id="titleId" />
         <button class="modal-close" type="button" aria-label="Close dialog" @click="handleClose">
@@ -85,6 +107,10 @@ onUnmounted(() => {
 
 .modal-overlay.open .modal {
   transform: translateY(0);
+}
+
+.modal:focus {
+  outline: none;
 }
 
 .modal-header {

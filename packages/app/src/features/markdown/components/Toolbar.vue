@@ -151,6 +151,7 @@ onUnmounted(() => {
       @copy="copy"
       @export-html="exportHtml"
       @export-pdf="exportPdf"
+      @insert-table="insertTable"
       @install="install"
       @open-document="openDocument"
       @open-examples="openExamples"

@@ -52,7 +52,10 @@ export interface EditorWorkspaceController {
     startNew(): Promise<void>
   }
   editor: {
+    cancelTableInsertion(): void
+    confirmTableInsertion(): Promise<void>
     insertTable(): Promise<void>
+    setTableDimensions(dimensions: TableDimensions): void
     setTheme(request: ThemeChangeRequest): Promise<void>
     setViewMode(mode: ViewMode): void
     syncPreviewToEditorPosition(payload?: EditorScrollPayload | null): void
@@ -136,6 +139,7 @@ export interface EditorWorkspaceState {
   isExamplesModalOpen: ShallowRef<boolean>
   isHomebrewInstall: Readonly<Ref<boolean>>
   isMobile: ShallowRef<boolean>
+  isTableDimensionPickerOpen: Readonly<Ref<boolean>>
   pdfExportUnavailableReason: Readonly<Ref<string>>
   pwaBannerStatus: Readonly<Ref<'offline-ready' | 'update-available'>>
   renderedHtml: Readonly<Ref<string>>
@@ -144,6 +148,7 @@ export interface EditorWorkspaceState {
   sourceMap: Readonly<Ref<MarkdownSourceMapEntry[]>>
   stats: Readonly<Ref<EditorStats>>
   statusText: Readonly<Ref<string>>
+  tableDimensions: Readonly<Ref<TableDimensions>>
   theme: Readonly<Ref<Theme>>
   updateInfo: Readonly<Ref<null | WorkspaceUpdateInfo>>
   viewMode: Readonly<Ref<ViewMode>>
@@ -151,6 +156,11 @@ export interface EditorWorkspaceState {
 
 export interface PreviewPaneAdapter {
   scrollToSourceOffset(offset: number): void
+}
+
+export interface TableDimensions {
+  columns: number
+  rows: number
 }
 
 export interface ThemeChangeRequest {

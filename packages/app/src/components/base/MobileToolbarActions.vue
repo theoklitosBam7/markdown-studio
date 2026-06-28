@@ -36,6 +36,7 @@ const emit = defineEmits<{
   copy: []
   exportHtml: []
   exportPdf: []
+  insertTable: []
   install: []
   openDocument: []
   openExamples: []
@@ -87,6 +88,11 @@ const secondaryActions = computed(() => {
       action: () => emit('openExamples'),
       icon: '✨',
       label: 'Load Examples',
+    },
+    {
+      action: () => emit('insertTable'),
+      icon: '▦',
+      label: 'Insert Table',
     },
     {
       action: () => emit('copy'),

@@ -121,6 +121,24 @@ describe('Toolbar', () => {
     expect(document.querySelector('.mobile-action-sheet-backdrop')).not.toBeNull()
   })
 
+  it('forwards insert-table from mobile action sheet', async () => {
+    const wrapper = mountToolbar({
+      availableModes: ['editor', 'preview'],
+      isMobile: true,
+      viewMode: 'editor',
+    })
+
+    const menuButton = wrapper.find('button[aria-label="Menu"]')
+    await menuButton.trigger('click')
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const tableAction = Array.from(actions).find((el) => el.textContent?.includes('Insert Table'))
+
+    await tableAction?.dispatchEvent(new MouseEvent('click'))
+
+    expect(wrapper.emitted('insertTable')).toHaveLength(1)
+  })
+
   it('hides open and save when document actions are unavailable', () => {
     const wrapper = mountToolbar({
       availableModes: ['editor', 'preview'],
