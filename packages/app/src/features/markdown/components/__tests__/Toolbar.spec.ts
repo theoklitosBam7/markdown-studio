@@ -1,13 +1,18 @@
+import type { VueWrapper } from '@vue/test-utils'
+
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 
 import Toolbar from '../Toolbar.vue'
+
+const wrappers: VueWrapper[] = []
 
 function mountToolbar(overrides: Record<string, unknown> = {}) {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
-  return mount(Toolbar, {
+  const wrapper = mount(Toolbar, {
     attachTo: container,
     props: {
       availableModes: ['editor', 'split', 'preview'],
@@ -20,10 +25,19 @@ function mountToolbar(overrides: Record<string, unknown> = {}) {
       ...overrides,
     },
   })
+
+  wrappers.push(wrapper)
+
+  return wrapper
 }
 
 describe('Toolbar', () => {
-  afterEach(() => {
+  afterEach(async () => {
+    for (const wrapper of wrappers) {
+      wrapper.unmount()
+    }
+    wrappers.length = 0
+    await nextTick()
     document.body.innerHTML = ''
   })
 
