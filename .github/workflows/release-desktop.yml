@@ -93,7 +93,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object.sha' 2>/dev/null || true)"
+          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object.sha' 2>/dev/null)" || remote_sha=""
 
           if [[ -n "$remote_sha" && "$remote_sha" != "$RELEASE_SHA" ]]; then
             echo "Tag $RELEASE_TAG already exists on a different commit: $remote_sha" >&2
