@@ -8,6 +8,8 @@ import { buildAppMenu } from './menu/appMenu'
 const preloadPath = fileURLToPath(new URL('../preload/preload.cjs', import.meta.url))
 const rendererHtmlPath = fileURLToPath(new URL('../renderer/index.html', import.meta.url))
 
+app.setName('Markdown Studio')
+
 async function createMainWindow(): Promise<BrowserWindow> {
   const window = new BrowserWindow({
     backgroundColor: '#f7f5f0',
