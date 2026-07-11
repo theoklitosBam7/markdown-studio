@@ -5,6 +5,8 @@ import { escapeHtml } from '@/utils/escapeHtml'
 import type { MarkdownSourceMapEntry } from '../types'
 
 type AnnotatedToken = {
+  checkboxEnd?: number
+  checkboxStart?: number
   sourceEnd?: number
   sourceId?: string
   sourceStart?: number
@@ -63,11 +65,25 @@ function annotateTokens(
         itemCursor = itemEnd
 
         const annotatedItem = item as AnnotatedToken
+        const checkboxMatch = item.raw.match(/^\s*(?:[-+*]|\d+[.)])\s+(\[[ xX]\])/)
+        const checkboxStart = checkboxMatch
+          ? itemStart + checkboxMatch[0].lastIndexOf(checkboxMatch[1]!)
+          : undefined
+        const checkboxEnd = checkboxStart === undefined ? undefined : checkboxStart + 3
         const id = `block-${sourceMap.length}`
+        annotatedItem.checkboxEnd = checkboxEnd
+        annotatedItem.checkboxStart = checkboxStart
         annotatedItem.sourceId = id
         annotatedItem.sourceStart = itemStart
         annotatedItem.sourceEnd = itemEnd
-        sourceMap.push({ end: itemEnd, id, start: itemStart, type: item.type })
+        sourceMap.push({
+          checkboxEnd,
+          checkboxStart,
+          end: itemEnd,
+          id,
+          start: itemStart,
+          type: item.type,
+        })
       }
     }
   }
@@ -84,7 +100,12 @@ function buildAttrs(token: AnnotatedToken): string {
     return ''
   }
 
-  return ` id="markdown-source-${token.sourceId}" data-source-id="${token.sourceId}" data-source-start="${token.sourceStart}" data-source-end="${token.sourceEnd}"`
+  const checkboxAttrs =
+    token.checkboxStart === undefined || token.checkboxEnd === undefined
+      ? ''
+      : ` data-checkbox-start="${token.checkboxStart}" data-checkbox-end="${token.checkboxEnd}"`
+
+  return ` id="markdown-source-${token.sourceId}" data-source-id="${token.sourceId}" data-source-start="${token.sourceStart}" data-source-end="${token.sourceEnd}"${checkboxAttrs}`
 }
 
 function createRenderer() {

@@ -216,6 +216,10 @@ function handleInstall(): void {
   })
 }
 
+function handleReplaceSourceRange(start: number, end: number, replacement: string): void {
+  void editorPaneRef.value?.replaceRange(start, end, replacement)
+}
+
 function handleStartNewDocument(): void {
   void workspace.document.startNew().catch((error: unknown) => {
     console.error('Failed to start new document:', error)
@@ -305,6 +309,7 @@ function handleTableInsertionConfirm(): void {
         :word-count="stats.words"
         @jump-to-offset="workspace.preview.jumpToOffset"
         @render-diagrams="workspace.preview.renderDiagrams"
+        @replace-source-range="handleReplaceSourceRange"
       />
     </main>
 

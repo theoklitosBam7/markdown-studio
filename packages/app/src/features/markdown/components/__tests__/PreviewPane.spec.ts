@@ -59,6 +59,49 @@ describe('PreviewPane', () => {
     expect(wrapper.emitted('jumpToOffset')).toEqual([[12]])
   })
 
+  it('requests source replacements when task list checkboxes are clicked', async () => {
+    const wrapper = mount(PreviewPane, {
+      props: {
+        html: [
+          '<ul>',
+          '<li data-checkbox-start="2" data-checkbox-end="5"><input type="checkbox">First</li>',
+          '<li data-checkbox-start="19" data-checkbox-end="22"><input checked type="checkbox">Second</li>',
+          '</ul>',
+        ].join(''),
+        sourceMap: [],
+        theme: 'light',
+        wordCount: 4,
+      },
+    })
+
+    await nextTick()
+    const checkboxes = wrapper.findAll<HTMLInputElement>('input[type="checkbox"]')
+    await checkboxes[0]!.trigger('click')
+    await checkboxes[1]!.trigger('click')
+
+    expect(wrapper.emitted('replaceSourceRange')).toEqual([
+      [2, 5, '[x]'],
+      [19, 22, '[ ]'],
+    ])
+  })
+
+  it('enables rendered task list checkboxes for interaction', async () => {
+    const wrapper = mount(PreviewPane, {
+      props: {
+        html: '<li data-checkbox-start="2" data-checkbox-end="5"><input checked disabled type="checkbox">Task</li>',
+        sourceMap: [],
+        theme: 'light',
+        wordCount: 1,
+      },
+    })
+
+    await nextTick()
+
+    const checkbox = wrapper.get<HTMLInputElement>('input[type="checkbox"]').element
+    expect(checkbox.disabled).toBe(false)
+    expect(checkbox.checked).toBe(true)
+  })
+
   it('preserves source attributes across sanitization and rerenders', async () => {
     const wrapper = mount(PreviewPane, {
       props: {
