@@ -1,5 +1,21 @@
 # @markdown-studio/desktop
 
+## 0.11.0
+
+### Minor Changes
+
+- b4ad09d: Make task list checkboxes interactive in the Live Preview
+
+  - Toggle task checkboxes directly from the Live Preview
+  - Update the matching Markdown source immediately
+  - Preserve independent task states and undo support
+
+### Patch Changes
+
+- b158b4f: Show the product name in the desktop application menu
+
+  - Replace the internal package name in the About menu item with Markdown Studio
+
 ## 0.10.0
 
 ### Minor Changes
