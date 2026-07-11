@@ -13,6 +13,8 @@ export interface Example {
 }
 
 export interface MarkdownSourceMapEntry {
+  checkboxEnd?: number
+  checkboxStart?: number
   end: number
   id: string
   start: number

@@ -79,6 +79,25 @@ describe('MarkdownStudioView', () => {
     vi.restoreAllMocks()
   })
 
+  it('updates the matching Markdown task when its Live Preview checkbox is clicked', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    const textarea = wrapper.get('textarea')
+    await textarea.setValue('- [ ] First task\n- [ ] Second task')
+    await flushPromises()
+
+    const checkboxes = wrapper.findAll<HTMLInputElement>('.rendered-md input[type="checkbox"]')
+    expect(checkboxes).toHaveLength(2)
+
+    await checkboxes[1]!.trigger('click')
+    await flushPromises()
+
+    expect((textarea.element as HTMLTextAreaElement).value).toBe(
+      '- [ ] First task\n- [x] Second task',
+    )
+
+    wrapper.unmount()
+  })
+
   it('inserts a default table when the toolbar insert table button is clicked', async () => {
     const { wrapper } = await mountMarkdownStudioView()
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement

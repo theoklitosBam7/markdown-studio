@@ -21,6 +21,7 @@ const desktop = useDesktop()
 const emit = defineEmits<{
   jumpToOffset: [offset: number]
   renderDiagrams: [container: HTMLElement]
+  replaceSourceRange: [start: number, end: number, replacement: string]
 }>()
 
 const previewRef = useTemplateRef<HTMLDivElement>('preview')
@@ -45,6 +46,28 @@ function getSourceElement(entry: MarkdownSourceMapEntry): HTMLElement | null {
     previewRef.value.querySelector<HTMLElement>(`[data-source-id="${entry.id}"]`) ??
     previewRef.value.querySelector<HTMLElement>(`#markdown-source-${entry.id}`)
   )
+}
+
+function handleCheckboxClick(event: MouseEvent): void {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return
+
+  const listItem = target.closest<HTMLElement>('[data-checkbox-start][data-checkbox-end]')
+  const checkboxStart = listItem?.dataset.checkboxStart
+  const checkboxEnd = listItem?.dataset.checkboxEnd
+  if (checkboxStart === undefined || checkboxEnd === undefined) return
+
+  emit(
+    'replaceSourceRange',
+    Number.parseInt(checkboxStart, 10),
+    Number.parseInt(checkboxEnd, 10),
+    target.checked ? '[x]' : '[ ]',
+  )
+}
+
+function handleClick(event: MouseEvent): void {
+  handleCheckboxClick(event)
+  handleLinkClick(event)
 }
 
 function handleDoubleClick(event: MouseEvent): void {
@@ -85,6 +108,12 @@ function hydrateSourceAnchors(): void {
     'h1, h2, h3, h4, h5, h6, p, blockquote, li, table, pre, hr, .mermaid-wrap, .html-block',
   )
   if (!candidateElements) return
+
+  for (const checkbox of previewRef.value?.querySelectorAll<HTMLInputElement>(
+    'li[data-checkbox-start][data-checkbox-end] input[type="checkbox"]',
+  ) ?? []) {
+    checkbox.disabled = false
+  }
 
   let candidateIndex = 0
 
@@ -229,7 +258,7 @@ defineExpose({ scrollToSourceOffset })
         :key="renderKey"
         ref="preview"
         class="rendered-md markdown-document markdown-document-theme--app"
-        @click="handleLinkClick"
+        @click="handleClick"
         @dblclick="handleDoubleClick"
         v-html="sanitizedHtml"
       ></div>
@@ -284,6 +313,18 @@ defineExpose({ scrollToSourceOffset })
 
 .rendered-md {
   min-height: 100%;
+}
+
+.rendered-md :deep(input[type='checkbox']) {
+  cursor: pointer;
+  transition:
+    filter 120ms ease,
+    transform 120ms ease;
+}
+
+.rendered-md :deep(input[type='checkbox']:hover) {
+  filter: brightness(1.15);
+  transform: scale(1.08);
 }
 
 @media (max-width: 700px) {

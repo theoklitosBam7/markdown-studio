@@ -47,6 +47,19 @@ describe('renderMarkdownWithSourceMap', () => {
     expect(html).toContain('<table id="markdown-source-block-5" data-source-id=')
   })
 
+  it('tracks task list checkbox source offsets', () => {
+    const content = '- [ ] First task\n- [x] Second task'
+
+    const { html, sourceMap } = renderMarkdownWithSourceMap(content)
+
+    expect(sourceMap).toEqual([
+      expect.objectContaining({ checkboxEnd: 5, checkboxStart: 2, type: 'list_item' }),
+      expect.objectContaining({ checkboxEnd: 22, checkboxStart: 19, type: 'list_item' }),
+    ])
+    expect(html).toContain('data-checkbox-start="2" data-checkbox-end="5"')
+    expect(html).toContain('data-checkbox-start="19" data-checkbox-end="22"')
+  })
+
   it('keeps repeated blocks distinct by offset', () => {
     const content = ['Repeat me', '', 'Repeat me'].join('\n')
 
