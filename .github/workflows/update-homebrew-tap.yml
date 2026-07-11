@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: update-homebrew-tap
+  cancel-in-progress: false
+
 jobs:
   update-homebrew-tap:
     name: Update Homebrew tap
@@ -22,10 +26,14 @@ jobs:
     steps:
       - name: Resolve release metadata
         id: release_meta
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_VERSION: ${{ inputs.version }}
         shell: bash
         run: |
-          version="${{ inputs.version }}"
-          tag="${{ inputs.tag }}"
+          set -euo pipefail
+          version="$INPUT_VERSION"
+          tag="$INPUT_TAG"
 
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
             echo "Invalid desktop version: $version" >&2
