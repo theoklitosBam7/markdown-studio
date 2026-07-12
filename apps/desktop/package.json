@@ -1,6 +1,6 @@
 {
   "name": "@markdown-studio/desktop",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "description": "Markdown Studio desktop application workspace.",
   "license": "MIT",
