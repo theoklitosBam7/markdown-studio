@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { AppWindow } from '@/browser-window'
@@ -35,6 +35,127 @@ describe('EditorPane', () => {
     window.getComputedStyle = originalGetComputedStyle
     appWindow.desktop = originalDesktop
     vi.restoreAllMocks()
+  })
+
+  it('highlights the initial logical line on render', async () => {
+    window.getComputedStyle = vi.fn(
+      () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
+    )
+
+    const wrapper = mountEditorPane()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('height: 20px')
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 124px')
+
+    wrapper.unmount()
+  })
+
+  it('follows a collapsed caret without requiring text selection', async () => {
+    window.getComputedStyle = vi.fn(
+      () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
+    )
+
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.focus()
+    textarea.setSelectionRange(14, 14)
+    document.dispatchEvent(new Event('selectionchange'))
+    await wrapper.vm.$nextTick()
+
+    expect(textarea.selectionStart).toBe(textarea.selectionEnd)
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 64px')
+
+    wrapper.unmount()
+  })
+
+  it('highlights the logical line containing the caret', async () => {
+    window.getComputedStyle = vi.fn(
+      () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
+    )
+
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(14, 14)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 64px')
+
+    wrapper.unmount()
+  })
+
+  it('highlights the selection head for backward selections', async () => {
+    window.getComputedStyle = vi.fn(
+      () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
+    )
+
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(0, 14, 'backward')
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 24px')
+
+    wrapper.unmount()
+  })
+
+  it('retains a muted active-line highlight when editor focus moves elsewhere', async () => {
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea')
+
+    await textarea.trigger('focus')
+    expect(wrapper.get('.active-line-highlight').classes()).toContain(
+      'active-line-highlight--focused',
+    )
+
+    await textarea.trigger('blur')
+    expect(wrapper.find('.active-line-highlight').exists()).toBe(true)
+    expect(wrapper.get('.active-line-highlight').classes()).not.toContain(
+      'active-line-highlight--focused',
+    )
+
+    wrapper.unmount()
+  })
+
+  it('keeps the active-line highlight synchronized with editor scrolling', async () => {
+    window.getComputedStyle = vi.fn(
+      () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
+    )
+
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(14, 14)
+    await wrapper.get('textarea').trigger('select')
+    textarea.scrollTop = 30
+    await wrapper.get('textarea').trigger('scroll')
+
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 34px')
+
+    wrapper.unmount()
+  })
+
+  it('updates the active-line highlight after programmatic selection', async () => {
+    window.getComputedStyle = vi.fn(
+      () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
+    )
+
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    Object.defineProperty(textarea, 'clientHeight', { configurable: true, value: 80 })
+
+    await (
+      wrapper.vm as unknown as {
+        setSelectionRange: (start: number, end: number) => Promise<void>
+      }
+    ).setSelectionRange(21, 21)
+
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 64px')
+
+    wrapper.unmount()
   })
 
   it('focuses the editor at an offset and centers the caret line', async () => {
@@ -154,12 +275,10 @@ describe('EditorPane', () => {
         items: [{ kind: 'file', type: 'image/png' }],
       },
     })
-    expect(pane.classes()).toContain('editor-pane--image-dragging')
     expect(wrapper.get('.image-drop-overlay').isVisible()).toBe(true)
     expect(wrapper.get('.image-drop-label').text()).toBe('Drop image to add it')
 
     await pane.trigger('dragleave')
-    expect(pane.classes()).not.toContain('editor-pane--image-dragging')
     expect(wrapper.get('.image-drop-overlay').isVisible()).toBe(false)
   })
 
@@ -170,7 +289,7 @@ describe('EditorPane', () => {
 
     await pane.trigger('dragover', { dataTransfer: { files: [textFile] } })
 
-    expect(pane.classes()).not.toContain('editor-pane--image-dragging')
+    expect(wrapper.get('.image-drop-overlay').isVisible()).toBe(false)
   })
 
   it('saves a dropped image and inserts Markdown at the cursor on desktop', async () => {
@@ -219,6 +338,7 @@ describe('EditorPane', () => {
     await wrapper.get('.editor-pane').trigger('drop', {
       dataTransfer: { files: [file] },
     })
+    await flushPromises()
 
     expect(saveImage).toHaveBeenCalledWith({
       data: new Uint8Array([1, 2, 3]),
