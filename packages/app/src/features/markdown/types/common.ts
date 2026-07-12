@@ -12,12 +12,21 @@ export interface Example {
   title: string
 }
 
+export interface MarkdownOutlineHeading {
+  depth: number
+  id: string
+  start: number
+  text: string
+}
+
 export interface MarkdownSourceMapEntry {
   checkboxEnd?: number
   checkboxStart?: number
+  depth?: number
   end: number
   id: string
   start: number
+  text?: string
   type: string
 }
 

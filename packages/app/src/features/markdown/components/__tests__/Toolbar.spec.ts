@@ -77,6 +77,18 @@ describe('Toolbar', () => {
     expect(wrapper.emitted('insertTable')).toHaveLength(1)
   })
 
+  it('renders an accessible icon control for toggling the document outline', async () => {
+    const wrapper = mountToolbar({ isOutlineOpen: true })
+
+    const outlineButton = wrapper.get('button[aria-label="Hide document outline"]')
+    expect(outlineButton.attributes('aria-pressed')).toBe('true')
+    expect(outlineButton.find('svg[aria-hidden="true"]').exists()).toBe(true)
+
+    await outlineButton.trigger('click')
+
+    expect(wrapper.emitted('toggleOutline')).toHaveLength(1)
+  })
+
   it('renders keyboard shortcuts as an accessible icon control', async () => {
     const wrapper = mountToolbar()
 
@@ -116,6 +128,22 @@ describe('Toolbar', () => {
     expect(
       wrapper.find('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]').exists(),
     ).toBe(true)
+  })
+
+  it('keeps the outline toggle available in the compact mobile toolbar', async () => {
+    const wrapper = mountToolbar({
+      availableModes: ['editor', 'preview'],
+      isMobile: true,
+      isOutlineOpen: false,
+      viewMode: 'editor',
+    })
+
+    const outlineButton = wrapper.get('button[aria-label="Show document outline"]')
+    expect(outlineButton.classes()).toContain('icon-only')
+
+    await outlineButton.trigger('click')
+
+    expect(wrapper.emitted('toggleOutline')).toHaveLength(1)
   })
 
   it('opens action sheet when hamburger menu is clicked', async () => {

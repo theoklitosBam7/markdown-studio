@@ -2,7 +2,14 @@ import type { AppCommand } from '@markdown-studio/desktop-contract/types'
 import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
 import type { FindMatch } from '../composables/useFindReplace'
-import type { EditorStats, Example, MarkdownSourceMapEntry, Theme, ViewMode } from './common'
+import type {
+  EditorStats,
+  Example,
+  MarkdownOutlineHeading,
+  MarkdownSourceMapEntry,
+  Theme,
+  ViewMode,
+} from './common'
 
 /**
  * Imperative capabilities exposed by the editor pane.
@@ -70,6 +77,10 @@ export interface EditorWorkspaceController {
     pdf(): Promise<void>
   }
   find: EditorWorkspaceFindApi
+  outline: {
+    navigate(offset: number): Promise<void>
+    toggle(): void
+  }
   preview: {
     jumpToOffset(offset: number): Promise<void>
     renderDiagrams(container: HTMLElement): Promise<void>
@@ -123,6 +134,7 @@ export interface EditorWorkspaceFindState {
  * rather than the primary orchestration owner.
  */
 export interface EditorWorkspaceState {
+  activeOutlineHeadingId: ComputedRef<null | string>
   availableModes: ComputedRef<ViewMode[]>
   bannerStatus: Readonly<Ref<'up-to-date' | 'update-available'>>
   bodyClasses: ComputedRef<Record<string, boolean>>
@@ -139,7 +151,9 @@ export interface EditorWorkspaceState {
   isExamplesModalOpen: ShallowRef<boolean>
   isHomebrewInstall: Readonly<Ref<boolean>>
   isMobile: ShallowRef<boolean>
+  isOutlineOpen: ShallowRef<boolean>
   isTableDimensionPickerOpen: Readonly<Ref<boolean>>
+  outlineHeadings: ComputedRef<MarkdownOutlineHeading[]>
   pdfExportUnavailableReason: Readonly<Ref<string>>
   pwaBannerStatus: Readonly<Ref<'offline-ready' | 'update-available'>>
   renderedHtml: Readonly<Ref<string>>

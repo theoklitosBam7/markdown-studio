@@ -3,7 +3,7 @@ export { useDocumentExport } from './composables/useDocumentExport'
 // Composables
 export { useEditorWorkspaceController } from './composables/useEditorWorkspaceController'
 export { useMarkdownEditor } from './composables/useMarkdownEditor'
-export { renderMarkdownWithSourceMap } from './rendered-document'
+export { extractHeadings, renderMarkdownWithSourceMap } from './rendered-document'
 
 export {
   buildExportHtml,
@@ -22,6 +22,7 @@ export type {
   EditorWorkspaceFindApi,
   EditorWorkspaceState,
   Example,
+  MarkdownOutlineHeading,
   MarkdownSourceMapEntry,
   PreviewPaneAdapter,
   Theme,

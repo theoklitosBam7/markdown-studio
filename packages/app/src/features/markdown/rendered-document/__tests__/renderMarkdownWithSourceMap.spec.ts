@@ -47,6 +47,34 @@ describe('renderMarkdownWithSourceMap', () => {
     expect(html).toContain('<table id="markdown-source-block-5" data-source-id=')
   })
 
+  it('exposes heading depth and text for the document outline', () => {
+    const content = [
+      '# Document title',
+      '## Section',
+      '### Subsection',
+      '#### Detail',
+      '##### Note',
+      '###### Fine print',
+      '',
+      'Paragraph text',
+    ].join('\n')
+
+    const { sourceMap } = renderMarkdownWithSourceMap(content)
+
+    expect(
+      sourceMap
+        .filter((entry) => entry.type === 'heading')
+        .map(({ depth, start, text }) => ({ depth, start, text })),
+    ).toEqual([
+      { depth: 1, start: 0, text: 'Document title' },
+      { depth: 2, start: content.indexOf('## Section'), text: 'Section' },
+      { depth: 3, start: content.indexOf('### Subsection'), text: 'Subsection' },
+      { depth: 4, start: content.indexOf('#### Detail'), text: 'Detail' },
+      { depth: 5, start: content.indexOf('##### Note'), text: 'Note' },
+      { depth: 6, start: content.indexOf('###### Fine print'), text: 'Fine print' },
+    ])
+  })
+
   it('tracks task list checkbox source offsets', () => {
     const content = '- [ ] First task\n- [x] Second task'
 

@@ -17,6 +17,7 @@ interface Props {
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
   isCopied: boolean
+  isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
   theme: Theme
   viewMode: ViewMode
@@ -28,6 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
   canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
+  isOutlineOpen: false,
   pdfExportUnavailableReason: '',
 })
 
@@ -42,6 +44,7 @@ const emit = defineEmits<{
   openExamples: []
   openShortcuts: []
   saveDocument: []
+  toggleOutline: []
   'update:theme': [payload: { origin: { x: number; y: number }; theme: Theme }]
   'update:viewMode': [mode: ViewMode]
 }>()
@@ -182,6 +185,24 @@ function openActionSheet(): void {
     </div>
 
     <div class="mobile-toolbar-actions__row mobile-toolbar-actions__row--secondary">
+      <ToolbarButton
+        icon-only
+        :aria-label="props.isOutlineOpen ? 'Hide document outline' : 'Show document outline'"
+        :aria-pressed="props.isOutlineOpen"
+        @click="emit('toggleOutline')"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <rect x="2" y="2.5" width="12" height="11" rx="1.5" />
+          <path d="M6 2.5v11" />
+          <path d="M3.5 5h1M3.5 7.5h1M3.5 10h1" />
+        </svg>
+      </ToolbarButton>
       <ViewToggle
         compact
         :available-modes="availableModes"
