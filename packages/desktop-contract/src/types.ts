@@ -13,6 +13,7 @@ export interface DesktopApi {
   documents: DesktopDocumentsApi
   editing: DesktopEditingApi
   exports: DesktopExportsApi
+  images?: DesktopImagesApi
   install: DesktopInstallApi
   isDesktop: boolean
   shell: DesktopShellApi
@@ -53,6 +54,10 @@ export interface DesktopExportsApi {
   exportPdf: (input: DesktopExportInput) => Promise<{ path: string } | null>
 }
 
+export interface DesktopImagesApi {
+  save: (input: DesktopSaveImageInput) => Promise<DesktopSaveImageResult>
+}
+
 export interface DesktopInstallApi {
   isHomebrew: () => Promise<boolean>
 }
@@ -60,6 +65,17 @@ export interface DesktopInstallApi {
 export interface DesktopSaveAsInput {
   content: string
   suggestedPath?: null | string
+}
+
+export interface DesktopSaveImageInput {
+  data: Uint8Array
+  documentPath: string
+  filename: string
+}
+
+export interface DesktopSaveImageResult {
+  filename: string
+  relativePath: string
 }
 
 export interface DesktopSaveInput {

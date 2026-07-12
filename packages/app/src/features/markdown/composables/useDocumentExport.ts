@@ -11,6 +11,7 @@ import {
   getDefaultTitle,
   getSuggestedFileName,
   renderExport,
+  resolveDesktopAssetUrls,
 } from '../rendered-document'
 
 interface UseDocumentExportOptions {
@@ -166,8 +167,12 @@ export function useDocumentExport(options: UseDocumentExportOptions): UseDocumen
     const suggestedPath = getSuggestedFileName(getDocumentPath(), 'pdf')
 
     if (desktop.value.isDesktop) {
+      const pdfDocumentHtml = options.currentPath.value
+        ? resolveDesktopAssetUrls(documentHtml, options.currentPath.value)
+        : documentHtml
+
       await desktop.value.exports.exportPdf({
-        documentHtml,
+        documentHtml: pdfDocumentHtml,
         documentTitle: rendered.title,
         suggestedPath,
       })

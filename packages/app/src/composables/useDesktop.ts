@@ -25,6 +25,11 @@ const fallbackDesktopApi: DesktopApi = {
     exportHtml: async () => null,
     exportPdf: async () => null,
   },
+  images: {
+    save: async () => {
+      throw new Error('Image saving is unavailable in the web runtime.')
+    },
+  },
   install: {
     isHomebrew: async () => false,
   },

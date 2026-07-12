@@ -1,6 +1,7 @@
 import type {
   DesktopExportInput,
   DesktopSaveAsInput,
+  DesktopSaveImageInput,
   DesktopSaveInput,
   DesktopWorkspaceDraft,
   DesktopWorkspaceDraftInput,
@@ -43,6 +44,25 @@ export function assertSaveAsInput(value: unknown): DesktopSaveAsInput {
       input.suggestedPath === undefined || input.suggestedPath === null
         ? null
         : assertNonEmptyPath(input.suggestedPath),
+  }
+}
+
+export function assertSaveImageInput(value: unknown): DesktopSaveImageInput {
+  assertObject(value, 'Save image payload must be an object.')
+  const input = value as Record<string, unknown>
+
+  if (!(input.data instanceof Uint8Array)) {
+    throw new TypeError('Image data must be binary.')
+  }
+
+  if (typeof input.filename !== 'string' || !/\.(gif|jpe?g|png|svg|webp)$/i.test(input.filename)) {
+    throw new Error('Unsupported image format.')
+  }
+
+  return {
+    data: input.data,
+    documentPath: assertNonEmptyPath(input.documentPath),
+    filename: input.filename,
   }
 }
 

@@ -24,11 +24,13 @@ import MatchOverlay from './MatchOverlay.vue'
 
 interface Props {
   content: string
+  documentPath?: null | string
   findState?: EditorWorkspaceFindState
   lineCount: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  documentPath: null,
   findState: () => ({
     activeMatchIndex: -1,
     isOpen: false,
@@ -49,6 +51,7 @@ const emit = defineEmits<{
 
 const editorRef = useTemplateRef<HTMLTextAreaElement>('editor')
 const findReplaceBarRef = useTemplateRef<InstanceType<typeof FindReplaceBar>>('findReplaceBar')
+const isImageDragging = shallowRef(false)
 const scrollbarWidth = shallowRef(0)
 const scrollTop = shallowRef(0)
 let resizeObserver: null | ResizeObserver = null
@@ -114,6 +117,32 @@ function getScrollState(): EditorScrollPayload | null {
   }
 }
 
+function handleDragLeave(): void {
+  isImageDragging.value = false
+}
+
+function handleDragOver(event: DragEvent): void {
+  const dataTransfer = event.dataTransfer
+  if (!dataTransfer) {
+    isImageDragging.value = false
+    return
+  }
+
+  const hasSupportedImageItem = Array.from(dataTransfer.items ?? []).some(
+    (item) => item.kind === 'file' && /image\/(gif|jpeg|png|svg\+xml|webp)/i.test(item.type),
+  )
+  isImageDragging.value =
+    hasSupportedImageItem || Array.from(dataTransfer.files ?? []).some(isSupportedImage)
+}
+
+async function handleDrop(event: DragEvent): Promise<void> {
+  isImageDragging.value = false
+  const file = [...(event.dataTransfer?.files ?? [])].find(isSupportedImage)
+  if (!file) return
+
+  await insertImage(file)
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
     event.preventDefault()
@@ -145,6 +174,24 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
+async function insertImage(file: File): Promise<void> {
+  const editor = editorRef.value
+  const browserWindow = window as AppWindow
+  const images = browserWindow.desktop?.images
+  if (!editor || !props.documentPath || !browserWindow.desktop?.isDesktop || !images) return
+
+  const start = editor.selectionStart
+  const end = editor.selectionEnd
+  const result = await images.save({
+    data: new Uint8Array(await file.arrayBuffer()),
+    documentPath: props.documentPath,
+    filename: file.name,
+  })
+
+  editor.setSelectionRange(start, end)
+  await insertText(`![${result.filename}](${result.relativePath})`)
+}
+
 async function insertText(text: string): Promise<void> {
   const editor = editorRef.value
   if (!editor) return
@@ -162,6 +209,10 @@ async function insertText(text: string): Promise<void> {
   }
 
   insertTextAtSelection(editor, text, start, end)
+}
+
+function isSupportedImage(file: File): boolean {
+  return /\.(gif|jpe?g|png|svg|webp)$/i.test(file.name)
 }
 
 async function replaceAllContent(nextContent: string): Promise<void> {
@@ -234,6 +285,7 @@ defineExpose({
   focusAtOffset,
   focusFindQuery,
   getScrollState,
+  insertImage,
   insertText,
   replaceAllContent,
   replaceRange,
@@ -269,7 +321,13 @@ watch(
 </script>
 
 <template>
-  <div class="editor-pane">
+  <div
+    class="editor-pane"
+    :class="{ 'editor-pane--image-dragging': isImageDragging }"
+    @dragleave="handleDragLeave"
+    @dragover.prevent="handleDragOver"
+    @drop.prevent="handleDrop"
+  >
     <div class="pane-header">
       <span class="pane-label">Markdown</span>
       <span class="line-count">{{ lineCount }} line{{ lineCount !== 1 ? 's' : '' }}</span>
@@ -295,6 +353,12 @@ watch(
     />
 
     <div class="editor-body">
+      <div v-show="isImageDragging" class="image-drop-overlay" aria-hidden="true">
+        <div class="image-drop-message">
+          <span class="image-drop-label">Drop image to add it</span>
+          <span class="image-drop-hint">PNG, JPG, GIF, WebP, or SVG</span>
+        </div>
+      </div>
       <MatchOverlay
         :active-match-index="findState.activeMatchIndex"
         :content="content"
@@ -329,6 +393,45 @@ watch(
   flex: 1;
   min-height: 0;
   background: var(--surface);
+}
+
+.image-drop-overlay {
+  position: absolute;
+  inset: 12px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  box-shadow:
+    0 0 0 12px color-mix(in srgb, var(--surface) 82%, transparent),
+    0 16px 40px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.image-drop-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+.image-drop-label {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.image-drop-hint {
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
 }
 
 .pane-header {

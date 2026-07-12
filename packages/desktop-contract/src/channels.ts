@@ -11,4 +11,5 @@ export const DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL = 'documents:saveWorkspaceDr
 export const EDITING_INSERT_TEXT_CHANNEL = 'editing:insertText'
 export const EXPORTS_HTML_CHANNEL = 'exports:html'
 export const EXPORTS_PDF_CHANNEL = 'exports:pdf'
+export const IMAGES_SAVE_CHANNEL = 'images:save'
 export const SHELL_OPEN_EXTERNAL_CHANNEL = 'shell:openExternal'

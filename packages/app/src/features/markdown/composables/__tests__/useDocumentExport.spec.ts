@@ -172,6 +172,7 @@ describe('useDocumentExport', () => {
   })
 
   it('delegates exports to the desktop bridge when available', async () => {
+    content.value = '# Export\n\n![diagram](./.markdown-studio/assets/diagram.png)'
     const exportHtml = vi.fn(async () => ({ path: '/tmp/export.html' }))
     const exportPdf = vi.fn(async () => ({ path: '/tmp/export.pdf' }))
     appWindow.desktop = {
@@ -219,13 +220,15 @@ describe('useDocumentExport', () => {
 
     expect(exportHtml).toHaveBeenCalledWith(
       expect.objectContaining({
-        documentHtml: expect.stringContaining('<!DOCTYPE html>'),
+        documentHtml: expect.stringContaining('src="./.markdown-studio/assets/diagram.png"'),
         suggestedPath: 'export-notes.html',
       }),
     )
     expect(exportPdf).toHaveBeenCalledWith(
       expect.objectContaining({
-        documentHtml: expect.stringContaining('<!DOCTYPE html>'),
+        documentHtml: expect.stringContaining(
+          'src="markdown-studio-asset://local/?documentPath=%2Ftmp%2Fexport-notes.md&amp;relativePath=.%2F.markdown-studio%2Fassets%2Fdiagram.png"',
+        ),
         suggestedPath: 'export-notes.pdf',
       }),
     )

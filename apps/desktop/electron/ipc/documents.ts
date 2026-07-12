@@ -15,12 +15,14 @@ import {
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
+  IMAGES_SAVE_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
 } from '@markdown-studio/desktop-contract/channels'
 import {
   assertExportInput,
   assertExternalUrl,
   assertSaveAsInput,
+  assertSaveImageInput,
   assertSaveInput,
   assertWorkspaceDraft,
   assertWorkspaceDraftInput,
@@ -30,6 +32,8 @@ import {
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+
+import { saveImage } from './images'
 
 const HTML_FILTERS = [
   { extensions: ['html'], name: 'HTML Files' },
@@ -151,6 +155,7 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.removeHandler(EDITING_INSERT_TEXT_CHANNEL)
   ipcMain.removeHandler(EXPORTS_HTML_CHANNEL)
   ipcMain.removeHandler(EXPORTS_PDF_CHANNEL)
+  ipcMain.removeHandler(IMAGES_SAVE_CHANNEL)
   ipcMain.removeHandler(SHELL_OPEN_EXTERNAL_CHANNEL)
 
   ipcMain.handle(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL, async () =>
@@ -174,6 +179,9 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   })
   ipcMain.handle(EXPORTS_HTML_CHANNEL, async (_, payload) => exportHtml(mainWindow, payload))
   ipcMain.handle(EXPORTS_PDF_CHANNEL, async (_, payload) => exportPdf(mainWindow, payload))
+  ipcMain.handle(IMAGES_SAVE_CHANNEL, async (_, payload) =>
+    saveImage(assertSaveImageInput(payload)),
+  )
   ipcMain.handle(SHELL_OPEN_EXTERNAL_CHANNEL, (_, url) =>
     shell.openExternal(assertExternalUrl(url)),
   )
