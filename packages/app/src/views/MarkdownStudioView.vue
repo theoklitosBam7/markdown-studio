@@ -92,6 +92,7 @@ const {
   canOpenDocuments,
   canSaveDocuments,
   content,
+  currentPath,
   displayName,
   homebrewUpgradeCommand,
   isCopied,
@@ -312,6 +313,7 @@ function handleTableInsertionConfirm(): void {
       <EditorPane
         ref="editorPane"
         :content="content"
+        :document-path="currentPath"
         :find-state="workspace.find.state.value"
         :line-count="stats.lines"
         @find-action="handleFindAction"
@@ -320,6 +322,7 @@ function handleTableInsertionConfirm(): void {
       />
       <PreviewPane
         ref="previewPane"
+        :document-path="currentPath"
         :html="renderedHtml"
         :source-map="sourceMap"
         :theme="theme"

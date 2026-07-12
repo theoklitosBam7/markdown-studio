@@ -18,6 +18,7 @@
   "main": "out/main/main.js",
   "scripts": {
     "build": "electron-vite build",
+    "test": "vitest run",
     "dev": "electron-vite dev --watch",
     "dist:mac": "pnpm build && electron-builder --mac --config.mac.identity=null --publish never",
     "preview": "electron-vite preview"
@@ -36,6 +37,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-vue-devtools": "catalog:",
+    "vitest": "catalog:",
     "vue-tsc": "catalog:"
   },
   "build": {

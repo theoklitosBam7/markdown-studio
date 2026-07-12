@@ -640,6 +640,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       canOpenDocuments,
       canSaveDocuments,
       content,
+      currentPath,
       displayName,
       homebrewUpgradeCommand,
       isCopied,

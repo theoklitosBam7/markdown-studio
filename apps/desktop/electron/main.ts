@@ -1,12 +1,26 @@
-import { app, BrowserWindow, Menu, shell } from 'electron'
+import { app, BrowserWindow, Menu, protocol, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 
+import { handleAssetRequest } from './asset-protocol'
 import { registerDesktopIpc } from './ipc/documents'
 import { registerInstallIpc } from './ipc/install-method'
 import { buildAppMenu } from './menu/appMenu'
 
+const ASSET_PROTOCOL = 'markdown-studio-asset'
 const preloadPath = fileURLToPath(new URL('../preload/preload.cjs', import.meta.url))
 const rendererHtmlPath = fileURLToPath(new URL('../renderer/index.html', import.meta.url))
+
+protocol.registerSchemesAsPrivileged([
+  {
+    privileges: {
+      corsEnabled: true,
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+    },
+    scheme: ASSET_PROTOCOL,
+  },
+])
 
 app.setName('Markdown Studio')
 
@@ -93,6 +107,7 @@ async function openExternal(url: string): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  protocol.handle(ASSET_PROTOCOL, handleAssetRequest)
   await createMainWindow()
 
   app.on('activate', async () => {

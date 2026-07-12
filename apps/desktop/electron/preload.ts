@@ -13,6 +13,7 @@ import {
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
+  IMAGES_SAVE_CHANNEL,
   INSTALL_IS_HOMEBREW_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
 } from '@markdown-studio/desktop-contract/channels'
@@ -53,6 +54,9 @@ function createDesktopApi(): DesktopApi {
     exports: {
       exportHtml: (input) => ipcRenderer.invoke(EXPORTS_HTML_CHANNEL, input),
       exportPdf: (input) => ipcRenderer.invoke(EXPORTS_PDF_CHANNEL, input),
+    },
+    images: {
+      save: (input) => ipcRenderer.invoke(IMAGES_SAVE_CHANNEL, input),
     },
     install: {
       isHomebrew: () => ipcRenderer.invoke(INSTALL_IS_HOMEBREW_CHANNEL),

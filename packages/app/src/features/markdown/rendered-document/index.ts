@@ -148,16 +148,41 @@ export function renderPreview(input: RenderedMarkdownPreviewInput): RenderedMark
   }
 }
 
+export function resolveDesktopAssetUrls(html: string, documentPath: string): string {
+  const isFullDocument = /^\s*<!doctype html>/i.test(html)
+  const parser = new DOMParser()
+  const documentNode = parser.parseFromString(html, 'text/html')
+
+  for (const image of documentNode.querySelectorAll<HTMLImageElement>('img[src]')) {
+    const relativePath = image.getAttribute('src')
+    if (!relativePath?.startsWith('./.markdown-studio/assets/')) continue
+
+    const assetUrl = new URL('markdown-studio-asset://local/')
+    assetUrl.searchParams.set('documentPath', documentPath)
+    assetUrl.searchParams.set('relativePath', relativePath)
+    image.setAttribute('src', assetUrl.toString())
+  }
+
+  return isFullDocument
+    ? `<!doctype html>\n${documentNode.documentElement.outerHTML}`
+    : documentNode.body.innerHTML
+}
+
 export function sanitizeRenderedMarkdownPreviewHtml(
   html: string,
   runtime: 'desktop' | 'web',
+  documentPath?: null | string,
 ): string {
-  return DOMPurify.sanitize(html, {
+  const sanitizedHtml = DOMPurify.sanitize(html, {
     ADD_ATTR: ['data-source-end', 'data-source-id', 'data-source-start', 'id'],
     FORBID_ATTR:
       runtime === 'desktop' ? ['allow', 'allowfullscreen', 'frameborder', 'scrolling'] : [],
     FORBID_TAGS: runtime === 'desktop' ? ['iframe'] : [],
   })
+
+  if (runtime !== 'desktop' || !documentPath) return sanitizedHtml
+
+  return resolveDesktopAssetUrls(sanitizedHtml, documentPath)
 }
 
 function createMermaidId(index: number): string {

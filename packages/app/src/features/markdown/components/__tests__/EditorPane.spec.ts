@@ -145,6 +145,121 @@ describe('EditorPane', () => {
     expect(replaceButtons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
   })
 
+  it('highlights the editor while an image is dragged over it', async () => {
+    const wrapper = mountEditorPane({ documentPath: '/tmp/notes.md' })
+    const pane = wrapper.get('.editor-pane')
+    await pane.trigger('dragover', {
+      dataTransfer: {
+        files: [],
+        items: [{ kind: 'file', type: 'image/png' }],
+      },
+    })
+    expect(pane.classes()).toContain('editor-pane--image-dragging')
+    expect(wrapper.get('.image-drop-overlay').isVisible()).toBe(true)
+    expect(wrapper.get('.image-drop-label').text()).toBe('Drop image to add it')
+
+    await pane.trigger('dragleave')
+    expect(pane.classes()).not.toContain('editor-pane--image-dragging')
+    expect(wrapper.get('.image-drop-overlay').isVisible()).toBe(false)
+  })
+
+  it('does not highlight unsupported files', async () => {
+    const wrapper = mountEditorPane({ documentPath: '/tmp/notes.md' })
+    const pane = wrapper.get('.editor-pane')
+    const textFile = new File(['notes'], 'notes.txt', { type: 'text/plain' })
+
+    await pane.trigger('dragover', { dataTransfer: { files: [textFile] } })
+
+    expect(pane.classes()).not.toContain('editor-pane--image-dragging')
+  })
+
+  it('saves a dropped image and inserts Markdown at the cursor on desktop', async () => {
+    const insertText = vi.fn(async (value: string) => {
+      const textarea = document.activeElement as HTMLTextAreaElement
+      textarea.setRangeText(value, textarea.selectionStart, textarea.selectionEnd, 'end')
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const saveImage = vi.fn(async () => ({
+      filename: 'diagram.png',
+      relativePath: './.markdown-studio/assets/diagram.png',
+    }))
+    appWindow.desktop = {
+      commands: { onAppCommand: () => () => undefined },
+      documents: {
+        clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
+        open: async () => null,
+        restoreLastOpened: async () => null,
+        restoreWorkspaceDraft: async () => null,
+        save: async () => null,
+        saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
+      },
+      editing: { insertText },
+      exports: { exportHtml: async () => null, exportPdf: async () => null },
+      images: { save: saveImage },
+      install: { isHomebrew: async () => false },
+      isDesktop: true,
+      shell: { openExternal: async () => undefined },
+    }
+
+    const wrapper = mountEditorPane({
+      content: 'before after',
+      documentPath: '/tmp/notes.md',
+      lineCount: 1,
+    })
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    textarea.value = 'before after'
+    textarea.setSelectionRange(6, 6)
+    const file = new File([new Uint8Array([1, 2, 3])], 'Diagram.png', { type: 'image/png' })
+    Object.defineProperty(file, 'arrayBuffer', {
+      value: async () => new Uint8Array([1, 2, 3]).buffer,
+    })
+
+    await wrapper.get('.editor-pane').trigger('drop', {
+      dataTransfer: { files: [file] },
+    })
+
+    expect(saveImage).toHaveBeenCalledWith({
+      data: new Uint8Array([1, 2, 3]),
+      documentPath: '/tmp/notes.md',
+      filename: 'Diagram.png',
+    })
+    expect(insertText).toHaveBeenCalledWith('![diagram.png](./.markdown-studio/assets/diagram.png)')
+    expect(textarea.value).toBe('before![diagram.png](./.markdown-studio/assets/diagram.png) after')
+  })
+
+  it('ignores image drops for an unsaved Markdown Document', async () => {
+    const saveImage = vi.fn()
+    appWindow.desktop = {
+      commands: { onAppCommand: () => () => undefined },
+      documents: {
+        clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
+        open: async () => null,
+        restoreLastOpened: async () => null,
+        restoreWorkspaceDraft: async () => null,
+        save: async () => null,
+        saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
+      },
+      editing: { insertText: vi.fn() },
+      exports: { exportHtml: async () => null, exportPdf: async () => null },
+      images: { save: saveImage },
+      install: { isHomebrew: async () => false },
+      isDesktop: true,
+      shell: { openExternal: async () => undefined },
+    }
+    const wrapper = mountEditorPane({ documentPath: null })
+    const image = new File(['image'], 'diagram.png', { type: 'image/png' })
+
+    await wrapper.get('.editor-pane').trigger('drop', {
+      dataTransfer: { files: [image] },
+    })
+
+    expect(saveImage).not.toHaveBeenCalled()
+  })
+
   it('prefers the Electron native edit path on desktop', async () => {
     const insertText = vi.fn(async (value: string) => {
       const textarea = document.activeElement as HTMLTextAreaElement

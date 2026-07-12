@@ -6,6 +6,7 @@ import {
   assertExportInput,
   assertExternalUrl,
   assertSaveAsInput,
+  assertSaveImageInput,
   assertSaveInput,
   assertWorkspaceDraft,
   assertWorkspaceDraftInput,
@@ -32,6 +33,17 @@ describe('desktop validation', () => {
     })
     expect(getDefaultMarkdownPath('notes')).toBe('notes.md')
     expect(getDefaultMarkdownPath()).toBe('Untitled.md')
+  })
+
+  it('accepts supported image payloads and rejects non-image filenames', () => {
+    const data = new Uint8Array([1, 2, 3])
+
+    expect(
+      assertSaveImageInput({ data, documentPath: '/tmp/notes.md', filename: 'Diagram.WEBP' }),
+    ).toEqual({ data, documentPath: '/tmp/notes.md', filename: 'Diagram.WEBP' })
+    expect(() =>
+      assertSaveImageInput({ data, documentPath: '/tmp/notes.md', filename: 'notes.txt' }),
+    ).toThrow('Unsupported image format')
   })
 
   it('normalizes export payloads and paths', () => {

@@ -127,6 +127,43 @@ describe('PreviewPane', () => {
     expect(sourceElement.attributes('data-source-end')).toBe('5')
   })
 
+  it('resolves managed document images through the desktop asset protocol', async () => {
+    appWindow.desktop = {
+      commands: { onAppCommand: () => () => undefined },
+      documents: {
+        clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
+        open: async () => null,
+        restoreLastOpened: async () => null,
+        restoreWorkspaceDraft: async () => null,
+        save: async () => null,
+        saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
+      },
+      editing: { insertText: async () => undefined },
+      exports: { exportHtml: async () => null, exportPdf: async () => null },
+      install: { isHomebrew: async () => false },
+      isDesktop: true,
+      shell: { openExternal: async () => undefined },
+    }
+
+    const wrapper = mount(PreviewPane, {
+      props: {
+        documentPath: '/tmp/notes.md',
+        html: '<p><img alt="diagram" src="./.markdown-studio/assets/diagram.png"></p>',
+        sourceMap: [],
+        theme: 'light',
+        wordCount: 1,
+      },
+    })
+
+    await nextTick()
+
+    expect(wrapper.get('img').attributes('src')).toBe(
+      'markdown-studio-asset://local/?documentPath=%2Ftmp%2Fnotes.md&relativePath=.%2F.markdown-studio%2Fassets%2Fdiagram.png',
+    )
+  })
+
   it('strips iframe embeds in desktop mode and opens safe external links via the shell bridge', async () => {
     const openExternal = vi.fn(async () => undefined)
     appWindow.desktop = {

@@ -143,6 +143,7 @@ export interface EditorWorkspaceState {
   canOpenDocuments: Readonly<Ref<boolean>>
   canSaveDocuments: Readonly<Ref<boolean>>
   content: Readonly<Ref<string>>
+  currentPath: Readonly<Ref<null | string>>
   displayName: Readonly<Ref<string>>
   homebrewUpgradeCommand: Readonly<ComputedRef<string>>
   isCopied: Readonly<Ref<boolean>>

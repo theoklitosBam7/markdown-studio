@@ -9,13 +9,16 @@ import type { MarkdownSourceMapEntry, Theme } from '../types'
 import { sanitizeRenderedMarkdownPreviewHtml } from '../rendered-document'
 
 interface Props {
+  documentPath?: null | string
   html: string
   sourceMap: MarkdownSourceMapEntry[]
   theme: Theme
   wordCount: number
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  documentPath: null,
+})
 const desktop = useDesktop()
 
 const emit = defineEmits<{
@@ -29,7 +32,11 @@ const previewScrollRef = useTemplateRef<HTMLDivElement>('previewScroll')
 const renderKey = ref(0)
 
 const sanitizedHtml = computed(() =>
-  sanitizeRenderedMarkdownPreviewHtml(props.html, desktop.value.isDesktop ? 'desktop' : 'web'),
+  sanitizeRenderedMarkdownPreviewHtml(
+    props.html,
+    desktop.value.isDesktop ? 'desktop' : 'web',
+    props.documentPath,
+  ),
 )
 
 function getAnchorTop(element: HTMLElement, scrollContainer: HTMLDivElement): number {
