@@ -51,6 +51,9 @@ const emit = defineEmits<{
 
 const editorRef = useTemplateRef<HTMLTextAreaElement>('editor')
 const findReplaceBarRef = useTemplateRef<InstanceType<typeof FindReplaceBar>>('findReplaceBar')
+const activeLineHeight = shallowRef(0)
+const activeLineTop = shallowRef(0)
+const isEditorFocused = shallowRef(false)
 const isImageDragging = shallowRef(false)
 const scrollbarWidth = shallowRef(0)
 const scrollTop = shallowRef(0)
@@ -66,6 +69,7 @@ function emitScroll(): void {
   const scrollState = getScrollState()
   if (!scrollState) return
 
+  syncActiveLine()
   syncEditorMetrics()
   scrollTop.value = scrollState.scrollTop
   emit('scroll', scrollState)
@@ -115,6 +119,13 @@ function getScrollState(): EditorScrollPayload | null {
     scrollHeight: editor.scrollHeight,
     scrollTop: editor.scrollTop,
   }
+}
+
+function handleDocumentSelectionChange(): void {
+  const editor = editorRef.value
+  if (!editor || editor.ownerDocument.activeElement !== editor) return
+
+  syncActiveLine()
 }
 
 function handleDragLeave(): void {
@@ -268,6 +279,22 @@ async function setSelectionRange(start: number, end: number, shouldFocus = false
   await nextTick()
   editor.setSelectionRange(clampedStart, clampedEnd)
   editor.scrollTop = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 2)
+  syncActiveLine()
+}
+
+function syncActiveLine(): void {
+  const editor = editorRef.value
+  if (!editor) return
+
+  const computedStyle = window.getComputedStyle(editor)
+  const lineHeight = getLineHeight(editor)
+  const paddingTop = Number.parseFloat(computedStyle.paddingTop) || 0
+  const caretOffset =
+    editor.selectionDirection === 'backward' ? editor.selectionStart : editor.selectionEnd
+  const lineIndex = getLineIndexForOffset(caretOffset)
+
+  activeLineHeight.value = lineHeight
+  activeLineTop.value = paddingTop + lineIndex * lineHeight - editor.scrollTop
 }
 
 function syncEditorMetrics(): void {
@@ -293,19 +320,23 @@ defineExpose({
 })
 
 onMounted(() => {
+  syncActiveLine()
   syncEditorMetrics()
+  document.addEventListener('selectionchange', handleDocumentSelectionChange)
 
   if (typeof ResizeObserver === 'undefined' || !editorRef.value) {
     return
   }
 
   resizeObserver = new ResizeObserver(() => {
+    syncActiveLine()
     syncEditorMetrics()
   })
   resizeObserver.observe(editorRef.value)
 })
 
 onUnmounted(() => {
+  document.removeEventListener('selectionchange', handleDocumentSelectionChange)
   resizeObserver?.disconnect()
   resizeObserver = null
 })
@@ -314,6 +345,7 @@ watch(
   () => props.content,
   async () => {
     await nextTick()
+    syncActiveLine()
     syncEditorMetrics()
   },
   { flush: 'post' },
@@ -323,7 +355,6 @@ watch(
 <template>
   <div
     class="editor-pane"
-    :class="{ 'editor-pane--image-dragging': isImageDragging }"
     @dragleave="handleDragLeave"
     @dragover.prevent="handleDragOver"
     @drop.prevent="handleDrop"
@@ -359,6 +390,12 @@ watch(
           <span class="image-drop-hint">PNG, JPG, GIF, WebP, or SVG</span>
         </div>
       </div>
+      <div
+        class="active-line-highlight"
+        :class="{ 'active-line-highlight--focused': isEditorFocused }"
+        :style="{ height: `${activeLineHeight}px`, top: `${activeLineTop}px` }"
+        aria-hidden="true"
+      ></div>
       <MatchOverlay
         :active-match-index="findState.activeMatchIndex"
         :content="content"
@@ -372,8 +409,11 @@ watch(
         class="editor"
         spellcheck="false"
         placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
+        @blur="isEditorFocused = false"
+        @focus="isEditorFocused = true"
         @keydown="handleKeydown"
         @scroll="emitScroll"
+        @select="syncActiveLine"
       ></textarea>
     </div>
   </div>
@@ -392,7 +432,20 @@ watch(
   position: relative;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   background: var(--surface);
+}
+
+.active-line-highlight {
+  position: absolute;
+  right: 0;
+  left: 0;
+  pointer-events: none;
+  background: var(--editor-active-line-muted-bg);
+}
+
+.active-line-highlight--focused {
+  background: var(--editor-active-line-bg);
 }
 
 .image-drop-overlay {
@@ -490,6 +543,10 @@ watch(
 }
 
 @media (max-width: 700px) {
+  .active-line-highlight {
+    opacity: 0.72;
+  }
+
   .line-count {
     display: none;
   }
