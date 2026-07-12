@@ -16,6 +16,7 @@ import type {
   ThemeChangeRequest,
 } from '../types/workspace'
 
+import { extractHeadings } from '../rendered-document'
 import { EXAMPLES } from './examples'
 import { useDesktopDraftPersistence } from './useDesktopDraftPersistence'
 import { useDocumentExport } from './useDocumentExport'
@@ -37,8 +38,10 @@ const MOBILE_BREAKPOINT = 700
 export function useEditorWorkspaceController(): EditorWorkspaceController {
   const editorPane = shallowRef<EditorPaneAdapter | null>(null)
   const previewPane = shallowRef<null | PreviewPaneAdapter>(null)
+  const activeEditorOffset = shallowRef(0)
   const isExamplesModalOpen = shallowRef(false)
   const isMobile = shallowRef(false)
+  const isOutlineOpen = shallowRef(false)
   const isStarted = shallowRef(false)
 
   const {
@@ -170,6 +173,17 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     'view-preview': viewMode.value === 'preview',
     'view-split': viewMode.value === 'split',
   }))
+  const outlineHeadings = computed(() => extractHeadings(sourceMap.value))
+  const activeOutlineHeadingId = computed(() => {
+    let activeHeadingId: null | string = null
+
+    for (const heading of outlineHeadings.value) {
+      if (heading.start > activeEditorOffset.value) break
+      activeHeadingId = heading.id
+    }
+
+    return activeHeadingId
+  })
   const findState = computed(() => ({
     activeMatchIndex: activeMatchIndex.value,
     isOpen: isFindReplaceOpen.value,
@@ -288,8 +302,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   }
 
   function syncPreviewToEditorPosition(scrollState?: EditorScrollPayload | null): void {
-    if (isMobile.value || viewMode.value !== 'split') return
-
     const effectiveScrollState = scrollState ?? editorPane.value?.getScrollState()
     if (!effectiveScrollState) return
 
@@ -298,6 +310,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       Math.floor(effectiveScrollState.scrollTop / effectiveScrollState.lineHeight),
     )
     const sourceOffset = getOffsetForLine(content.value, topLine)
+    activeEditorOffset.value = sourceOffset
+
+    if (isMobile.value || viewMode.value !== 'split') return
+
     previewPane.value?.scrollToSourceOffset(sourceOffset)
   }
 
@@ -490,6 +506,25 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     syncViewport(width)
   }
 
+  async function navigateFromOutline(offset: number): Promise<void> {
+    activeEditorOffset.value = offset
+
+    if (isMobile.value) {
+      isOutlineOpen.value = false
+      await nextTick()
+    }
+
+    if (viewMode.value !== 'editor') {
+      previewPane.value?.scrollToSourceOffset(offset)
+    }
+
+    await editorPane.value?.focusAtOffset(offset)
+  }
+
+  function toggleOutline(): void {
+    isOutlineOpen.value = !isOutlineOpen.value
+  }
+
   function closeFindPanel(): void {
     closeFindReplace()
     editorPane.value?.focus()
@@ -583,6 +618,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       setReplaceText,
       state: findState,
     },
+    outline: {
+      navigate: navigateFromOutline,
+      toggle: toggleOutline,
+    },
     preview: {
       async jumpToOffset(offset: number): Promise<void> {
         await jumpToOffset(offset)
@@ -592,6 +631,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       },
     },
     state: {
+      activeOutlineHeadingId,
       availableModes,
       bannerStatus,
       bodyClasses,
@@ -608,7 +648,9 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       isExamplesModalOpen,
       isHomebrewInstall: isHomebrewInstallRef,
       isMobile,
+      isOutlineOpen,
       isTableDimensionPickerOpen: tableInsertion.isPickerOpen,
+      outlineHeadings,
       pdfExportUnavailableReason,
       pwaBannerStatus,
       renderedHtml,

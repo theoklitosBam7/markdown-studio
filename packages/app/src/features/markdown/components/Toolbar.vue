@@ -17,6 +17,7 @@ interface Props {
   canSaveDocuments?: boolean
   isCopied: boolean
   isMobile?: boolean
+  isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
   theme: Theme
   viewMode: ViewMode
@@ -29,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
   canOpenDocuments: false,
   canSaveDocuments: false,
   isMobile: false,
+  isOutlineOpen: false,
   pdfExportUnavailableReason: '',
 })
 
@@ -43,6 +45,7 @@ const emit = defineEmits<{
   openExamples: []
   openShortcuts: []
   saveDocument: []
+  toggleOutline: []
   'update:theme': [payload: ThemeChangeRequest]
   'update:viewMode': [mode: ViewMode]
 }>()
@@ -77,6 +80,10 @@ function openShortcuts(): void {
 
 function saveDocument(): void {
   emit('saveDocument')
+}
+
+function toggleOutline(): void {
+  emit('toggleOutline')
 }
 
 const exportMenuRef = useTemplateRef<HTMLDetailsElement>('exportMenu')
@@ -144,6 +151,7 @@ onUnmounted(() => {
       :can-open-documents="props.canOpenDocuments"
       :can-save-documents="props.canSaveDocuments"
       :is-copied="props.isCopied"
+      :is-outline-open="props.isOutlineOpen"
       :pdf-export-unavailable-reason="props.pdfExportUnavailableReason"
       :theme="props.theme"
       :view-mode="props.viewMode"
@@ -157,6 +165,7 @@ onUnmounted(() => {
       @open-examples="openExamples"
       @open-shortcuts="openShortcuts"
       @save-document="saveDocument"
+      @toggle-outline="toggleOutline"
       @update:theme="handleThemeChange"
       @update:view-mode="handleViewModeChange"
     />
@@ -285,6 +294,25 @@ onUnmounted(() => {
         </a>
 
         <div class="toolbar__desktop-controls">
+          <ToolbarButton
+            icon-only
+            :aria-label="props.isOutlineOpen ? 'Hide document outline' : 'Show document outline'"
+            :aria-pressed="props.isOutlineOpen"
+            :title="props.isOutlineOpen ? 'Hide document outline' : 'Show document outline'"
+            @click="toggleOutline"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <rect x="2" y="2.5" width="12" height="11" rx="1.5" />
+              <path d="M6 2.5v11" />
+              <path d="M3.5 5h1M3.5 7.5h1M3.5 10h1" />
+            </svg>
+          </ToolbarButton>
           <ViewToggle
             :available-modes="props.availableModes"
             :model-value="props.viewMode"

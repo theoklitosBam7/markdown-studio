@@ -54,7 +54,14 @@ function annotateTokens(
       annotatedToken.sourceId = id
       annotatedToken.sourceStart = start
       annotatedToken.sourceEnd = end
-      sourceMap.push({ end, id, start, type: token.type })
+      sourceMap.push({
+        depth: token.type === 'heading' ? token.depth : undefined,
+        end,
+        id,
+        start,
+        text: token.type === 'heading' ? token.text : undefined,
+        type: token.type,
+      })
     }
 
     if (token.type === 'list') {

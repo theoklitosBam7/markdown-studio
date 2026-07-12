@@ -98,6 +98,32 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('opens the document outline and navigates the editor to a selected heading', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    const textarea = wrapper.get('textarea')
+    const content = '# Introduction\nBody\n## Details\nMore'
+    await textarea.setValue(content)
+    await flushPromises()
+
+    await wrapper.get('button[aria-label="Show document outline"]').trigger('click')
+    await flushPromises()
+
+    const outline = wrapper.get('nav[aria-label="Document outline"]')
+    expect(outline.findAll('button').map((button) => button.text())).toEqual([
+      'Introduction',
+      'Details',
+    ])
+
+    await outline.findAll('button')[1]?.trigger('click')
+    await flushPromises()
+
+    expect((textarea.element as HTMLTextAreaElement).selectionStart).toBe(
+      content.indexOf('## Details'),
+    )
+
+    wrapper.unmount()
+  })
+
   it('inserts a default table when the toolbar insert table button is clicked', async () => {
     const { wrapper } = await mountMarkdownStudioView()
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement

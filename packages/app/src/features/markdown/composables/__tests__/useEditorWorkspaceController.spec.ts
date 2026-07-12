@@ -151,6 +151,54 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
+  it('tracks outline visibility and the active heading from editor scrolling', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const content = '# Introduction\nBody\n## Details\nMore'
+
+    workspace.editor.updateContent(content)
+    workspace.outline.toggle()
+    workspace.editor.syncPreviewToEditorPosition({
+      clientHeight: 200,
+      contentLength: content.length,
+      lineHeight: 20,
+      scrollHeight: 400,
+      scrollTop: 40,
+    })
+
+    expect(workspace.state.isOutlineOpen.value).toBe(true)
+    expect(
+      workspace.state.outlineHeadings.value.map(({ depth, text }) => ({ depth, text })),
+    ).toEqual([
+      { depth: 1, text: 'Introduction' },
+      { depth: 2, text: 'Details' },
+    ])
+    expect(workspace.state.activeOutlineHeadingId.value).toBe(
+      workspace.state.outlineHeadings.value[1]?.id,
+    )
+
+    wrapper.unmount()
+  })
+
+  it('navigates from the mobile outline without changing the Workspace View Mode', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+    const editor = createEditorAdapter()
+    const preview = createPreviewAdapter()
+    workspace.attach.editor(editor)
+    workspace.attach.preview(preview)
+    workspace.system.handleViewportResize(640)
+    workspace.editor.setViewMode('preview')
+    workspace.outline.toggle()
+
+    await workspace.outline.navigate(18)
+
+    expect(editor.focusAtOffset).toHaveBeenCalledWith(18)
+    expect(preview.scrollToSourceOffset).toHaveBeenCalledWith(18)
+    expect(workspace.state.viewMode.value).toBe('preview')
+    expect(workspace.state.isOutlineOpen.value).toBe(false)
+
+    wrapper.unmount()
+  })
+
   it('jumps from preview to editor offsets only while split view is active', async () => {
     const { workspace, wrapper } = await mountWorkspace()
     const editor = createEditorAdapter()

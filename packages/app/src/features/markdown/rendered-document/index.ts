@@ -8,6 +8,7 @@ import type { MarkdownSourceMapEntry } from '../types'
 import markdownDocumentCss from '../styles/markdown-document.css?raw'
 import { renderMarkdownWithSourceMap } from './renderMarkdownWithSourceMap'
 
+export { extractHeadings } from './extractHeadings'
 export { renderMarkdownWithSourceMap }
 
 export interface RenderedMarkdownDiagnostic {

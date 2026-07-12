@@ -6,6 +6,7 @@ import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/t
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
+import OutlineSidebar from '@/features/markdown/components/OutlineSidebar.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
 import ShortcutsHelp from '@/features/markdown/components/ShortcutsHelp.vue'
@@ -82,6 +83,7 @@ const { shortcuts } = useShortcuts({
 })
 
 const {
+  activeOutlineHeadingId,
   availableModes,
   bannerStatus,
   bodyClasses,
@@ -97,6 +99,8 @@ const {
   isExamplesModalOpen,
   isHomebrewInstall,
   isMobile,
+  isOutlineOpen,
+  outlineHeadings,
   pdfExportUnavailableReason,
   pwaBannerStatus,
   renderedHtml,
@@ -250,6 +254,7 @@ function handleTableInsertionConfirm(): void {
       :can-install="canInstall"
       :can-save-documents="canSaveDocuments"
       :is-mobile="isMobile"
+      :is-outline-open="isOutlineOpen"
       :view-mode="viewMode"
       :pdf-export-unavailable-reason="pdfExportUnavailableReason"
       :theme="theme"
@@ -266,6 +271,7 @@ function handleTableInsertionConfirm(): void {
       @export-html="handleExportHtml"
       @export-pdf="handleExportPdf"
       @save-document="workspace.document.save"
+      @toggle-outline="workspace.outline.toggle"
     />
 
     <Transition name="banner-slide">
@@ -290,7 +296,18 @@ function handleTableInsertionConfirm(): void {
       />
     </Transition>
 
-    <main class="main-content">
+    <main
+      class="main-content"
+      :class="{ 'main-content--mobile-outline': isMobile && isOutlineOpen }"
+    >
+      <Transition name="outline-slide">
+        <OutlineSidebar
+          v-if="isOutlineOpen"
+          :active-heading-id="activeOutlineHeadingId"
+          :headings="outlineHeadings"
+          @navigate="workspace.outline.navigate"
+        />
+      </Transition>
       <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
       <EditorPane
         ref="editorPane"
@@ -402,9 +419,45 @@ function handleTableInsertionConfirm(): void {
   border-right: none;
 }
 
+.outline-slide-enter-active,
+.outline-slide-leave-active {
+  transition:
+    max-width 0.22s ease,
+    opacity 0.18s ease,
+    transform 0.22s ease;
+}
+
+.outline-slide-enter-from,
+.outline-slide-leave-to {
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-16px);
+}
+
+.outline-slide-enter-to,
+.outline-slide-leave-from {
+  max-width: 260px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
 @media (max-width: 700px) {
   .main-content {
     flex-direction: column;
+  }
+
+  .main-content--mobile-outline :deep(.editor-pane),
+  .main-content--mobile-outline :deep(.preview-pane) {
+    display: none;
+  }
+
+  .main-content--mobile-outline :deep(.outline-sidebar) {
+    height: 100%;
+  }
+
+  .outline-slide-enter-to,
+  .outline-slide-leave-from {
+    max-width: 100%;
   }
 
   .markdown-studio :deep(.editor-pane),
