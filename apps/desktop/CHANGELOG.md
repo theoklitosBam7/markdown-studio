@@ -1,5 +1,28 @@
 # @markdown-studio/desktop
 
+## 0.12.0
+
+### Minor Changes
+
+- b2842a3: Highlight the active line in the Editor Workspace
+
+  - Follow the editor cursor with a theme-aware active-line highlight
+  - Keep the active line visible while navigating, scrolling, and selecting text
+  - Preserve a muted active-line highlight when editor focus moves elsewhere
+
+- 1bf02bd: Add a collapsible document outline for navigating Markdown headings
+
+  - Show H1–H6 headings with hierarchical indentation and active-position highlighting
+  - Navigate the editor cursor when an outline heading is selected
+  - Provide animated desktop and full-width mobile outline layouts
+
+- e2059a0: Add image drag and drop to saved Markdown Documents
+
+  - Save dropped images in a managed `.markdown-studio/assets` folder
+  - Insert relative Markdown image links at the editor cursor
+  - Display managed images in Live Preview and desktop PDF exports
+  - Highlight the Editor Workspace while a supported image is dragged over it
+
 ## 0.11.0
 
 ### Minor Changes

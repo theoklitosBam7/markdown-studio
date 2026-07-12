@@ -1,5 +1,21 @@
 # markdown-studio
 
+## 0.10.0
+
+### Minor Changes
+
+- b2842a3: Highlight the active line in the Editor Workspace
+
+  - Follow the editor cursor with a theme-aware active-line highlight
+  - Keep the active line visible while navigating, scrolling, and selecting text
+  - Preserve a muted active-line highlight when editor focus moves elsewhere
+
+- 1bf02bd: Add a collapsible document outline for navigating Markdown headings
+
+  - Show H1–H6 headings with hierarchical indentation and active-position highlighting
+  - Navigate the editor cursor when an outline heading is selected
+  - Provide animated desktop and full-width mobile outline layouts
+
 ## 0.9.0
 
 ### Minor Changes
