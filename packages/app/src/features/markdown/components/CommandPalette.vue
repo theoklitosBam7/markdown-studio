@@ -23,7 +23,6 @@ const emit = defineEmits<{
 
 const inputRef = useTemplateRef<HTMLInputElement>('input')
 const panelRef = useTemplateRef<HTMLElement>('panel')
-const resultsRef = useTemplateRef<HTMLElement>('results')
 let previousFocus: Element | null = null
 
 const groupedResults = computed(() => {
@@ -137,9 +136,7 @@ watch(
     if (!props.isOpen || !activeCommandId) return
 
     await nextTick()
-    const activeOption = resultsRef.value?.querySelector<HTMLElement>(
-      `#${CSS.escape(getCommandOptionId(activeCommandId))}`,
-    )
+    const activeOption = document.getElementById(getCommandOptionId(activeCommandId))
     activeOption?.scrollIntoView({ block: 'nearest' })
   },
 )
@@ -193,7 +190,6 @@ onUnmounted(() => {
 
           <div
             id="command-palette-listbox"
-            ref="results"
             class="command-palette__results"
             role="listbox"
             aria-label="Commands"
