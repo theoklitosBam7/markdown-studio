@@ -194,7 +194,7 @@ describe('Markdown Studio responsive shell', () => {
       expect(dialogRect.right).to.be.lessThan(Cypress.config('viewportWidth') + 1)
       expect(dialogRect.left).to.be.greaterThan(-1)
     })
-    cy.get('button[aria-label="Close dialog"]').click()
+    cy.get('.modal-overlay.open button[aria-label="Close dialog"]').click()
 
     // Clear document from action sheet
     cy.window().then((win) => {

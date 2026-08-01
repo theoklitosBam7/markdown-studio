@@ -12,12 +12,12 @@
   },
   "dependencies": {
     "@markdown-studio/desktop-contract": "workspace:*",
-    "dompurify": "^3.4.11",
+    "dompurify": "^3.4.12",
     "marked": "^17.0.6",
     "mermaid": "^11.16.0",
     "pinia": "^3.0.4",
-    "vue": "^3.5.39",
-    "vue-router": "^5.1.0"
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0"
   },
   "devDependencies": {
     "@types/jsdom": "^28.0.3",
@@ -25,7 +25,7 @@
     "@vitejs/plugin-vue": "catalog:",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
-    "jsdom": "^28.1.0",
+    "jsdom": "^30.0.1",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-vue-devtools": "catalog:",
