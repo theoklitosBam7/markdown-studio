@@ -1,5 +1,24 @@
 # @markdown-studio/desktop
 
+## 0.12.1
+
+### Patch Changes
+
+- 3133611: Improve desktop development updates
+
+  - Update renderer changes without a full reload during development
+  - Preserve reliable desktop builds and previews
+
+- e52d733: Improve dependency boundary validation across the editor
+
+  - Keep shared editor types available across desktop and browser builds
+  - Detect unresolved TypeScript imports during boundary validation
+
+- 88af3a7: Raise the minimum supported Node.js version to 24.15.0
+
+  - Require Node.js 24.15.0 or newer for the desktop app and npm package
+  - Pin development and CI environments to Node.js 24.18.1
+
 ## 0.12.0
 
 ### Minor Changes
