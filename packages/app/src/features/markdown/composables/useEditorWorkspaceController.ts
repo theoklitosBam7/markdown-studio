@@ -2,12 +2,14 @@ import type { AppCommand } from '@markdown-studio/desktop-contract/types'
 
 import { computed, nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 
+import type { ViewMode } from '@/types/editor'
+
 import { useDesktop } from '@/composables/useDesktop'
 import { usePwa } from '@/composables/usePwa'
 import { useThemeTransition } from '@/composables/useThemeTransition'
 import { useUpdateChecker } from '@/composables/useUpdateChecker'
 
-import type { Example, ViewMode } from '../types'
+import type { Example } from '../types'
 import type {
   EditorPaneAdapter,
   EditorScrollPayload,

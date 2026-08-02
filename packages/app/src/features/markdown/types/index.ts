@@ -1,10 +1,9 @@
 export type {
   EditorStats,
   Example,
+  FindMatch,
   MarkdownOutlineHeading,
   MarkdownSourceMapEntry,
-  Theme,
-  ViewMode,
 } from './common'
 
 export type { Shortcut, ShortcutBinding, ShortcutId } from './shortcuts'

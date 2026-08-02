@@ -3,10 +3,12 @@ import type { ComputedRef, DeepReadonly, ShallowRef } from 'vue'
 import mermaid from 'mermaid'
 import { computed, onUnmounted, readonly, shallowRef, watch } from 'vue'
 
+import type { Theme, ViewMode } from '@/types/editor'
+
 import { useTheme } from '@/composables/useTheme'
 import { escapeHtml } from '@/utils/escapeHtml'
 
-import type { EditorStats, Example, MarkdownSourceMapEntry, Theme, ViewMode } from '../types'
+import type { EditorStats, Example, MarkdownSourceMapEntry } from '../types'
 
 import { renderPreview } from '../rendered-document'
 import { DEFAULT_EXAMPLE_INDEX, EXAMPLES } from './examples'

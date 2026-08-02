@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
 
+import type { Theme, ViewMode } from '@/types/editor'
+
 import MobileToolbarActions from '@/components/base/MobileToolbarActions.vue'
 import ThemeToggle from '@/components/base/ThemeToggle.vue'
 import ToolbarButton from '@/components/base/ToolbarButton.vue'
 import ViewToggle from '@/components/base/ViewToggle.vue'
 import { GITHUB_REPO_URL } from '@/utils/constants'
 
-import type { Theme, ThemeChangeRequest, ViewMode } from '../types'
+import type { ThemeChangeRequest } from '../types'
 
 interface Props {
   availableModes?: ViewMode[]

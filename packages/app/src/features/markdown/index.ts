@@ -25,9 +25,7 @@ export type {
   MarkdownOutlineHeading,
   MarkdownSourceMapEntry,
   PreviewPaneAdapter,
-  Theme,
   ThemeChangeRequest,
-  ViewMode,
 } from './types'
 
 export { buildMarkdownDocumentHtml, renderMarkdownDocument } from './utils/renderMarkdownDocument'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { FindMatch } from '../composables/useFindReplace'
+import type { FindMatch } from '../types'
 
 interface MatchSegment {
   active: boolean

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 
-import type { Theme, ViewMode } from '@/features/markdown/types'
+import type { Theme, ViewMode } from '@/types/editor'
 
 import { GITHUB_REPO_URL } from '@/utils/constants'
 

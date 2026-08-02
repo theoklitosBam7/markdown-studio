@@ -15,7 +15,6 @@ const featureTypes = [
   'feature-store',
   'feature-service',
   'feature-type',
-  'feature-index',
 ]
 
 const uiTypes = ['ui', 'ui-base', 'ui-icons']
@@ -24,14 +23,26 @@ const globalLayerTypes = ['global-store', 'global-service', 'global-composable']
 const structuralTypes = ['view', 'layout', 'router']
 
 const sameFeatureSelector = (type: string | string[]) => ({
-  type,
-  captured: { feature: '{{from.captured.feature}}' },
+  element: {
+    type,
+    captured: { feature: '{{from.element.captured.feature}}' },
+  },
 })
 
 const differentFeatureSelector = (type: string | string[]) => ({
-  type,
-  captured: { feature: '!{{from.captured.feature}}' },
+  element: {
+    type,
+    captured: { feature: '!{{from.element.captured.feature}}' },
+  },
 })
+
+const eslintImportResolverSettings = {
+  'import/resolver': {
+    typescript: {
+      project: './packages/app/tsconfig.json',
+    },
+  },
+}
 
 export default defineConfigWithVueTs(
   {
@@ -95,145 +106,140 @@ export default defineConfigWithVueTs(
       boundaries,
     },
     settings: {
+      ...eslintImportResolverSettings,
       'boundaries/include': ['packages/app/src/**/*.ts', 'packages/app/src/**/*.vue'],
       'boundaries/ignore': ['**/*.spec.ts', '**/*.test.ts', '**/__tests__/**'],
+      'boundaries/files': [
+        {
+          category: 'app-root',
+          pattern: 'packages/app/src/App.vue',
+        },
+        {
+          category: 'main',
+          pattern: 'packages/app/src/createMarkdownStudioApp.ts',
+        },
+      ],
       'boundaries/elements': [
         {
           type: 'feature-component',
           pattern: 'packages/app/src/features/*/components/**',
           capture: ['feature'],
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'feature-composable',
           pattern: 'packages/app/src/features/*/composables/**',
           capture: ['feature'],
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'feature-store',
           pattern: 'packages/app/src/features/*/store/**',
           capture: ['feature'],
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'feature-service',
           pattern: 'packages/app/src/features/*/services/**',
           capture: ['feature'],
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'feature-type',
           pattern: 'packages/app/src/features/*/types/**',
           capture: ['feature'],
-          mode: 'full',
-        },
-        {
-          type: 'feature-index',
-          pattern: 'packages/app/src/features/*/index.ts',
-          capture: ['feature'],
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'feature',
           pattern: 'packages/app/src/features/*/**',
           capture: ['feature'],
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'view',
           pattern: 'packages/app/src/views/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'layout',
           pattern: 'packages/app/src/layouts/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'router',
           pattern: 'packages/app/src/router/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'ui-base',
           pattern: 'packages/app/src/components/base/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'ui-icons',
           pattern: 'packages/app/src/components/icons/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'ui',
           pattern: 'packages/app/src/components/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'global-store',
           pattern: 'packages/app/src/stores/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'global-service',
           pattern: 'packages/app/src/services/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'utils',
           pattern: 'packages/app/src/utils/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'global-composable',
           pattern: 'packages/app/src/composables/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'types',
           pattern: 'packages/app/src/types/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'styles',
           pattern: 'packages/app/src/styles/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'assets',
           pattern: 'packages/app/src/assets/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'app-config',
           pattern: 'packages/app/src/app/config/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'app-plugin',
           pattern: 'packages/app/src/app/plugins/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'app-provider',
           pattern: 'packages/app/src/app/providers/**',
-          mode: 'full',
+          partialMatch: false,
         },
         {
           type: 'app',
           pattern: 'packages/app/src/app/**',
-          mode: 'full',
-        },
-        {
-          type: 'app-root',
-          pattern: 'packages/app/src/App.vue',
-          mode: 'file',
-        },
-        {
-          type: 'main',
-          pattern: 'packages/app/src/createMarkdownStudioApp.ts',
-          mode: 'file',
+          partialMatch: false,
         },
       ],
     } satisfies Settings,
@@ -244,144 +250,168 @@ export default defineConfigWithVueTs(
         {
           default: 'allow',
           checkAllOrigins: true,
-          rules: [
+          policies: [
             {
-              from: { type: featureTypes },
+              from: { element: { type: featureTypes } },
               disallow: [{ to: differentFeatureSelector(featureTypes) }],
               message:
-                '🚫 Cross-feature import detected! "${file.type}" in "${file.feature}" cannot import from "${dependency.feature}". Features must be isolated. Use global stores or events for cross-feature communication.',
+                '🚫 Cross-feature import detected! "{{from.element.types.[0]}}" in "{{from.element.captured.feature}}" cannot import from "{{to.element.captured.feature}}". Features must be isolated. Use global stores or events for cross-feature communication.',
             },
             {
-              from: { type: 'view' },
+              from: { element: { type: 'view' } },
               disallow: [
                 {
                   to: {
-                    type: [...globalLayerTypes, ...appTypes, 'feature-store', 'feature-service'],
+                    element: {
+                      type: [...globalLayerTypes, ...appTypes, 'feature-store', 'feature-service'],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 Views are orchestration layers. "${file.type}" cannot import "${dependency.type}". Use feature composables or components instead of accessing stores/services directly.',
+                '🚫 Views are orchestration layers. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Use feature composables or components instead of accessing stores/services directly.',
             },
             {
-              from: { type: 'layout' },
+              from: { element: { type: 'layout' } },
               disallow: [
                 {
                   to: {
-                    type: [...featureTypes, ...globalLayerTypes, ...structuralTypes, ...appTypes],
+                    element: {
+                      type: [...featureTypes, ...globalLayerTypes, ...structuralTypes, ...appTypes],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 Layouts define page structure only. "${file.type}" cannot import "${dependency.type}". No features or business logic allowed in layouts.',
+                '🚫 Layouts define page structure only. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". No features or business logic allowed in layouts.',
             },
             {
-              from: { type: uiTypes },
+              from: { element: { type: uiTypes } },
               disallow: [
                 {
                   to: {
-                    type: [...featureTypes, ...globalLayerTypes, ...structuralTypes, ...appTypes],
+                    element: {
+                      type: [...featureTypes, ...globalLayerTypes, ...structuralTypes, ...appTypes],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 UI components must be pure and reusable. "${file.type}" cannot import "${dependency.type}". No features, stores, or services allowed. Use props and events instead.',
+                '🚫 UI components must be pure and reusable. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". No features, stores, or services allowed. Use props and events instead.',
             },
             {
-              from: { type: 'global-store' },
-              disallow: [
-                { to: { type: [...featureTypes, ...uiTypes, ...structuralTypes, ...appTypes] } },
-              ],
-              message:
-                '🚫 Global stores handle cross-cutting concerns. "${file.type}" cannot import "${dependency.type}". Global stores cannot depend on features or UI.',
-            },
-            {
-              from: { type: 'global-service' },
+              from: { element: { type: 'global-store' } },
               disallow: [
                 {
                   to: {
-                    type: [
-                      ...featureTypes,
-                      'global-store',
-                      ...uiTypes,
-                      ...structuralTypes,
-                      ...appTypes,
-                    ],
+                    element: {
+                      type: [...featureTypes, ...uiTypes, ...structuralTypes, ...appTypes],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 Global services are infrastructure. "${file.type}" cannot import "${dependency.type}". Services should be pure and not depend on state or UI.',
+                '🚫 Global stores handle cross-cutting concerns. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Global stores cannot depend on features or UI.',
             },
             {
-              from: { type: 'global-composable' },
-              disallow: [
-                { to: { type: [...featureTypes, ...uiTypes, ...structuralTypes, ...appTypes] } },
-              ],
-              message:
-                '🚫 Global composables must stay generic. "${file.type}" cannot import "${dependency.type}". Use composables for shared logic only.',
-            },
-            {
-              from: { type: 'utils' },
+              from: { element: { type: 'global-service' } },
               disallow: [
                 {
                   to: {
-                    type: [
-                      ...featureTypes,
-                      ...globalLayerTypes,
-                      ...uiTypes,
-                      ...structuralTypes,
-                      ...appTypes,
-                      'styles',
-                      'assets',
-                    ],
+                    element: {
+                      type: [
+                        ...featureTypes,
+                        'global-store',
+                        ...uiTypes,
+                        ...structuralTypes,
+                        ...appTypes,
+                      ],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 Utils must be pure functions. "${file.type}" cannot import "${dependency.type}". Utils should have no side effects and no dependencies on application layers.',
+                '🚫 Global services are infrastructure. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Services should be pure and not depend on state or UI.',
             },
             {
-              from: { type: 'types' },
+              from: { element: { type: 'global-composable' } },
               disallow: [
                 {
                   to: {
-                    type: [
-                      ...featureTypes,
-                      ...globalLayerTypes,
-                      ...uiTypes,
-                      ...structuralTypes,
-                      ...appTypes,
-                      'utils',
-                      'styles',
-                      'assets',
-                    ],
+                    element: {
+                      type: [...featureTypes, ...uiTypes, ...structuralTypes, ...appTypes],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 Types are compile-time only. "${file.type}" cannot import "${dependency.type}". Types can only reference other types.',
+                '🚫 Global composables must stay generic. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Use composables for shared logic only.',
             },
             {
-              from: { type: 'feature-component' },
+              from: { element: { type: 'utils' } },
+              disallow: [
+                {
+                  to: {
+                    element: {
+                      type: [
+                        ...featureTypes,
+                        ...globalLayerTypes,
+                        ...uiTypes,
+                        ...structuralTypes,
+                        ...appTypes,
+                        'styles',
+                        'assets',
+                      ],
+                    },
+                  },
+                },
+              ],
+              message:
+                '🚫 Utils must be pure functions. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Utils should have no side effects and no dependencies on application layers.',
+            },
+            {
+              from: { element: { type: 'types' } },
+              disallow: [
+                {
+                  to: {
+                    element: {
+                      type: [
+                        ...featureTypes,
+                        ...globalLayerTypes,
+                        ...uiTypes,
+                        ...structuralTypes,
+                        ...appTypes,
+                        'utils',
+                        'styles',
+                        'assets',
+                      ],
+                    },
+                  },
+                },
+              ],
+              message:
+                '🚫 Types are compile-time only. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Types can only reference other types.',
+            },
+            {
+              from: { element: { type: 'feature-component' } },
               disallow: [
                 { to: sameFeatureSelector('feature-service') },
-                { to: { type: ['global-service', ...structuralTypes, ...appTypes] } },
+                { to: { element: { type: ['global-service', ...structuralTypes, ...appTypes] } } },
               ],
               message:
-                '🚫 Feature components cannot call services directly. "${file.type}" cannot import "${dependency.type}". Use composables to access services.',
+                '🚫 Feature components cannot call services directly. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Use composables to access services.',
             },
             {
-              from: { type: 'feature-store' },
+              from: { element: { type: 'feature-store' } },
               disallow: [
                 { to: sameFeatureSelector('feature-component') },
-                { to: { type: [...structuralTypes, ...uiTypes, ...appTypes] } },
+                { to: { element: { type: [...structuralTypes, ...uiTypes, ...appTypes] } } },
               ],
               message:
-                '🚫 Feature stores manage state only. "${file.type}" cannot import "${dependency.type}". Stores should not depend on components or composables.',
+                '🚫 Feature stores manage state only. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Stores should not depend on components or composables.',
             },
             {
-              from: { type: 'feature-service' },
+              from: { element: { type: 'feature-service' } },
               disallow: [
                 {
                   to: sameFeatureSelector([
@@ -390,13 +420,19 @@ export default defineConfigWithVueTs(
                     'feature-store',
                   ]),
                 },
-                { to: { type: ['global-store', ...uiTypes, ...structuralTypes, ...appTypes] } },
+                {
+                  to: {
+                    element: {
+                      type: ['global-store', ...uiTypes, ...structuralTypes, ...appTypes],
+                    },
+                  },
+                },
               ],
               message:
-                '🚫 Feature services handle API calls only. "${file.type}" cannot import "${dependency.type}". Services should be stateless and not depend on stores or UI.',
+                '🚫 Feature services handle API calls only. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Services should be stateless and not depend on stores or UI.',
             },
             {
-              from: { type: 'feature-type' },
+              from: { element: { type: 'feature-type' } },
               disallow: [
                 {
                   to: sameFeatureSelector([
@@ -408,60 +444,76 @@ export default defineConfigWithVueTs(
                 },
                 {
                   to: {
-                    type: [
-                      ...globalLayerTypes,
-                      ...uiTypes,
-                      ...structuralTypes,
-                      ...appTypes,
-                      'utils',
-                      'styles',
-                      'assets',
-                    ],
+                    element: {
+                      type: [
+                        ...globalLayerTypes,
+                        ...uiTypes,
+                        ...structuralTypes,
+                        ...appTypes,
+                        'utils',
+                        'styles',
+                        'assets',
+                      ],
+                    },
                   },
                 },
               ],
               message:
-                '🚫 Feature types are compile-time only. "${file.type}" cannot import "${dependency.type}". Feature types can only extend shared types.',
+                '🚫 Feature types are compile-time only. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Feature types can only extend shared types.',
             },
             {
-              from: { type: 'router' },
-              disallow: [{ to: { type: [...featureTypes, ...uiTypes, ...appTypes] } }],
+              from: { element: { type: 'router' } },
+              disallow: [{ to: { element: { type: [...featureTypes, ...uiTypes, ...appTypes] } } }],
               message:
-                '🚫 Router defines routes only. "${file.type}" cannot import "${dependency.type}". Router can reference views and layouts, not features directly.',
+                '🚫 Router defines routes only. "{{from.element.types.[0]}}" cannot import "{{to.element.types.[0]}}". Router can reference views and layouts, not features directly.',
             },
             {
-              from: { type: ['app-root', 'main'] },
-              disallow: [{ to: { type: [...featureTypes, ...globalLayerTypes, 'view'] } }],
+              from: { file: { categories: ['app-root', 'main'] } },
+              disallow: [
+                { to: { element: { type: [...featureTypes, ...globalLayerTypes, 'view'] } } },
+              ],
               message:
-                '🚫 App entry points must stay lean. "${file.type}" cannot import "${dependency.type}". Keep bootstrapping minimal and delegate to app layer.',
+                '🚫 App entry points must stay lean. "{{from.file.categories}}" cannot import "{{to.element.types.[0]}}". Keep bootstrapping minimal and delegate to app layer.',
             },
             {
-              from: { type: uiTypes },
+              from: { element: { type: uiTypes } },
               disallow: [
                 {
-                  to: { origin: ['external', 'core'] },
-                  dependency: { module: ['pinia', 'vue-router'] },
+                  to: {
+                    module: {
+                      origin: ['external', 'core'],
+                      source: ['pinia', 'vue-router'],
+                    },
+                  },
                 },
               ],
               message: '🚫 UI components must be pure. Use composables for state and routing.',
             },
             {
-              from: { type: 'utils' },
+              from: { element: { type: 'utils' } },
               disallow: [
                 {
-                  to: { origin: ['external', 'core'] },
-                  dependency: { module: ['vue', 'pinia', 'vue-router'] },
+                  to: {
+                    module: {
+                      origin: ['external', 'core'],
+                      source: ['vue', 'pinia', 'vue-router'],
+                    },
+                  },
                 },
               ],
               message:
                 '🚫 Utils must be pure TypeScript. No Vue reactivity or framework dependencies.',
             },
             {
-              from: { type: 'types' },
+              from: { element: { type: 'types' } },
               disallow: [
                 {
-                  to: { origin: ['external', 'core'] },
-                  dependency: { module: ['vue', 'pinia', 'vue-router'] },
+                  to: {
+                    module: {
+                      origin: ['external', 'core'],
+                      source: ['vue', 'pinia', 'vue-router'],
+                    },
+                  },
                 },
               ],
               message: '🚫 Types are compile-time only. No runtime dependencies allowed.',
