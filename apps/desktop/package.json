@@ -17,11 +17,11 @@
   "type": "module",
   "main": "out/main/main.js",
   "scripts": {
-    "build": "electron-vite build",
+    "build": "node scripts/electron.mjs build",
     "test": "vitest run",
-    "dev": "electron-vite dev --watch",
+    "dev": "node scripts/electron.mjs dev --watch",
     "dist:mac": "pnpm build && electron-builder --mac --config.mac.identity=null --publish never",
-    "preview": "electron-vite preview"
+    "preview": "node scripts/electron.mjs preview"
   },
   "dependencies": {
     "@markdown-studio/app": "workspace:*",
@@ -33,7 +33,6 @@
     "@vitejs/plugin-vue": "catalog:",
     "electron": "^41.9.0",
     "electron-builder": "^26.15.3",
-    "electron-vite": "^5.0.0",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-vue-devtools": "catalog:",
