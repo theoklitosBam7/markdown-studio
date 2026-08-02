@@ -305,7 +305,7 @@ packages/cli/              # NPX launcher package
 - **DOMPurify** — HTML sanitization
 - **Mermaid** — Diagram generation from text
 - **Electron** — Cross-platform desktop app framework
-- **electron-vite** — Vite integration for Electron
+- **Vite** — Build tool for the web and desktop applications
 - **electron-builder** — Packaging and distribution
 - **Vitest** — Unit testing framework
 - **Cypress** — End-to-end testing

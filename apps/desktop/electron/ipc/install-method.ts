@@ -2,6 +2,7 @@ import { INSTALL_IS_HOMEBREW_CHANNEL } from '@markdown-studio/desktop-contract/c
 import { ipcMain } from 'electron'
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const MARKER_FILE = '.homebrew-install'
 
@@ -12,8 +13,9 @@ export function registerInstallIpc(): void {
 
 function getResourcesPath(): string {
   // In production, the app lives at /Applications/Markdown Studio.app
-  // In dev, __dirname points to the out/main directory
-  return join(process.resourcesPath ?? join(__dirname, '..'))
+  // In dev, this module lives in the out/main directory
+  const developmentResourcesPath = fileURLToPath(new URL('../', import.meta.url))
+  return join(process.resourcesPath ?? developmentResourcesPath)
 }
 
 async function isHomebrewInstall(): Promise<boolean> {
