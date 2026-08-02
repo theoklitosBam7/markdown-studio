@@ -2,11 +2,7 @@ import type { ComputedRef, DeepReadonly, ShallowRef } from 'vue'
 
 import { computed, readonly, shallowRef, watch } from 'vue'
 
-export interface FindMatch {
-  end: number
-  index: number
-  length: number
-}
+import type { FindMatch } from '../types'
 
 interface ReplaceAllPlan {
   nextActiveIndex: number

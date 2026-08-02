@@ -12,6 +12,12 @@ export interface Example {
   title: string
 }
 
+export interface FindMatch {
+  end: number
+  index: number
+  length: number
+}
+
 export interface MarkdownOutlineHeading {
   depth: number
   id: string
@@ -29,6 +35,3 @@ export interface MarkdownSourceMapEntry {
   text?: string
   type: string
 }
-
-export type Theme = 'dark' | 'light'
-export type ViewMode = 'editor' | 'preview' | 'split'

@@ -1,14 +1,14 @@
 import type { AppCommand } from '@markdown-studio/desktop-contract/types'
 import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
-import type { FindMatch } from '../composables/useFindReplace'
+import type { Theme, ViewMode } from '@/types/editor'
+
 import type {
   EditorStats,
   Example,
+  FindMatch,
   MarkdownOutlineHeading,
   MarkdownSourceMapEntry,
-  Theme,
-  ViewMode,
 } from './common'
 
 /**

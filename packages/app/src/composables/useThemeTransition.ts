@@ -1,4 +1,4 @@
-import type { Theme } from '@/features/markdown/types'
+import type { Theme } from '@/types/editor'
 
 export interface ThemeTransitionOrigin {
   x: number

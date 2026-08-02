@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import type { Theme } from '@/features/markdown/types'
+import type { Theme } from '@/types/editor'
 
 interface Props {
   compact?: boolean

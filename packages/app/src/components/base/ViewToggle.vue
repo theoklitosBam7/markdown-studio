@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { ViewMode } from '@/features/markdown/types'
+import type { ViewMode } from '@/types/editor'
 
 interface Props {
   availableModes?: ViewMode[]

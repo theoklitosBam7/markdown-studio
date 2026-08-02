@@ -2,7 +2,7 @@ import type { DeepReadonly, ShallowRef } from 'vue'
 
 import { readonly, shallowRef, watch } from 'vue'
 
-import type { Theme } from '@/features/markdown/types'
+import type { Theme } from '@/types/editor'
 
 const THEME_STORAGE_KEY = 'markdown-studio-theme'
 

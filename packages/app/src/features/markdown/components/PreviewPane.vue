@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
 
+import type { Theme } from '@/types/editor'
+
 import { useDesktop } from '@/composables/useDesktop'
 import { isSafeExternalUrl } from '@/utils/platform'
 
-import type { MarkdownSourceMapEntry, Theme } from '../types'
+import type { MarkdownSourceMapEntry } from '../types'
 
 import { sanitizeRenderedMarkdownPreviewHtml } from '../rendered-document'
 
