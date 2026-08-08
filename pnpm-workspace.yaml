@@ -22,3 +22,4 @@ catalog:
   '@types/node': ^24.13.2
   '@vitejs/plugin-vue': ^6.0.8
   vite-plugin-vue-devtools: ^8.2.1
+  mermaid: ^11.16.0

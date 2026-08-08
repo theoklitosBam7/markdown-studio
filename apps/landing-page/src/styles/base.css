@@ -1,0 +1,125 @@
+/* Base reset + shared controls for the landing page */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+body {
+  min-height: 100vh;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #d7e0e6;
+  background: #070809;
+}
+
+a {
+  color: #5cc8ff;
+  text-decoration: none;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease,
+    outline-color 150ms ease;
+}
+
+a:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid #3ddc97;
+  outline-offset: 2px;
+}
+
+a:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+code {
+  font-family: inherit;
+  font-size: 0.9em;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.3;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.btn-primary {
+  background: #3ddc97;
+  border-color: #3ddc97;
+  color: #04140d;
+}
+
+.btn-primary:hover {
+  background: #67efb3;
+  border-color: #67efb3;
+  color: #04140d;
+}
+
+.btn-code {
+  background: #0a0d10;
+  border-color: #243038;
+  color: #d7e0e6;
+}
+
+.btn-code:hover {
+  background: #12171c;
+  color: #d7e0e6;
+}
+
+.footer-link {
+  color: #8b9aa5;
+}
+
+.footer-link:hover {
+  color: #3ddc97;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -12,6 +12,9 @@ catalogs:
     '@vitejs/plugin-vue':
       specifier: ^6.0.8
       version: 6.0.8
+    mermaid:
+      specifier: ^11.16.0
+      version: 11.16.0
     typescript:
       specifier: ~6.0.3
       version: 6.0.3
@@ -173,6 +176,10 @@ importers:
         version: 3.3.8(typescript@6.0.3)
 
   apps/landing-page:
+    dependencies:
+      mermaid:
+        specifier: 'catalog:'
+        version: 11.16.0
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -224,7 +231,7 @@ importers:
         specifier: ^17.0.6
         version: 17.0.6
       mermaid:
-        specifier: ^11.16.0
+        specifier: 'catalog:'
         version: 11.16.0
       pinia:
         specifier: ^3.0.4
