@@ -8,6 +8,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "mermaid": "catalog:"
+  },
   "devDependencies": {
     "typescript": "catalog:",
     "vite": "catalog:"

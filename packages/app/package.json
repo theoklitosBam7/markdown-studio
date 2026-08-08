@@ -14,7 +14,7 @@
     "@markdown-studio/desktop-contract": "workspace:*",
     "dompurify": "^3.4.12",
     "marked": "^17.0.6",
-    "mermaid": "^11.16.0",
+    "mermaid": "catalog:",
     "pinia": "^3.0.4",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"

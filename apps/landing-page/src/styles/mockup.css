@@ -1,0 +1,275 @@
+/* Editor workspace mockup chrome. */
+.editor-mockup-wrap {
+  width: 100%;
+}
+
+.editor-mockup {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: #12141a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  color: #e8e6e1;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mockup {
+  border-color: #e2ddd5;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(26, 24, 20, 0.12);
+  color: #1a1814;
+}
+
+.editor-mockup-chrome,
+.editor-mockup-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mockup-chrome,
+.editor-mockup-wrap:not(.is-dark) .editor-mockup-toolbar {
+  border-bottom-color: #ebe8e2;
+  background: #f7f5f0;
+}
+
+.editor-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.editor-dot.red {
+  background: #ff5f56;
+}
+
+.editor-dot.yellow {
+  background: #ffbd2e;
+}
+
+.editor-dot.green {
+  background: #27c93f;
+}
+
+.editor-mockup-title {
+  margin-left: 0.5rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mockup-title {
+  color: #9b958f;
+}
+
+.editor-mockup-toolbar {
+  gap: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mockup-toolbar {
+  color: #6b6560;
+}
+
+.editor-mockup-spacer {
+  flex: 1;
+}
+
+.editor-mockup-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 280px;
+}
+
+.editor-mockup-editor,
+.editor-mockup-preview {
+  min-width: 0;
+  padding: 1rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.editor-mockup-preview {
+  overflow: auto;
+}
+
+.editor-mockup-editor {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mockup-editor {
+  border-right-color: #ebe8e2;
+}
+
+.editor-mockup-preview {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mockup-preview {
+  background: #f7f5f0;
+}
+
+.editor-line {
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 0.25rem;
+}
+
+.editor-line .editor-line__num {
+  min-width: 1.25rem;
+  color: rgba(255, 255, 255, 0.28);
+  text-align: right;
+  user-select: none;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-line .editor-line__num {
+  color: #9b958f;
+}
+
+.editor-line .editor-line__content.heading {
+  color: #7dd3c0;
+  font-weight: 600;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-line .editor-line__content.heading {
+  color: #2a5f4f;
+}
+
+.editor-line .editor-line__content.code {
+  color: #f0a8b4;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-line .editor-line__content.code {
+  color: #d73a49;
+}
+
+.editor-mockup-preview h3 {
+  margin-bottom: 0.55rem;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.05rem;
+}
+
+.editor-preview-kicker {
+  margin-bottom: 0.65rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-preview-kicker {
+  color: #6b6560;
+}
+
+/* Task list — custom marks, no emoji/symbol fallbacks */
+.editor-task-list {
+  list-style: none;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.editor-task-list li {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-task-list li {
+  color: #5f584f;
+}
+
+.editor-task-list li::before {
+  content: '';
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-top: 0.1rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px transparent;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-task-list li::before {
+  border-color: #b7aea2;
+}
+
+.editor-task-list li.is-checked {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-task-list li.is-checked {
+  color: #1a1814;
+}
+
+.editor-task-list li.is-checked::before {
+  border-color: #3ddc97;
+  background-color: #3ddc97;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2304140d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.7rem 0.7rem;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-task-list li.is-checked::before {
+  border-color: #2a5f4f;
+  background-color: #2a5f4f;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E");
+}
+
+/* Real Mermaid SVG output */
+.editor-mermaid-wrap {
+  margin-top: 0.35rem;
+  padding: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+  overflow: auto;
+}
+
+.editor-mockup-wrap:not(.is-dark) .editor-mermaid-wrap {
+  border-color: #e2ddd5;
+  background: #fff;
+}
+
+.editor-mermaid-wrap svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-mermaid {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  white-space: pre-wrap;
+}
+
+.editor-mermaid-error {
+  color: #ff7aa2;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .editor-mockup-body {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-mockup-editor {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .editor-mockup-wrap:not(.is-dark) .editor-mockup-editor {
+    border-bottom-color: #ebe8e2;
+  }
+}
