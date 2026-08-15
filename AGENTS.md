@@ -2,38 +2,35 @@
 
 ## Package manager
 
-Always use **pnpm** for this repo:
+Use **Vite+** for repository commands. Vite+ delegates dependency operations to pnpm:
 
-- Install dependencies: `pnpm install` (not `npm install` or `yarn`)
-- Run scripts: `pnpm <script>` or `pnpm exec <bin>` (not `npm run`, `npx`, or `yarn`)
+- Install dependencies: `vp install` (not `npm install` or `yarn`)
+- Run scripts: `vp run <script>` or `vp exec <bin>` (not `npm run`, `npx`, or `yarn`)
 
-The root `package.json` pins the package manager via `packageManager`; respect it.
+Respect the pnpm version declared under `devEngines.packageManager` in the root `package.json`. When CI behavior matters, use the workflow files as the source of truth; they install with Vite+ and a frozen lockfile.
 
-## Task Completion Requirements
+## Completion Criteria
 
-- Run `pnpm format`, `pnpm lint`, and `pnpm type-check` before considering a task complete.
-- Before running a script command that uses `vite preview` or `electron-vite preview`, don't forget to build the corresponding app first.
-- If tests are relevant to the change, run the smallest targeted suite first, then expand only if needed. Prefer `pnpm test:unit`, `pnpm test:e2e:dev`, or `pnpm test:e2e` over ad hoc commands.
-- Do not use outdated or redundant scripts when a repo-specific command already exists.
+- A task is complete when `vp fmt`, `vp lint`, and `vp run type-check` pass. Prefer `vp check` when it covers the required checks.
+- Before running a preview command, build the corresponding app when the command uses `vite preview` or `electron-vite preview`.
+- When tests are relevant, run the smallest targeted suite first, then expand only when needed. Prefer the repository's `vp run test:*` scripts over ad hoc commands.
+- Use existing repository scripts and configuration as the source of truth for commands and paths.
 
-## Project Language
+## Domain Language
 
-`CONTEXT.md` is the canonical project-language reference generated from domain review sessions. Use its terms when naming concepts, writing documentation, opening issues, and describing changes. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
+When naming or describing product concepts, read `CONTEXT.md` and use its terms. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
 
-## Commit Scopes
+## Commits and Pull Requests
 
-The supported scopes are defined in `commitlint.config.ts`; prefer those scopes when writing commit subjects.
+- Use the supported scopes from `commitlint.config.ts` when writing commit subjects.
+- Use the appropriate issue or pull-request template from `.github` when creating one.
+- Before creating a pull request, validate any Changeset with `vp run changeset:validate-scopes`.
 
-## Issue and PR Templates
+## Changesets
 
-- Before creating a PR, make sure to run `pnpm changeset:validate-scopes` to validate the changeset scopes. If there is no changeset file, create one. If the changeset file is not valid, update it to match the new use case.
-- Use the appropriate issue or PR template when creating a new issue or PR located in the `.github` directory.
-- If the template doesn't fit, update it to match the new use case.
-
-## Changesets Validation
-
-- `@markdown-studio/desktop` for desktop-specific behavior, packaging changes, and shared app changes that are not desktop-specific, but that are still shipped with the desktop app.
-- `markdown-studio` for the published npm package and browser launcher behavior. It is affected from changes in `@markdown-studio/app`, `@markdown-studio/web` when they are not desktop-specific.
+- Use `@markdown-studio/desktop` for desktop behavior, packaging, and shared changes shipped with the desktop app.
+- Use `markdown-studio` for the published npm package and browser launcher behavior. Changes in `@markdown-studio/app` and `@markdown-studio/web` can affect this package.
+- For whether a Changeset is required, inspect the current release filters in `.github/workflows/pull-request.yml`; do not infer the answer only from the package name or implementation intent.
 - Use the following format for generated changesets:
 
   ```
@@ -46,8 +43,8 @@ The supported scopes are defined in `commitlint.config.ts`; prefer those scopes 
 
   Start with a summary line (no bullet), then a blank line, then unordered list items each beginning with a present-tense verb.
 
-- Run `pnpm changeset:validate-scopes` after you perform changeset actions.
-- Changesets feed Release Notes and should describe user-facing changes only. Avoid implementation details such as "add unit tests", "refactor internal helpers", or other items that do not change the released behavior.
+- Run `vp run changeset:validate-scopes` after you perform changeset actions.
+- Changesets feed Release Notes. Describe the user-visible or distributable impact in plain terms. For maintenance or tooling changes that CI classifies as release-affecting, describe the affected shipped surface or distribution workflow instead of listing implementation steps. Do not list test-only or refactor-only work.
 
 ## Project Snapshot
 

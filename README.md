@@ -119,17 +119,17 @@ Build and run the app locally from source:
 **Web app:**
 
 ```sh
-pnpm install
-pnpm dev
+vp install
+vp run dev
 ```
 
 **Desktop app:**
 
 ```sh
-pnpm install
-pnpm dev:desktop    # Development mode
-pnpm build:desktop # Production build
-pnpm dist:mac      # Create macOS distribution package (unsigned)
+vp install
+vp run dev:desktop    # Development mode
+vp run build:desktop # Production build
+vp run dist:mac      # Create macOS distribution package (unsigned)
 ```
 
 ## Repository Maintenance
@@ -305,40 +305,44 @@ packages/cli/              # NPX launcher package
 - **DOMPurify** — HTML sanitization
 - **Mermaid** — Diagram generation from text
 - **Electron** — Cross-platform desktop app framework
-- **Vite** — Build tool for the web and desktop applications
+- **Vite+** — Unified toolchain for dev, build, test, lint, and format
 - **electron-builder** — Packaging and distribution
-- **Vitest** — Unit testing framework
+- **Vitest** — Unit testing framework (via Vite+)
 - **Cypress** — End-to-end testing
-- **ESLint + oxlint** — Linting and code quality
-- **oxfmt** — Code formatting
 
 ### Available Scripts
 
 ```sh
 # Development
-pnpm dev              # Start Vite dev server
-pnpm dev:desktop      # Start Electron in dev mode
+vp run dev            # Start Vite dev server
+vp run dev:desktop    # Start Electron in dev mode
 
 # Building
-pnpm build            # Type-check and build all buildable workspace apps/packages
-pnpm build:npm        # Build and stage the npm launcher package
-pnpm build:desktop    # Build Electron bundles
-pnpm dist:mac         # Create unsigned macOS package
+vp run build          # Type-check and build all buildable workspace apps/packages
+vp run build:npm      # Build and stage the npm launcher package
+vp run build:desktop  # Build Electron bundles
+vp run dist:mac       # Create unsigned macOS package
 
 # Preview
-pnpm preview          # Preview production build
-pnpm preview:desktop  # Preview Electron build
+vp run preview          # Preview production build
+vp run preview:desktop  # Preview Electron build
 
 # Testing
-pnpm test:unit        # Run Vitest unit tests
-pnpm test:e2e:dev     # Run Cypress in dev mode
-pnpm test:e2e         # Run Cypress against production build
+vp run test:unit     # Run unit tests across the workspace
+vp run test:e2e:dev  # Run Cypress in dev mode
+vp run test:e2e      # Run Cypress against production build
 
 # Quality
-pnpm type-check       # Run TypeScript type checking
-pnpm lint             # Run ESLint and oxlint
-pnpm format           # Format code and Markdown with oxfmt
-pnpm format:check     # Check formatting without writing changes
+vp run type-check     # Run TypeScript type checking
+vp check              # Run formatting, lint, and type checks
+vp lint               # Lint code
+vp fmt                # Format code and Markdown
+vp fmt --check        # Check formatting without writing changes
+
+# Dependencies
+vp install            # Install dependencies (delegates to pnpm)
+vp add <pkg>          # Add a dependency
+vp remove <pkg>       # Remove a dependency
 ```
 
 ### Releases
@@ -383,8 +387,8 @@ Prereleases should be prepared through Changesets prerelease mode. The manual pu
 
 Convenience commands for prerelease mode:
 
-- `pnpm changeset:pre:enter` enters prerelease mode using the `next` tag
-- `pnpm changeset:pre:exit` exits prerelease mode and returns future version PRs to stable releases
+- `vp run changeset:pre:enter` enters prerelease mode using the `next` tag
+- `vp run changeset:pre:exit` exits prerelease mode and returns future version PRs to stable releases
 
 Dry-run behavior:
 

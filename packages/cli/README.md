@@ -80,7 +80,7 @@ This package serves the production Markdown Studio web app over localhost and op
 ### Build
 
 ```sh
-pnpm build
+vp run build
 ```
 
 ### Test Locally

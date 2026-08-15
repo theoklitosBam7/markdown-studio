@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview"
   },
   "dependencies": {
     "@markdown-studio/app": "workspace:*",
@@ -19,6 +19,7 @@
     "vite": "catalog:",
     "vite-plugin-pwa": "^1.3.0",
     "vite-plugin-vue-devtools": "catalog:",
+    "vite-plus": "catalog:",
     "vue-tsc": "catalog:"
   }
 }

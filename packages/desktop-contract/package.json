@@ -11,10 +11,11 @@
     "./validation": "./src/validation.ts"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vp test run --project desktop-contract"
   },
   "devDependencies": {
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
   }
 }

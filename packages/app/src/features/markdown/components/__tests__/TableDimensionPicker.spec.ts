@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vite-plus/test'
 
 import { TABLE_DIMENSION_BOUNDS } from '../../utils/tableDimensions'
 import TableDimensionPicker from '../TableDimensionPicker.vue'

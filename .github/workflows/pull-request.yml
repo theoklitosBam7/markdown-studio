@@ -180,19 +180,14 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          cache: pnpm
           node-version-file: .node-version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Require changeset file
         shell: bash
@@ -208,10 +203,10 @@ jobs:
           printf '%s\n' "$changeset_files"
 
       - name: Validate changeset scopes
-        run: pnpm changeset:validate-scopes
+        run: vp run changeset:validate-scopes
 
       - name: Check release plan
-        run: pnpm exec changeset status --since origin/main
+        run: vp exec changeset status --since origin/main
 
   quality:
     name: Quality and unit tests
@@ -224,34 +219,29 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          cache: pnpm
           node-version-file: .node-version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Format
-        run: pnpm format:check
+        run: vp fmt --check
 
       - name: Lint
-        run: pnpm lint
+        run: vp lint
 
       - name: Type check
-        run: pnpm type-check
+        run: vp run type-check
 
       - name: Run script tests
-        run: pnpm test:scripts
+        run: vp run test:scripts
 
       - name: Run unit tests
-        run: pnpm test:unit
+        run: vp run test:unit
 
   npm_package:
     name: Build and verify npm package
@@ -264,25 +254,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          cache: pnpm
           node-version-file: .node-version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Build npm package
-        run: pnpm build:npm
+        run: vp run build:npm
 
       - name: Verify npm package contents
-        run: pnpm --filter markdown-studio pack:check
+        run: vp run --filter markdown-studio pack:check
 
   desktop_build:
     name: Build macOS desktop release
@@ -295,19 +280,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          cache: pnpm
           node-version-file: .node-version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Build desktop artifacts
-        run: pnpm dist:mac
+        run: vp run dist:mac

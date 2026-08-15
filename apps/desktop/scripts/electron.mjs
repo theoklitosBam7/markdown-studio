@@ -1,7 +1,7 @@
 import electronPath from 'electron'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { build, createServer, mergeConfig } from 'vite'
+import { build, createServer, mergeConfig } from 'vite-plus'
 
 import { mainConfig, preloadConfig, rendererConfig } from '../electron.vite.config.ts'
 

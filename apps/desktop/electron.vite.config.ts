@@ -1,7 +1,7 @@
 import vue from '@vitejs/plugin-vue'
 import { builtinModules, createRequire } from 'node:module'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite-plus'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 const desktopPackage = createRequire(import.meta.url)('./package.json')

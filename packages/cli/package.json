@@ -39,15 +39,16 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pnpm exec tsc -p ./tsconfig.build.json && node ./scripts/finalize-dist.mjs",
-    "prepack": "node ./scripts/verify-package.mjs && pnpm build",
-    "pack:check": "pnpm pack --pack-destination ../../.tmp/npm-pack",
-    "test": "vitest run"
+    "build": "vp exec tsc -p ./tsconfig.build.json && node ./scripts/finalize-dist.mjs",
+    "prepack": "node ./scripts/verify-package.mjs && vp run build",
+    "pack:check": "vp pm pack --pack-destination ../../.tmp/npm-pack",
+    "test": "vp test run --project cli"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
   },
   "engines": {
     "node": ">=24.15.0"

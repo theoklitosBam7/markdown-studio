@@ -18,9 +18,9 @@
   "main": "out/main/main.js",
   "scripts": {
     "build": "node scripts/electron.mjs build",
-    "test": "vitest run",
+    "test": "vp test run --project desktop",
     "dev": "node scripts/electron.mjs dev --watch",
-    "dist:mac": "pnpm build && electron-builder --mac --config.mac.identity=null --publish never",
+    "dist:mac": "vp run build && electron-builder --mac --config.mac.identity=null --publish never",
     "preview": "node scripts/electron.mjs preview"
   },
   "dependencies": {
@@ -36,7 +36,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-vue-devtools": "catalog:",
-    "vitest": "catalog:",
+    "vite-plus": "catalog:",
     "vue-tsc": "catalog:"
   },
   "build": {

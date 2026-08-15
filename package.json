@@ -23,31 +23,30 @@
     "changeset:status": "changeset status",
     "changeset:validate-scopes": "node ./scripts/validate-changeset-scopes.mjs",
     "changeset:version": "changeset version",
-    "dev": "pnpm --filter @markdown-studio/web dev",
-    "build": "pnpm type-check && run-p build:web build:desktop build:landing build:cli",
-    "build:web": "pnpm --filter @markdown-studio/web build",
-    "build:landing": "pnpm --filter @markdown-studio/landing build",
-    "build:cli": "pnpm --filter markdown-studio build",
-    "build:npm": "pnpm build:web && node ./scripts/stage-cli-package.mjs && pnpm --filter markdown-studio build",
-    "build:desktop": "pnpm --filter @markdown-studio/desktop build",
-    "dev:desktop": "pnpm --filter @markdown-studio/desktop dev",
-    "dist:mac": "pnpm --filter @markdown-studio/desktop dist:mac",
-    "preview": "pnpm --filter @markdown-studio/web preview",
-    "preview:desktop": "pnpm --filter @markdown-studio/desktop preview",
-    "test:unit": "pnpm -r test",
-    "test:scripts": "vitest run scripts/",
+    "dev": "vp run --filter @markdown-studio/web dev",
+    "build": "vp run type-check && vp run --parallel --filter '@markdown-studio/*' build",
+    "build:web": "vp run --filter @markdown-studio/web build",
+    "build:landing": "vp run --filter @markdown-studio/landing build",
+    "build:cli": "vp run --filter markdown-studio build",
+    "build:npm": "vp run build:web && node ./scripts/stage-cli-package.mjs && vp run --filter markdown-studio build",
+    "build:desktop": "vp run --filter @markdown-studio/desktop build",
+    "dev:desktop": "vp run --filter @markdown-studio/desktop dev",
+    "dist:mac": "vp run --filter @markdown-studio/desktop dist:mac",
+    "preview": "vp run --filter @markdown-studio/web preview",
+    "preview:desktop": "vp run --filter @markdown-studio/desktop preview",
+    "test:unit": "vp run -r test",
+    "test:scripts": "vp test run scripts/",
     "prepare": "cypress install && simple-git-hooks",
     "generate-pwa-assets": "pwa-assets-generator",
     "generate-desktop-icons": "node scripts/generate-desktop-icons.mjs",
-    "test:e2e": "VITE_DISABLE_PWA=true pnpm build:web && start-server-and-test 'pnpm --filter @markdown-studio/web exec vite preview --port 4175' http://localhost:4175 'cypress run --e2e --config baseUrl=http://localhost:4175'",
-    "test:e2e:dev": "start-server-and-test 'VITE_DISABLE_PWA=true pnpm --filter @markdown-studio/web dev -- --port 4175' http://localhost:4175 'cypress open --e2e --config baseUrl=http://localhost:4175'",
+    "test:e2e": "VITE_DISABLE_PWA=true vp run build:web && start-server-and-test 'vp -C apps/web preview --port 4175' http://localhost:4175 'cypress run --e2e --config baseUrl=http://localhost:4175'",
+    "test:e2e:dev": "start-server-and-test 'VITE_DISABLE_PWA=true vp -C apps/web dev --port 4175' http://localhost:4175 'cypress open --e2e --config baseUrl=http://localhost:4175'",
     "type-check": "vue-tsc --build",
-    "lint": "run-s lint:*",
-    "lint:oxlint": "oxlint . --fix",
-    "lint:eslint": "eslint . --fix --cache",
-    "pack:npm": "pnpm build:npm && pnpm --filter markdown-studio pack:check",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
+    "check": "vp check",
+    "pack:npm": "vp run build:npm && vp run --filter markdown-studio pack:check"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
@@ -58,45 +57,37 @@
     "@types/semver": "^7.7.1",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-vue": "catalog:",
-    "@vitest/eslint-plugin": "^1.6.24",
-    "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/tsconfig": "^0.9.1",
     "cypress": "^15.19.0",
-    "eslint": "^10.8.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-boundaries": "^7.1.0",
     "eslint-plugin-cypress": "^6.4.3",
-    "eslint-plugin-oxlint": "~1.76.0",
     "eslint-plugin-perfectionist": "^5.10.0",
-    "eslint-plugin-vue": "~10.10.0",
-    "jiti": "^2.7.0",
     "nano-staged": "^1.0.2",
-    "npm-run-all2": "^9.0.3",
-    "oxfmt": "^0.61.0",
-    "oxlint": "~1.76.0",
     "png-to-ico": "^3.0.2",
     "semver": "^7.8.5",
     "sharp": "^0.35.3",
     "simple-git-hooks": "^2.13.1",
     "start-server-and-test": "^3.0.11",
     "typescript": "catalog:",
-    "vitest": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
     "vue-tsc": "catalog:"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec nano-staged",
-    "commit-msg": "pnpm exec commitlint --edit $1"
+    "pre-commit": "vp exec nano-staged",
+    "commit-msg": "vp exec commitlint --edit $1"
   },
   "nano-staged": {
-    "*.{mjs,js,ts,vue,css,json,md}": "pnpm run format",
+    "*.{mjs,js,ts,vue,css,json,md}": "vp fmt",
     "*.{mjs,js,ts,vue}": [
-      "oxlint --fix",
-      "eslint --fix --cache"
+      "vp lint --fix"
     ]
   },
-  "engines": {
-    "node": ">=24.15.0"
-  },
-  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c"
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.21.0",
+      "onFail": "download"
+    }
+  }
 }
