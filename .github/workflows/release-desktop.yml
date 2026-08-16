@@ -77,7 +77,7 @@ jobs:
           --output "${{ runner.temp }}/desktop-release-notes.md"
 
       - name: Build desktop artifacts
-        run: vp run dist:mac
+        run: vpr dist:mac
 
       - name: Ensure release tag exists
         if: ${{ !inputs.dry_run }}

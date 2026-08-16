@@ -79,10 +79,10 @@ jobs:
           --output "${{ runner.temp }}/npm-release-notes.md"
 
       - name: Build npm package
-        run: vp run build:npm
+        run: vpr build:npm
 
       - name: Verify npm package contents
-        run: vp run --filter markdown-studio pack:check
+        run: vpr --filter markdown-studio pack:check
 
       - name: Publish npm package
         if: ${{ !inputs.dry_run }}

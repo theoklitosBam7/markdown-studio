@@ -35,7 +35,7 @@ jobs:
       - name: Create or update version pull request
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
-          version: vp run changeset:version
+          version: vpr changeset:version
           commit: 'chore(release): version packages'
           title: 'chore(release): version packages'
         env:

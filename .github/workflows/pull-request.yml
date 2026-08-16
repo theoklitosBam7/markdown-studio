@@ -203,7 +203,7 @@ jobs:
           printf '%s\n' "$changeset_files"
 
       - name: Validate changeset scopes
-        run: vp run changeset:validate-scopes
+        run: vpr changeset:validate-scopes
 
       - name: Check release plan
         run: vp exec changeset status --since origin/main
@@ -229,19 +229,19 @@ jobs:
               - --frozen-lockfile
 
       - name: Format
-        run: vp fmt --check
+        run: vpr format:check
 
       - name: Lint
-        run: vp lint
+        run: vpr lint
 
       - name: Type check
-        run: vp run type-check
+        run: vpr type-check
 
       - name: Run script tests
-        run: vp run test:scripts
+        run: vpr test:scripts
 
       - name: Run unit tests
-        run: vp run test:unit
+        run: vpr test:unit
 
   npm_package:
     name: Build and verify npm package
@@ -264,10 +264,10 @@ jobs:
               - --frozen-lockfile
 
       - name: Build npm package
-        run: vp run build:npm
+        run: vpr build:npm
 
       - name: Verify npm package contents
-        run: vp run --filter markdown-studio pack:check
+        run: vpr --filter markdown-studio pack:check
 
   desktop_build:
     name: Build macOS desktop release
@@ -290,4 +290,4 @@ jobs:
               - --frozen-lockfile
 
       - name: Build desktop artifacts
-        run: vp run dist:mac
+        run: vpr dist:mac
