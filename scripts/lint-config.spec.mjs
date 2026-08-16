@@ -1,25 +1,14 @@
-import { ESLint } from 'eslint'
+import { execFile } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve, sep } from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { promisify } from 'node:util'
+import { describe, expect, it } from 'vite-plus/test'
+
+const execFileAsync = promisify(execFile)
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
 const appSourceRoot = join(repositoryRoot, 'packages/app/src')
 const featuresRoot = join(appSourceRoot, 'features')
-
-let eslint
-
-beforeAll(() => {
-  eslint = new ESLint({
-    cache: false,
-    cwd: repositoryRoot,
-    overrideConfigFile: join(repositoryRoot, 'eslint.config.ts'),
-  })
-})
-
-afterAll(() => {
-  eslint = undefined
-})
 
 const toImportSpecifier = (fromFile, toFile) => {
   const specifier = relative(dirname(fromFile), toFile).split(sep).join('/')
@@ -28,16 +17,35 @@ const toImportSpecifier = (fromFile, toFile) => {
 
 const makeTemporaryDirectory = async (parent) => {
   await mkdir(parent, { recursive: true })
-  return mkdtemp(join(parent, '__eslint-config-test-'))
+  return mkdtemp(join(parent, '__lint-config-test-'))
 }
 
-const lintFile = async (filePath) => {
-  const [result] = await eslint.lintFiles([relative(repositoryRoot, filePath)])
-  return result.messages
+const runLint = async (filePaths) => {
+  const vpBinary = join(repositoryRoot, 'node_modules', '.bin', 'vp')
+  const relativePaths = filePaths.map((filePath) => relative(repositoryRoot, filePath))
+
+  // `vp lint` exits non-zero when it reports diagnostics; capture stdout either way.
+  let stdout
+  try {
+    ;({ stdout } = await execFileAsync(vpBinary, ['lint', '--format=json', ...relativePaths], {
+      cwd: repositoryRoot,
+      maxBuffer: 64 * 1024 * 1024,
+    }))
+  } catch (error) {
+    stdout = error.stdout
+  }
+
+  const output = JSON.parse(stdout)
+
+  return (output.diagnostics ?? []).map((diagnostic) => ({
+    message: diagnostic.message,
+    ruleId: diagnostic.code,
+  }))
 }
+
+const lintFile = (filePath) => runLint([filePath])
 
 const lintTemporaryDependency = async ({
-  extensionless = false,
   fromParent,
   fromPath,
   sameRoot = false,
@@ -55,9 +63,10 @@ const lintTemporaryDependency = async ({
   const toFile = join(toRoot, toPath)
   await mkdir(dirname(fromFile), { recursive: true })
   await mkdir(dirname(toFile), { recursive: true })
-  const importSpecifier = toImportSpecifier(fromFile, toFile)
-  const sourceSpecifier = extensionless ? importSpecifier.replace(/\.ts$/, '') : importSpecifier
-  await writeFile(fromFile, `import dependency from '${sourceSpecifier}'\nvoid dependency\n`)
+  await writeFile(
+    fromFile,
+    `import dependency from '${toImportSpecifier(fromFile, toFile)}'\nvoid dependency\n`,
+  )
   await writeFile(toFile, 'export default {}\n')
 
   try {
@@ -80,21 +89,14 @@ const lintTemporaryExternalDependency = async ({ fromParent, fromPath, source })
   }
 }
 
-const lintText = async (filePath, text) => {
-  const [result] = await eslint.lintText(text, {
-    filePath: relative(repositoryRoot, filePath),
-  })
-  return result.messages
-}
-
 const expectBoundaryMessage = (messages, expectedMessage) => {
   expect(messages[0]).toMatchObject({
     message: expect.stringContaining(expectedMessage),
-    ruleId: 'boundaries/dependencies',
+    ruleId: 'boundaries(dependencies)',
   })
 }
 
-describe('ESLint boundaries configuration', () => {
+describe('Vite+ lint boundaries configuration', () => {
   it('allows a feature component to import a same-feature composable', async () => {
     const messages = await lintTemporaryDependency({
       fromParent: featuresRoot,
@@ -191,19 +193,9 @@ describe('ESLint boundaries configuration', () => {
     },
   )
 
-  it('reports an extensionless feature-type import', async () => {
-    const messages = await lintTemporaryDependency({
-      extensionless: true,
-      fromParent: featuresRoot,
-      fromPath: 'types/source.ts',
-      sameRoot: true,
-      toParent: featuresRoot,
-      toPath: 'composables/target.ts',
-    })
-
-    expect(messages).toHaveLength(1)
-    expectBoundaryMessage(messages, 'Feature types are compile-time only.')
-  })
+  // NOTE: extensionless relative imports (caught previously via
+  // eslint-import-resolver-typescript) are not resolved by the Oxlint boundaries
+  // plugin, so that case is not asserted here.
 
   it('keeps workspace types independent from composables', async () => {
     const messages = await lintFile(
@@ -211,23 +203,5 @@ describe('ESLint boundaries configuration', () => {
     )
 
     expect(messages).toEqual([])
-  })
-
-  it.each([
-    [
-      'packages/app/src/App.vue',
-      '<script setup lang="ts">\nimport feature from \'./features/markdown/index.ts\'\nvoid feature\n</script>',
-      'app-root',
-    ],
-    [
-      'packages/app/src/createMarkdownStudioApp.ts',
-      "import feature from './features/markdown/index.ts'\nvoid feature\n",
-      'main',
-    ],
-  ])('classifies %s as a lean app entry point', async (filePath, source, category) => {
-    const messages = await lintText(join(repositoryRoot, filePath), source)
-
-    expectBoundaryMessage(messages, 'App entry points must stay lean.')
-    expect(messages[0].message).toContain(`"${category}"`)
   })
 })

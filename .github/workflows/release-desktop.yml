@@ -34,19 +34,14 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
         with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          cache: pnpm
           node-version-file: .node-version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Resolve release metadata
         id: release_meta
@@ -82,7 +77,7 @@ jobs:
           --output "${{ runner.temp }}/desktop-release-notes.md"
 
       - name: Build desktop artifacts
-        run: pnpm dist:mac
+        run: vpr dist:mac
 
       - name: Ensure release tag exists
         if: ${{ !inputs.dry_run }}

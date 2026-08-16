@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vp test run"
   },
   "dependencies": {
     "@markdown-studio/desktop-contract": "workspace:*",
@@ -29,7 +29,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-vue-devtools": "catalog:",
-    "vitest": "catalog:",
+    "vite-plus": "catalog:",
     "vue-tsc": "catalog:"
   }
 }

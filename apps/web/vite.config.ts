@@ -1,11 +1,11 @@
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, lazyPlugins } from 'vite-plus'
 import { VitePWA } from 'vite-plugin-pwa'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
-  plugins: [
+  plugins: lazyPlugins(() => [
     vue(),
     vueDevTools(),
     VitePWA({
@@ -61,7 +61,7 @@ export default defineConfig({
         globPatterns: ['**/*.{css,html,ico,js,json,png,svg,webmanifest}'],
       },
     }),
-  ],
+  ]),
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('../../packages/app/src', import.meta.url)),

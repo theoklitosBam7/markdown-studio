@@ -24,8 +24,8 @@
 
 <!-- How was this tested? What should reviewers look for? -->
 
-- [ ] Unit tests pass: `pnpm test:unit`
-- [ ] E2E tests pass: `pnpm test:e2e` (if applicable)
+- [ ] Unit tests pass: `vpr test:unit`
+- [ ] E2E tests pass: `vpr test:e2e` (if applicable)
 - [ ] Manual testing notes:
 
 ## Related Issue
@@ -35,6 +35,6 @@
 ## Pre-flight Checklist
 
 - [ ] Tests added/updated for the changed functionality
-- [ ] Lint and type-check pass: `pnpm lint && pnpm type-check`
+- [ ] Lint and type-check pass: `vpr lint && vpr type-check`
 - [ ] No unintended changes to other files
 - [ ] UI changes have screenshots (if applicable)

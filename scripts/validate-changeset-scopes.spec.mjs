@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { parseReleaseLine, validateChangesetSource } from './validate-changeset-scopes.mjs'
 

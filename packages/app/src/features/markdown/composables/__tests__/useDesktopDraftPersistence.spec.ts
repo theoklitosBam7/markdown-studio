@@ -1,6 +1,6 @@
 import type { DesktopApi } from '@markdown-studio/desktop-contract/types'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { effectScope, nextTick, shallowRef } from 'vue'
 
 import type { AppWindow } from '@/browser-window'
