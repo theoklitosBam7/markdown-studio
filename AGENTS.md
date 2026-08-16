@@ -5,15 +5,15 @@
 Use **Vite+** for repository commands. Vite+ delegates dependency operations to pnpm:
 
 - Install dependencies: `vp install` (not `npm install` or `yarn`)
-- Run scripts: `vp run <script>` or `vp exec <bin>` (not `npm run`, `npx`, or `yarn`)
+- Run scripts: `vpr <script>` or `vp exec <bin>` (not `npm run`, `npx`, or `yarn`)
 
 Respect the pnpm version declared under `devEngines.packageManager` in the root `package.json`. When CI behavior matters, use the workflow files as the source of truth; they install with Vite+ and a frozen lockfile.
 
 ## Completion Criteria
 
-- A task is complete when `vp fmt`, `vp lint`, and `vp run type-check` pass. Prefer `vp check` when it covers the required checks.
+- A task is complete when `vpr check` and `vpr type-check` pass. `vpr check` covers formatting and linting; `vpr type-check` runs the separate Vue and TypeScript build check.
 - Before running a preview command, build the corresponding app when the command uses `vite preview` or `electron-vite preview`.
-- When tests are relevant, run the smallest targeted suite first, then expand only when needed. Prefer the repository's `vp run test:*` scripts over ad hoc commands.
+- When tests are relevant, run the smallest targeted suite first, then expand only when needed. Prefer the repository's `vpr test:*` scripts over ad hoc commands.
 - Use existing repository scripts and configuration as the source of truth for commands and paths.
 
 ## Domain Language
@@ -24,7 +24,7 @@ When naming or describing product concepts, read `CONTEXT.md` and use its terms.
 
 - Use the supported scopes from `commitlint.config.ts` when writing commit subjects.
 - Use the appropriate issue or pull-request template from `.github` when creating one.
-- Before creating a pull request, validate any Changeset with `vp run changeset:validate-scopes`.
+- Before creating a pull request, validate any Changeset with `vpr changeset:validate-scopes`.
 
 ## Changesets
 
@@ -43,7 +43,7 @@ When naming or describing product concepts, read `CONTEXT.md` and use its terms.
 
   Start with a summary line (no bullet), then a blank line, then unordered list items each beginning with a present-tense verb.
 
-- Run `vp run changeset:validate-scopes` after you perform changeset actions.
+- Run `vpr changeset:validate-scopes` after you perform changeset actions.
 - Changesets feed Release Notes. Describe the user-visible or distributable impact in plain terms. For maintenance or tooling changes that CI classifies as release-affecting, describe the affected shipped surface or distribution workflow instead of listing implementation steps. Do not list test-only or refactor-only work.
 
 ## Project Snapshot

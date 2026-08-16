@@ -80,7 +80,7 @@ This package serves the production Markdown Studio web app over localhost and op
 ### Build
 
 ```sh
-vp run build
+vpr build
 ```
 
 ### Test Locally
