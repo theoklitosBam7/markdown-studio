@@ -1,5 +1,15 @@
 # markdown-studio
 
+## 0.10.2
+
+### Patch Changes
+
+- 376631a: Standardize desktop and browser runtime tooling on Vite+
+  
+  - Align desktop build, preview, and packaging workflows with Vite+
+  - Align browser application and npm launcher workflows with Vite+
+  - Consolidate formatting, linting, and test execution under the unified toolchain
+
 ## 0.10.1
 
 ### Patch Changes
