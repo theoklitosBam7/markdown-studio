@@ -34,7 +34,7 @@
     "dist:mac": "vp run --filter @markdown-studio/desktop dist:mac",
     "preview": "vp run --filter @markdown-studio/web preview",
     "preview:desktop": "vp run --filter @markdown-studio/desktop preview",
-    "test:unit": "vp run -r test",
+    "test:unit": "vp test run",
     "test:scripts": "vp test run scripts/",
     "prepare": "cypress install && simple-git-hooks",
     "generate-pwa-assets": "pwa-assets-generator",
