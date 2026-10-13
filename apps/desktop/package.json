@@ -31,7 +31,7 @@
     "@tsconfig/node24": "^24.0.5",
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
-    "electron": "^41.9.0",
+    "electron": "^44.7.0",
     "electron-builder": "^26.15.3",
     "typescript": "catalog:",
     "vite": "catalog:",
@@ -54,6 +54,7 @@
     "asar": true,
     "mac": {
       "category": "public.app-category.productivity",
+      "minimumSystemVersion": "13.0.0",
       "target": [
         "dmg",
         "zip"
