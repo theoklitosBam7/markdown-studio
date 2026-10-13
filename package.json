@@ -86,7 +86,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.21.0",
+      "version": "12.11.2",
       "onFail": "download"
     }
   }

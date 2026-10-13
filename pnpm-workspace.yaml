@@ -3,7 +3,7 @@ packages:
   - apps/*
 
 minimumReleaseAge: 1440 # 1 day, in minutes
-nodeVersionFile: .node-version
+nodeVersion: 24.21.0
 
 allowBuilds:
   cypress: true
