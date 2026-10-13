@@ -85,7 +85,7 @@ const segments = computed<MatchSegment[]>(() => {
 
 .match-overlay__content {
   min-height: 100%;
-  padding: 24px;
+  padding: 24px 24px 24px 64px;
   font-family: 'DM Mono', monospace;
   font-size: 13.5px;
   line-height: 1.7;
@@ -111,7 +111,7 @@ const segments = computed<MatchSegment[]>(() => {
 
 @media (max-width: 700px) {
   .match-overlay__content {
-    padding: 16px var(--app-gutter) 24px;
+    padding: 16px var(--app-gutter) 24px 52px;
     font-size: 13px;
     line-height: 1.6;
   }

@@ -135,6 +135,22 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('formats selected source text and updates the Live Preview', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    await wrapper.get('textarea').setValue('make strong')
+    textarea.setSelectionRange(5, 11)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(textarea.value).toBe('make **strong**')
+    expect(wrapper.get('.rendered-md strong').text()).toBe('strong')
+    expect(wrapper.get('.editor-line-numbers').text()).toBe('1')
+
+    wrapper.unmount()
+  })
+
   it('provides a skip link to the Editor Workspace', async () => {
     const { wrapper } = await mountMarkdownStudioView()
 

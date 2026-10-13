@@ -37,6 +37,37 @@ describe('EditorPane', () => {
     vi.restoreAllMocks()
   })
 
+  it('shows line numbers for the active Markdown Document', () => {
+    const wrapper = mountEditorPane({
+      content: 'Heading\n\nParagraph',
+      lineCount: 3,
+    })
+
+    expect(wrapper.get('.editor-line-numbers').text()).toBe('123')
+
+    wrapper.unmount()
+  })
+
+  it('wraps selected source text in bold Markdown from the formatting toolbar', async () => {
+    const wrapper = mountEditorPane({
+      content: 'write this',
+      lineCount: 1,
+    })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(6, 10)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('write **this**')
+    expect(editor.selectionStart).toBe(8)
+    expect(editor.selectionEnd).toBe(12)
+    expect(wrapper.emitted('update:content')).toEqual([['write **this**']])
+
+    wrapper.unmount()
+  })
+
   it('highlights the initial logical line on render', async () => {
     window.getComputedStyle = vi.fn(
       () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
