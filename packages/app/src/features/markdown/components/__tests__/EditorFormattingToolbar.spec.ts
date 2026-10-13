@@ -40,6 +40,10 @@ describe('EditorFormattingToolbar', () => {
 
     await wrapper.get('select[aria-label="Set heading level"]').setValue('2')
     await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+    expect(wrapper.get('button[aria-label="More formatting"]').attributes('aria-expanded')).toBe(
+      'true',
+    )
+    expect(wrapper.get('.editor-formatting-toolbar__menu').isVisible()).toBe(true)
     await wrapper.get('.editor-formatting-toolbar__menu button').trigger('click')
 
     expect(wrapper.emitted('format')).toEqual([

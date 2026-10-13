@@ -346,7 +346,6 @@ function handleTableInsertionConfirm(): void {
           :content="content"
           :document-path="currentPath"
           :find-state="workspace.find.state.value"
-          :line-count="stats.lines"
           @find-action="handleFindAction"
           @scroll="handleEditorScroll"
           @update:content="workspace.editor.updateContent"

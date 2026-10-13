@@ -20,7 +20,6 @@ function mountEditorPane(overrides: Record<string, unknown> = {}) {
         replaceText: '',
         showReplace: false,
       },
-      lineCount: 6,
       ...overrides,
     },
   })
@@ -40,7 +39,6 @@ describe('EditorPane', () => {
   it('shows line numbers for the active Markdown Document', () => {
     const wrapper = mountEditorPane({
       content: 'Heading\n\nParagraph',
-      lineCount: 3,
     })
 
     expect(wrapper.get('.editor-line-numbers').text()).toBe('123')
@@ -48,10 +46,19 @@ describe('EditorPane', () => {
     wrapper.unmount()
   })
 
+  it('numbers every source line in a long Markdown Document', () => {
+    const content = Array.from({ length: 61 }, (_, index) => `Line ${index + 1}`).join('\n')
+    const wrapper = mountEditorPane({ content })
+
+    expect(wrapper.findAll('.editor-line-numbers li')).toHaveLength(61)
+    expect(wrapper.get('.line-count').text()).toBe('61 lines')
+
+    wrapper.unmount()
+  })
+
   it('wraps selected source text in bold Markdown from the formatting toolbar', async () => {
     const wrapper = mountEditorPane({
       content: 'write this',
-      lineCount: 1,
     })
     const editor = wrapper.get('textarea').element as HTMLTextAreaElement
     editor.focus()
@@ -356,7 +363,6 @@ describe('EditorPane', () => {
     const wrapper = mountEditorPane({
       content: 'before after',
       documentPath: '/tmp/notes.md',
-      lineCount: 1,
     })
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
     textarea.value = 'before after'
@@ -450,7 +456,6 @@ describe('EditorPane', () => {
 
     const wrapper = mountEditorPane({
       content: 'item one item two',
-      lineCount: 1,
     })
 
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
@@ -470,7 +475,6 @@ describe('EditorPane', () => {
   it('prefers the native browser edit command for replacements on web', async () => {
     const wrapper = mountEditorPane({
       content: 'item one item two',
-      lineCount: 1,
     })
 
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
@@ -500,7 +504,6 @@ describe('EditorPane', () => {
   it('falls back to setRangeText when execCommand is unavailable', async () => {
     const wrapper = mountEditorPane({
       content: 'item one item two',
-      lineCount: 1,
     })
 
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
@@ -524,7 +527,6 @@ describe('EditorPane', () => {
   it('inserts text at the current cursor position on web', async () => {
     const wrapper = mountEditorPane({
       content: 'before after',
-      lineCount: 1,
     })
 
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
@@ -567,7 +569,6 @@ describe('EditorPane', () => {
         replaceText: '',
         showReplace: false,
       },
-      lineCount: 1,
     })
 
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement

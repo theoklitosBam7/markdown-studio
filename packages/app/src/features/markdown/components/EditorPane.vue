@@ -28,7 +28,6 @@ interface Props {
   content: string
   documentPath?: null | string
   findState?: EditorWorkspaceFindState
-  lineCount: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -67,8 +66,9 @@ const localContent = computed({
   get: () => props.content,
   set: (value: string) => emit('update:content', value),
 })
+const documentLineCount = computed(() => Math.max(1, props.content.split('\n').length))
 const lineNumbers = computed(() =>
-  Array.from({ length: Math.max(1, props.lineCount) }, (_, index) => index + 1),
+  Array.from({ length: documentLineCount.value }, (_, index) => index + 1),
 )
 
 async function applyFormattingCommand(command: EditorFormattingCommand): Promise<void> {
@@ -550,7 +550,9 @@ watch(
   >
     <div class="pane-header">
       <span class="pane-label">Markdown</span>
-      <span class="line-count">{{ lineCount }} line{{ lineCount !== 1 ? 's' : '' }}</span>
+      <span class="line-count">
+        {{ documentLineCount }} line{{ documentLineCount !== 1 ? 's' : '' }}
+      </span>
     </div>
 
     <EditorFormattingToolbar @format="applyFormattingCommand" />
@@ -590,7 +592,10 @@ watch(
       <ol
         class="editor-line-numbers"
         aria-hidden="true"
-        :style="{ transform: `translateY(${-scrollTop}px)` }"
+        :style="{
+          '--editor-line-count': lineNumbers.length,
+          transform: `translateY(${-scrollTop}px)`,
+        }"
       >
         <li v-for="lineNumber in lineNumbers" :key="lineNumber">{{ lineNumber }}</li>
       </ol>
@@ -647,21 +652,25 @@ watch(
 }
 
 .editor-line-numbers {
+  --editor-line-height: 22.95px;
+  --editor-gutter-vertical-padding: 48px;
+
   position: absolute;
   z-index: 2;
   top: 0;
-  bottom: 0;
   left: 0;
   width: 48px;
+  height: calc(
+    var(--editor-line-height) * var(--editor-line-count) + var(--editor-gutter-vertical-padding)
+  );
   margin: 0;
   padding: 24px 10px 24px 0;
-  overflow: hidden;
   border-right: 1px solid var(--border);
   background: var(--panel);
   color: var(--text-faint);
   font-family: 'DM Mono', monospace;
   font-size: 11px;
-  line-height: 22.95px;
+  line-height: var(--editor-line-height);
   list-style: none;
   pointer-events: none;
   text-align: right;
@@ -669,7 +678,7 @@ watch(
 }
 
 .editor-line-numbers li {
-  min-height: 22.95px;
+  min-height: var(--editor-line-height);
 }
 
 .image-drop-overlay {
@@ -782,14 +791,16 @@ watch(
   }
 
   .editor-line-numbers {
+    --editor-line-height: 20.8px;
+    --editor-gutter-vertical-padding: 40px;
+
     width: 40px;
     padding-top: 16px;
     font-size: 10px;
-    line-height: 20.8px;
   }
 
   .editor-line-numbers li {
-    min-height: 20.8px;
+    min-height: var(--editor-line-height);
   }
 }
 </style>

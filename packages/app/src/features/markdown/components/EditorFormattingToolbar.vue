@@ -67,154 +67,176 @@ function handleHeadingChange(event: Event): void {
 
 <template>
   <div class="editor-formatting-toolbar" role="toolbar" aria-label="Editor formatting">
-    <div class="editor-formatting-toolbar__group" aria-label="History">
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Undo"
-        title="Undo"
-        type="button"
-        @mousedown.prevent
-        @click="emitHistory('undo')"
-      >
-        <Undo2 :size="18" :stroke-width="1.8" aria-hidden="true" />
-      </button>
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Redo"
-        title="Redo"
-        type="button"
-        @mousedown.prevent
-        @click="emitHistory('redo')"
-      >
-        <Redo2 :size="18" :stroke-width="1.8" aria-hidden="true" />
-      </button>
-    </div>
+    <div class="editor-formatting-toolbar__row">
+      <div class="editor-formatting-toolbar__scroll-area">
+        <div class="editor-formatting-toolbar__group" aria-label="History">
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Undo"
+            title="Undo"
+            type="button"
+            @mousedown.prevent
+            @click="emitHistory('undo')"
+          >
+            <Undo2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Redo"
+            title="Redo"
+            type="button"
+            @mousedown.prevent
+            @click="emitHistory('redo')"
+          >
+            <Redo2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+        </div>
 
-    <span class="editor-formatting-toolbar__divider" aria-hidden="true"></span>
+        <span class="editor-formatting-toolbar__divider" aria-hidden="true"></span>
 
-    <label class="editor-formatting-toolbar__heading">
-      <Heading1 :size="17" :stroke-width="1.8" aria-hidden="true" />
-      <select
-        aria-label="Set heading level"
-        title="Set heading level"
-        @change="handleHeadingChange"
-      >
-        <option value="">Text</option>
-        <option v-for="level in 6" :key="level" :value="level">H{{ level }}</option>
-      </select>
-    </label>
+        <label class="editor-formatting-toolbar__heading">
+          <Heading1 :size="17" :stroke-width="1.8" aria-hidden="true" />
+          <select
+            aria-label="Set heading level"
+            title="Set heading level"
+            @change="handleHeadingChange"
+          >
+            <option value="">Text</option>
+            <option v-for="level in 6" :key="level" :value="level">H{{ level }}</option>
+          </select>
+        </label>
 
-    <div class="editor-formatting-toolbar__group" aria-label="Text formatting">
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Bold"
-        title="Bold"
-        type="button"
-        @mousedown.prevent
-        @click="emitStyle('bold')"
-      >
-        <Bold :size="18" :stroke-width="2" aria-hidden="true" />
-      </button>
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Italic"
-        title="Italic"
-        type="button"
-        @mousedown.prevent
-        @click="emitStyle('italic')"
-      >
-        <Italic :size="18" :stroke-width="2" aria-hidden="true" />
-      </button>
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Insert link"
-        title="Insert link"
-        type="button"
-        @mousedown.prevent
-        @click="emitStyle('link')"
-      >
-        <Link2 :size="18" :stroke-width="1.8" aria-hidden="true" />
-      </button>
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Inline code"
-        title="Inline code"
-        type="button"
-        @mousedown.prevent
-        @click="emitStyle('inline-code')"
-      >
-        <Code2 :size="18" :stroke-width="1.8" aria-hidden="true" />
-      </button>
-      <button
-        class="editor-formatting-toolbar__button"
-        aria-label="Bulleted list"
-        title="Bulleted list"
-        type="button"
-        @mousedown.prevent
-        @click="emitBlock('bullet-list')"
-      >
-        <List :size="18" :stroke-width="1.8" aria-hidden="true" />
-      </button>
-    </div>
+        <div class="editor-formatting-toolbar__group" aria-label="Text formatting">
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Bold"
+            title="Bold"
+            type="button"
+            @mousedown.prevent
+            @click="emitStyle('bold')"
+          >
+            <Bold :size="18" :stroke-width="2" aria-hidden="true" />
+          </button>
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Italic"
+            title="Italic"
+            type="button"
+            @mousedown.prevent
+            @click="emitStyle('italic')"
+          >
+            <Italic :size="18" :stroke-width="2" aria-hidden="true" />
+          </button>
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Insert link"
+            title="Insert link"
+            type="button"
+            @mousedown.prevent
+            @click="emitStyle('link')"
+          >
+            <Link2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Inline code"
+            title="Inline code"
+            type="button"
+            @mousedown.prevent
+            @click="emitStyle('inline-code')"
+          >
+            <Code2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+          <button
+            class="editor-formatting-toolbar__button"
+            aria-label="Bulleted list"
+            title="Bulleted list"
+            type="button"
+            @mousedown.prevent
+            @click="emitBlock('bullet-list')"
+          >
+            <List :size="18" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+        </div>
 
-    <span class="editor-formatting-toolbar__divider" aria-hidden="true"></span>
+        <span class="editor-formatting-toolbar__divider" aria-hidden="true"></span>
+      </div>
 
-    <div class="editor-formatting-toolbar__more">
-      <button
-        class="editor-formatting-toolbar__button"
-        :aria-expanded="isMoreMenuOpen"
-        aria-label="More formatting"
-        aria-controls="editor-more-formatting"
-        title="More formatting"
-        type="button"
-        @mousedown.prevent
-        @click="isMoreMenuOpen = !isMoreMenuOpen"
-      >
-        <MoreHorizontal :size="19" :stroke-width="1.8" aria-hidden="true" />
-      </button>
-      <div
-        v-if="isMoreMenuOpen"
-        id="editor-more-formatting"
-        class="editor-formatting-toolbar__menu"
-      >
-        <button type="button" @mousedown.prevent @click="emitBlock('numbered-list')">
-          <ListOrdered :size="17" aria-hidden="true" />
-          <span>Numbered list</span>
-        </button>
-        <button type="button" @mousedown.prevent @click="emitBlock('blockquote')">
-          <Quote :size="17" aria-hidden="true" />
-          <span>Blockquote</span>
-        </button>
-        <button type="button" @mousedown.prevent @click="emitBlock('code-block')">
-          <Code2 :size="17" aria-hidden="true" />
-          <span>Code block</span>
-        </button>
-        <button type="button" @mousedown.prevent @click="emitBlock('horizontal-rule')">
-          <Minus :size="17" aria-hidden="true" />
-          <span>Horizontal rule</span>
+      <div class="editor-formatting-toolbar__more">
+        <button
+          class="editor-formatting-toolbar__button"
+          :aria-expanded="isMoreMenuOpen"
+          aria-label="More formatting"
+          aria-controls="editor-more-formatting"
+          title="More formatting"
+          type="button"
+          @mousedown.prevent
+          @click="isMoreMenuOpen = !isMoreMenuOpen"
+        >
+          <MoreHorizontal :size="19" :stroke-width="1.8" aria-hidden="true" />
         </button>
       </div>
+    </div>
+
+    <div
+      v-if="isMoreMenuOpen"
+      id="editor-more-formatting"
+      class="editor-formatting-toolbar__menu"
+      role="group"
+      aria-label="More formatting options"
+    >
+      <button type="button" @mousedown.prevent @click="emitBlock('numbered-list')">
+        <ListOrdered :size="17" aria-hidden="true" />
+        <span>Numbered list</span>
+      </button>
+      <button type="button" @mousedown.prevent @click="emitBlock('blockquote')">
+        <Quote :size="17" aria-hidden="true" />
+        <span>Blockquote</span>
+      </button>
+      <button type="button" @mousedown.prevent @click="emitBlock('code-block')">
+        <Code2 :size="17" aria-hidden="true" />
+        <span>Code block</span>
+      </button>
+      <button type="button" @mousedown.prevent @click="emitBlock('horizontal-rule')">
+        <Minus :size="17" aria-hidden="true" />
+        <span>Horizontal rule</span>
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .editor-formatting-toolbar {
-  position: relative;
   z-index: 4;
   display: flex;
-  min-height: 44px;
+  flex-direction: column;
   flex: 0 0 auto;
+  align-items: stretch;
+  overflow: visible;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.editor-formatting-toolbar__row {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+}
+
+.editor-formatting-toolbar__scroll-area {
+  display: flex;
+  min-width: 0;
+  flex: 1;
   align-items: center;
   gap: 7px;
   overflow-x: auto;
-  padding: 4px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
-.editor-formatting-toolbar::-webkit-scrollbar {
+.editor-formatting-toolbar__scroll-area::-webkit-scrollbar {
   display: none;
 }
 
@@ -292,32 +314,25 @@ function handleHeadingChange(event: Event): void {
 }
 
 .editor-formatting-toolbar__more {
-  position: relative;
   flex: 0 0 auto;
 }
 
 .editor-formatting-toolbar__menu {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% + 6px);
-  right: 0;
-  width: 190px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--raised-bg);
-  box-shadow: 0 10px 26px rgb(15 28 20 / 16%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 12px 8px;
 }
 
 .editor-formatting-toolbar__menu button {
   display: flex;
-  width: 100%;
+  width: auto;
   min-height: 36px;
   align-items: center;
   gap: 10px;
   padding: 0 9px;
-  border: 0;
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -331,7 +346,7 @@ function handleHeadingChange(event: Event): void {
 }
 
 @media (max-width: 700px) {
-  .editor-formatting-toolbar {
+  .editor-formatting-toolbar__row {
     min-height: 48px;
     gap: 5px;
     padding: 4px 8px;
