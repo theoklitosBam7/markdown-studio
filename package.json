@@ -55,7 +55,7 @@
     "@tsconfig/node24": "^24.0.5",
     "@types/node": "catalog:",
     "@types/semver": "^7.8.0",
-    "@vite-pwa/assets-generator": "^1.0.2",
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-vue": "catalog:",
     "@vue/tsconfig": "^0.9.1",
     "cypress": "^15.19.0",
