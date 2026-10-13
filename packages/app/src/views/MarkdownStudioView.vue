@@ -14,6 +14,7 @@ import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import TableDimensionPicker from '@/features/markdown/components/TableDimensionPicker.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
+import WorkspaceRail from '@/components/base/WorkspaceRail.vue'
 import { useCommandPalette } from '@/features/markdown/composables/useCommandPalette'
 import { useEditorWorkspaceCommands } from '@/features/markdown/composables/useEditorWorkspaceCommands'
 import { useEditorWorkspaceController } from '@/features/markdown/composables/useEditorWorkspaceController'
@@ -248,98 +249,114 @@ function handleTableInsertionConfirm(): void {
 
 <template>
   <div class="markdown-studio" :class="bodyClasses">
-    <Toolbar
-      :available-modes="availableModes"
-      :can-export-pdf="canExportPdf"
-      :can-open-documents="canOpenDocuments"
-      :can-install="canInstall"
-      :can-save-documents="canSaveDocuments"
-      :is-mobile="isMobile"
+    <a class="skip-link" href="#workspace-main">Skip to Editor Workspace</a>
+
+    <WorkspaceRail
+      v-if="!isMobile"
       :is-outline-open="isOutlineOpen"
-      :view-mode="viewMode"
-      :pdf-export-unavailable-reason="pdfExportUnavailableReason"
-      :theme="theme"
-      :is-copied="isCopied"
-      @install="handleInstall"
-      @open-document="workspace.document.open"
-      @update:view-mode="workspace.editor.setViewMode"
-      @update:theme="workspace.editor.setTheme"
-      @open-examples="workspace.examples.open"
-      @open-shortcuts="isShortcutsHelpOpen = true"
-      @clear="handleStartNewDocument"
-      @copy="workspace.toolbar.copy"
-      @insert-table="handleInsertTable"
-      @export-html="handleExportHtml"
-      @export-pdf="handleExportPdf"
-      @save-document="workspace.document.save"
+      @find="workspace.find.open"
       @toggle-outline="workspace.outline.toggle"
     />
 
-    <Transition name="banner-slide">
-      <UpdateBanner
-        v-if="showBanner"
-        :status="bannerStatus"
-        :current-version="updateInfo?.currentVersion"
-        :latest-version="updateInfo?.latestVersion"
-        :is-homebrew-install="isHomebrewInstall"
-        :homebrew-upgrade-command="homebrewUpgradeCommand"
-        @dismiss="workspace.toolbar.dismissUpdateBanner"
-        @download="workspace.toolbar.downloadUpdate"
+    <div class="workspace-shell">
+      <Toolbar
+        :available-modes="availableModes"
+        :can-export-pdf="canExportPdf"
+        :can-open-documents="canOpenDocuments"
+        :can-install="canInstall"
+        :can-save-documents="canSaveDocuments"
+        :document-name="displayName"
+        :is-mobile="isMobile"
+        :is-outline-open="isOutlineOpen"
+        :is-dirty="isDirty"
+        :view-mode="viewMode"
+        :pdf-export-unavailable-reason="pdfExportUnavailableReason"
+        :theme="theme"
+        :is-copied="isCopied"
+        @install="handleInstall"
+        @open-document="workspace.document.open"
+        @open-find="workspace.find.open"
+        @update:view-mode="workspace.editor.setViewMode"
+        @update:theme="workspace.editor.setTheme"
+        @open-examples="workspace.examples.open"
+        @open-shortcuts="isShortcutsHelpOpen = true"
+        @clear="handleStartNewDocument"
+        @copy="workspace.toolbar.copy"
+        @insert-table="handleInsertTable"
+        @export-html="handleExportHtml"
+        @export-pdf="handleExportPdf"
+        @save-document="workspace.document.save"
+        @toggle-outline="workspace.outline.toggle"
       />
-    </Transition>
 
-    <Transition name="banner-slide">
-      <PwaBanner
-        v-if="showPwaBanner"
-        :status="pwaBannerStatus"
-        @dismiss="workspace.toolbar.dismissPwaBanner"
-        @refresh="workspace.toolbar.updateApp"
-      />
-    </Transition>
-
-    <main
-      class="main-content"
-      :class="{ 'main-content--mobile-outline': isMobile && isOutlineOpen }"
-    >
-      <Transition name="outline-slide">
-        <OutlineSidebar
-          v-if="isOutlineOpen"
-          :active-heading-id="activeOutlineHeadingId"
-          :headings="outlineHeadings"
-          @navigate="workspace.outline.navigate"
+      <Transition name="banner-slide">
+        <UpdateBanner
+          v-if="showBanner"
+          :status="bannerStatus"
+          :current-version="updateInfo?.currentVersion"
+          :latest-version="updateInfo?.latestVersion"
+          :is-homebrew-install="isHomebrewInstall"
+          :homebrew-upgrade-command="homebrewUpgradeCommand"
+          @dismiss="workspace.toolbar.dismissUpdateBanner"
+          @download="workspace.toolbar.downloadUpdate"
         />
       </Transition>
-      <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
-      <EditorPane
-        ref="editorPane"
-        :content="content"
-        :document-path="currentPath"
-        :find-state="workspace.find.state.value"
-        :line-count="stats.lines"
-        @find-action="handleFindAction"
-        @scroll="handleEditorScroll"
-        @update:content="workspace.editor.updateContent"
-      />
-      <PreviewPane
-        ref="previewPane"
-        :document-path="currentPath"
-        :html="renderedHtml"
-        :source-map="sourceMap"
-        :theme="theme"
-        :word-count="stats.words"
-        @jump-to-offset="workspace.preview.jumpToOffset"
-        @render-diagrams="workspace.preview.renderDiagrams"
-        @replace-source-range="handleReplaceSourceRange"
-      />
-    </main>
 
-    <StatusBar
-      :chars="stats.chars"
-      :diagrams="stats.diagrams"
-      :document-name="displayName"
-      :is-dirty="isDirty"
-      :status="statusText"
-    />
+      <Transition name="banner-slide">
+        <PwaBanner
+          v-if="showPwaBanner"
+          :status="pwaBannerStatus"
+          @dismiss="workspace.toolbar.dismissPwaBanner"
+          @refresh="workspace.toolbar.updateApp"
+        />
+      </Transition>
+
+      <main
+        id="workspace-main"
+        tabindex="-1"
+        class="main-content"
+        :class="{ 'main-content--mobile-outline': isMobile && isOutlineOpen }"
+      >
+        <Transition name="outline-slide">
+          <OutlineSidebar
+            v-if="isOutlineOpen"
+            :active-heading-id="activeOutlineHeadingId"
+            :headings="outlineHeadings"
+            @navigate="workspace.outline.navigate"
+          />
+        </Transition>
+        <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
+        <EditorPane
+          ref="editorPane"
+          :content="content"
+          :document-path="currentPath"
+          :find-state="workspace.find.state.value"
+          :line-count="stats.lines"
+          @find-action="handleFindAction"
+          @scroll="handleEditorScroll"
+          @update:content="workspace.editor.updateContent"
+        />
+        <PreviewPane
+          ref="previewPane"
+          :document-path="currentPath"
+          :html="renderedHtml"
+          :source-map="sourceMap"
+          :theme="theme"
+          :word-count="stats.words"
+          @jump-to-offset="workspace.preview.jumpToOffset"
+          @render-diagrams="workspace.preview.renderDiagrams"
+          @replace-source-range="handleReplaceSourceRange"
+        />
+      </main>
+
+      <StatusBar
+        :chars="stats.chars"
+        :diagrams="stats.diagrams"
+        :document-name="displayName"
+        :is-dirty="isDirty"
+        :status="statusText"
+      />
+    </div>
 
     <ExamplesModal
       :is-open="isExamplesModalOpen"
@@ -389,13 +406,43 @@ function handleTableInsertionConfirm(): void {
 </template>
 
 <style scoped>
+.skip-link {
+  position: fixed;
+  z-index: 1001;
+  top: 10px;
+  left: 10px;
+  padding: 10px 14px;
+  transform: translateY(-150%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--raised-bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
 .markdown-studio {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  flex-direction: row;
+  min-width: 0;
   height: 100dvh;
   overflow: hidden;
+  background: var(--workspace-bg);
+}
+
+.workspace-shell {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--workspace-bg);
 }
 
 .main-content {
@@ -403,6 +450,15 @@ function handleTableInsertionConfirm(): void {
   display: flex;
   overflow: hidden;
   min-height: 0;
+  background: var(--workspace-bg);
+}
+
+.main-content :deep(.editor-body) {
+  background: var(--editor-bg);
+}
+
+.main-content :deep(.preview-scroll) {
+  background: var(--preview-bg);
 }
 
 /* View mode styles */
@@ -439,12 +495,16 @@ function handleTableInsertionConfirm(): void {
 
 .outline-slide-enter-to,
 .outline-slide-leave-from {
-  max-width: 260px;
+  max-width: 248px;
   opacity: 1;
   transform: translateX(0);
 }
 
 @media (max-width: 700px) {
+  .markdown-studio {
+    flex-direction: column;
+  }
+
   .main-content {
     flex-direction: column;
   }

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { nextTick } from 'vue'
+import { FolderOpen, Save, Trash2 } from '@lucide/vue'
 
 import MobileActionSheet from '../MobileActionSheet.vue'
 
@@ -21,9 +22,9 @@ describe('MobileActionSheet', () => {
       attachTo: container,
       props: {
         actions: [
-          { action: vi.fn(), icon: '📂', label: 'Open' },
-          { action: vi.fn(), icon: '💾', label: 'Save' },
-          { action: vi.fn(), icon: '🗑️', label: 'Delete', variant: 'danger' as const },
+          { action: vi.fn(), icon: FolderOpen, label: 'Open' },
+          { action: vi.fn(), icon: Save, label: 'Save' },
+          { action: vi.fn(), icon: Trash2, label: 'Delete', variant: 'danger' as const },
         ],
         isOpen: false,
         title: 'Test Actions',
@@ -56,14 +57,14 @@ describe('MobileActionSheet', () => {
     const actions = document.querySelectorAll('.mobile-action-sheet__action')
     expect(actions).toHaveLength(3)
 
-    expect(actions[0]?.textContent).toContain('📂')
     expect(actions[0]?.textContent).toContain('Open')
+    expect(actions[0]?.querySelector('svg.lucide')).not.toBeNull()
 
-    expect(actions[1]?.textContent).toContain('💾')
     expect(actions[1]?.textContent).toContain('Save')
+    expect(actions[1]?.querySelector('svg.lucide')).not.toBeNull()
 
-    expect(actions[2]?.textContent).toContain('🗑️')
     expect(actions[2]?.textContent).toContain('Delete')
+    expect(actions[2]?.querySelector('svg.lucide')).not.toBeNull()
     expect(actions[2]?.classList.contains('mobile-action-sheet__action--danger')).toBe(true)
   })
 
@@ -73,8 +74,8 @@ describe('MobileActionSheet', () => {
 
     mountSheet({
       actions: [
-        { action: openAction, icon: '📂', label: 'Open' },
-        { action: saveAction, icon: '💾', label: 'Save' },
+        { action: openAction, icon: FolderOpen, label: 'Open' },
+        { action: saveAction, icon: Save, label: 'Save' },
       ],
       isOpen: true,
     })

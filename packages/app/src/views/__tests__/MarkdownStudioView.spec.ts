@@ -124,6 +124,26 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('opens Find from the workspace rail', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+
+    await wrapper.get('button[aria-label="Find in document"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.find-replace-bar__input').exists()).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('provides a skip link to the Editor Workspace', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+
+    expect(wrapper.get('a.skip-link').attributes('href')).toBe('#workspace-main')
+    expect(wrapper.get('#workspace-main').element.tagName).toBe('MAIN')
+
+    wrapper.unmount()
+  })
+
   it('inserts a default table when the toolbar insert table button is clicked', async () => {
     const { wrapper } = await mountMarkdownStudioView()
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement

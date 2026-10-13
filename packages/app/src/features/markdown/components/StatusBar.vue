@@ -32,19 +32,20 @@ const props = withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .status-bar {
-  min-height: var(--status-h);
-  background: var(--accent);
+  min-height: 28px;
+  background: var(--surface);
   display: flex;
   align-items: center;
   padding: 0 var(--app-gutter);
   gap: 16px;
   flex-shrink: 0;
   overflow-x: auto;
+  border-top: 1px solid var(--border);
 }
 
 .status-item {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-muted);
   font-weight: 400;
   display: flex;
   align-items: center;
@@ -55,7 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #5fe8b8;
+  background: var(--accent-mid);
 }
 
 @media (max-width: 700px) {

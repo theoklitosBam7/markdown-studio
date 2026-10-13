@@ -356,6 +356,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@lucide/vue':
+        specifier: ^1.55.0
+        version: 1.55.0(vue@3.5.43(typescript@6.0.3))
       '@markdown-studio/desktop-contract':
         specifier: workspace:*
         version: link:../desktop-contract
@@ -1587,6 +1590,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lucide/vue@1.55.0':
+    resolution: {integrity: sha512-3lpuTiVGIMbG7vEVhcDnHvIu+ZkjXka7eOp9tIA9iDPu6GHpfqwykVyAb+LM1uYYVgSI9Myo4HGzTvVnTS2CyA==}
+    peerDependencies:
+      vue: '>=3.0.1'
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -7963,6 +7971,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  '@lucide/vue@1.55.0(vue@3.5.43(typescript@6.0.3))':
+    dependencies:
+      vue: 3.5.43(typescript@6.0.3)
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:

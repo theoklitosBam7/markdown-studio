@@ -1,5 +1,22 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 import { computed, shallowRef } from 'vue'
+import {
+  Copy,
+  Download,
+  FileDown,
+  FileText,
+  FolderOpen,
+  Grid2X2,
+  Keyboard,
+  Menu,
+  PanelLeft,
+  Save,
+  Search,
+  Table2,
+  Trash2,
+} from '@lucide/vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
 
@@ -16,7 +33,9 @@ interface Props {
   canInstall?: boolean
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
+  documentName?: string
   isCopied: boolean
+  isDirty?: boolean
   isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
   theme: Theme
@@ -29,6 +48,8 @@ const props = withDefaults(defineProps<Props>(), {
   canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
+  documentName: 'Untitled.md',
+  isDirty: false,
   isOutlineOpen: false,
   pdfExportUnavailableReason: '',
 })
@@ -42,6 +63,7 @@ const emit = defineEmits<{
   install: []
   openDocument: []
   openExamples: []
+  openFind: []
   openShortcuts: []
   saveDocument: []
   toggleOutline: []
@@ -56,7 +78,7 @@ const secondaryActions = computed(() => {
     action: () => void
     description?: string
     disabled?: boolean
-    icon: string
+    icon: 'github' | Component
     label: string
     variant?: 'danger' | 'default' | 'primary'
   }[] = []
@@ -64,7 +86,7 @@ const secondaryActions = computed(() => {
   if (props.canOpenDocuments) {
     actions.push({
       action: () => emit('openDocument'),
-      icon: '📂',
+      icon: FolderOpen,
       label: 'Open',
     })
   }
@@ -72,7 +94,7 @@ const secondaryActions = computed(() => {
   if (props.canSaveDocuments) {
     actions.push({
       action: () => emit('saveDocument'),
-      icon: '💾',
+      icon: Save,
       label: 'Save',
     })
   }
@@ -80,7 +102,7 @@ const secondaryActions = computed(() => {
   if (props.canInstall) {
     actions.push({
       action: () => emit('install'),
-      icon: '⬇️',
+      icon: Download,
       label: 'Install App',
       variant: 'primary',
     })
@@ -88,24 +110,29 @@ const secondaryActions = computed(() => {
 
   actions.push(
     {
+      action: () => emit('openFind'),
+      icon: Search,
+      label: 'Find in Document',
+    },
+    {
       action: () => emit('openExamples'),
-      icon: '✨',
+      icon: Grid2X2,
       label: 'Load Examples',
     },
     {
       action: () => emit('insertTable'),
-      icon: '▦',
+      icon: Table2,
       label: 'Insert Table',
     },
     {
       action: () => emit('copy'),
-      icon: '📋',
+      icon: Copy,
       label: props.isCopied ? 'Copied!' : 'Copy Markdown',
       variant: props.isCopied ? 'primary' : 'default',
     },
     {
       action: () => emit('clear'),
-      icon: '🗑️',
+      icon: Trash2,
       label: 'Clear Document',
       variant: 'danger',
     },
@@ -114,14 +141,14 @@ const secondaryActions = computed(() => {
   actions.push(
     {
       action: () => emit('exportHtml'),
-      icon: '📄',
+      icon: FileText,
       label: 'Export as HTML',
     },
     {
       action: () => emit('exportPdf'),
       description: props.canExportPdf ? undefined : props.pdfExportUnavailableReason,
       disabled: !props.canExportPdf,
-      icon: '📑',
+      icon: FileDown,
       label: 'Export as PDF',
     },
   )
@@ -129,14 +156,14 @@ const secondaryActions = computed(() => {
   // GitHub link - opens in new tab
   actions.push({
     action: () => window.open(GITHUB_REPO_URL, '_blank', 'noopener,noreferrer'),
-    icon: '🐙',
+    icon: 'github',
     label: 'View on GitHub',
     variant: 'primary',
   })
 
   actions.push({
     action: () => emit('openShortcuts'),
-    icon: '⌨️',
+    icon: Keyboard,
     label: 'Keyboard Shortcuts',
   })
 
@@ -169,17 +196,25 @@ function openActionSheet(): void {
         class="mobile-toolbar-actions__menu-btn"
         @click="openActionSheet"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 6h16" stroke-linecap="round" />
-          <path d="M4 12h16" stroke-linecap="round" />
-          <path d="M4 18h16" stroke-linecap="round" />
-        </svg>
+        <Menu :size="20" :stroke-width="1.8" aria-hidden="true" />
       </ToolbarButton>
 
-      <span class="mobile-toolbar-actions__brand">
-        <span class="brand-short">MD</span>
-        <span class="brand-full">Markdown <em>Studio</em></span>
-      </span>
+      <div class="mobile-toolbar-actions__identity">
+        <span class="mobile-toolbar-actions__brand">
+          <span class="brand-short">MD</span>
+          <span class="brand-full">Markdown Studio</span>
+        </span>
+        <span class="mobile-toolbar-actions__document" aria-live="polite">
+          <strong class="mobile-toolbar-actions__document-name">{{ props.documentName }}</strong>
+          <span
+            class="mobile-toolbar-actions__document-status"
+            :class="{ 'mobile-toolbar-actions__document-status--dirty': props.isDirty }"
+          >
+            <span class="mobile-toolbar-actions__document-dot" aria-hidden="true"></span>
+            {{ props.isDirty ? 'Unsaved' : 'Saved' }}
+          </span>
+        </span>
+      </div>
 
       <ThemeToggle compact :theme="theme" @toggle="handleThemeChange" />
     </div>
@@ -191,17 +226,7 @@ function openActionSheet(): void {
         :aria-pressed="props.isOutlineOpen"
         @click="emit('toggleOutline')"
       >
-        <svg
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          aria-hidden="true"
-        >
-          <rect x="2" y="2.5" width="12" height="11" rx="1.5" />
-          <path d="M6 2.5v11" />
-          <path d="M3.5 5h1M3.5 7.5h1M3.5 10h1" />
-        </svg>
+        <PanelLeft :size="20" :stroke-width="1.8" aria-hidden="true" />
       </ToolbarButton>
       <ViewToggle
         compact
@@ -225,7 +250,7 @@ function openActionSheet(): void {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px 16px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
@@ -242,30 +267,65 @@ function openActionSheet(): void {
   justify-content: center;
 }
 
+.mobile-toolbar-actions__identity {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .mobile-toolbar-actions__brand {
   display: flex;
   align-items: center;
-  font-family: 'Fraunces', serif;
-  font-weight: 300;
-  color: var(--accent);
+  color: var(--text);
   flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
 .brand-short {
   display: none;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
 }
 
 .brand-full {
-  font-size: 17px;
-  letter-spacing: -0.02em;
+  font-size: 13px;
 }
 
-.brand-full em {
-  font-style: italic;
-  font-weight: 300;
+.mobile-toolbar-actions__document {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.mobile-toolbar-actions__document-name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-toolbar-actions__document-status {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.mobile-toolbar-actions__document-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-mid);
+}
+
+.mobile-toolbar-actions__document-status--dirty .mobile-toolbar-actions__document-dot {
+  background: var(--brass);
 }
 
 .mobile-toolbar-actions__menu-btn {
@@ -292,6 +352,7 @@ function openActionSheet(): void {
 @media (max-width: 380px) {
   .brand-short {
     display: block;
+    font-size: 14px;
   }
 
   .brand-full {

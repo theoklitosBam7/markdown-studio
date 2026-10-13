@@ -1,5 +1,16 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import {
+  Copy,
+  Download,
+  FileDown,
+  FolderOpen,
+  Keyboard,
+  LayoutGrid,
+  Save,
+  Table2,
+  X,
+} from '@lucide/vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
 
@@ -17,7 +28,9 @@ interface Props {
   canInstall?: boolean
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
+  documentName?: string
   isCopied: boolean
+  isDirty?: boolean
   isMobile?: boolean
   isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
@@ -31,6 +44,8 @@ const props = withDefaults(defineProps<Props>(), {
   canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
+  documentName: 'Untitled.md',
+  isDirty: false,
   isMobile: false,
   isOutlineOpen: false,
   pdfExportUnavailableReason: '',
@@ -45,6 +60,7 @@ const emit = defineEmits<{
   install: []
   openDocument: []
   openExamples: []
+  openFind: []
   openShortcuts: []
   saveDocument: []
   toggleOutline: []
@@ -74,6 +90,10 @@ function openDocument(): void {
 
 function openExamples(): void {
   emit('openExamples')
+}
+
+function openFind(): void {
+  emit('openFind')
 }
 
 function openShortcuts(): void {
@@ -152,7 +172,9 @@ onUnmounted(() => {
       :can-install="props.canInstall"
       :can-open-documents="props.canOpenDocuments"
       :can-save-documents="props.canSaveDocuments"
+      :document-name="props.documentName"
       :is-copied="props.isCopied"
+      :is-dirty="props.isDirty"
       :is-outline-open="props.isOutlineOpen"
       :pdf-export-unavailable-reason="props.pdfExportUnavailableReason"
       :theme="props.theme"
@@ -164,6 +186,7 @@ onUnmounted(() => {
       @insert-table="insertTable"
       @install="install"
       @open-document="openDocument"
+      @open-find="openFind"
       @open-examples="openExamples"
       @open-shortcuts="openShortcuts"
       @save-document="saveDocument"
@@ -175,69 +198,54 @@ onUnmounted(() => {
     <template v-else>
       <div class="toolbar__top">
         <div class="toolbar__brand-group">
-          <span class="brand">Markdown <em>Studio</em></span>
-          <div class="divider" aria-hidden="true"></div>
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span class="brand">Markdown Studio</span>
+        </div>
+
+        <div class="toolbar__document" aria-live="polite">
+          <strong>{{ props.documentName }}</strong>
+          <span
+            class="toolbar__document-status"
+            :class="{ 'toolbar__document-status--dirty': props.isDirty }"
+          >
+            <span class="toolbar__document-dot" aria-hidden="true"></span>
+            {{ props.isDirty ? 'Unsaved changes' : 'Saved' }}
+          </span>
         </div>
 
         <div class="toolbar__actions" aria-label="Document actions">
           <ToolbarButton v-if="props.canInstall" variant="primary" @click="install">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M8 2.5v7" />
-              <path d="M5.5 7 8 9.5 10.5 7" />
-              <path d="M3 12.5h10" />
-            </svg>
+            <Download :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>Install</span>
           </ToolbarButton>
 
           <ToolbarButton v-if="props.canOpenDocuments" @click="openDocument">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M2 5.5l6-3 6 3M2 5.5V13h12V5.5" />
-              <path d="M6 8h4" />
-            </svg>
+            <FolderOpen :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>Open</span>
           </ToolbarButton>
 
           <ToolbarButton v-if="props.canSaveDocuments" @click="saveDocument">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M3 2.5h8l2 2V13a1 1 0 01-1 1H4a1 1 0 01-1-1v-9.5z" />
-              <path d="M5 2.5v4h5v-4" />
-              <path d="M5 11h6" />
-            </svg>
+            <Save :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>Save</span>
           </ToolbarButton>
 
           <ToolbarButton @click="openExamples">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="2" y="2" width="5" height="5" rx="1" />
-              <rect x="9" y="2" width="5" height="5" rx="1" />
-              <rect x="2" y="9" width="5" height="5" rx="1" />
-              <rect x="9" y="9" width="5" height="5" rx="1" />
-            </svg>
+            <LayoutGrid :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>Examples</span>
           </ToolbarButton>
 
           <ToolbarButton aria-label="Insert table" @click="insertTable">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="2" y="2" width="12" height="12" rx="1" />
-              <path d="M2 6h12" />
-              <path d="M6 6v8" />
-              <path d="M10 6v8" />
-            </svg>
+            <Table2 :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>Table</span>
           </ToolbarButton>
 
           <ToolbarButton @click="clear">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M3 3l10 10M13 3L3 13" />
-            </svg>
+            <X :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>Clear</span>
           </ToolbarButton>
 
           <ToolbarButton @click="copy">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="5" y="5" width="9" height="9" rx="1.5" />
-              <path d="M11 5V3a1 1 0 00-1-1H3a1 1 0 00-1 1v7a1 1 0 001 1h2" />
-            </svg>
+            <Copy :size="18" :stroke-width="1.8" aria-hidden="true" />
             <span>{{ isCopied ? 'Copied' : 'Copy MD' }}</span>
           </ToolbarButton>
 
@@ -248,11 +256,7 @@ onUnmounted(() => {
             @toggle="handleExportMenuToggle"
           >
             <summary class="toolbar-btn export-menu__trigger" aria-label="Export document">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M8 2.5v7" />
-                <path d="M5.5 7 8 9.5 10.5 7" />
-                <path d="M2.5 11.5h11" />
-              </svg>
+              <FileDown :size="18" :stroke-width="1.8" aria-hidden="true" />
               <span>Export</span>
             </summary>
 
@@ -296,25 +300,6 @@ onUnmounted(() => {
         </a>
 
         <div class="toolbar__desktop-controls">
-          <ToolbarButton
-            icon-only
-            :aria-label="props.isOutlineOpen ? 'Hide document outline' : 'Show document outline'"
-            :aria-pressed="props.isOutlineOpen"
-            :title="props.isOutlineOpen ? 'Hide document outline' : 'Show document outline'"
-            @click="toggleOutline"
-          >
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              aria-hidden="true"
-            >
-              <rect x="2" y="2.5" width="12" height="11" rx="1.5" />
-              <path d="M6 2.5v11" />
-              <path d="M3.5 5h1M3.5 7.5h1M3.5 10h1" />
-            </svg>
-          </ToolbarButton>
           <ViewToggle
             :available-modes="props.availableModes"
             :model-value="props.viewMode"
@@ -327,16 +312,7 @@ onUnmounted(() => {
             title="Keyboard shortcuts"
             @click="openShortcuts"
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">
-              <circle cx="8" cy="8" r="5.75" stroke-width="1.5" />
-              <path
-                d="M6.35 6.25a1.85 1.85 0 013.52.82c0 1.37-1.87 1.54-1.87 2.68"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.5"
-              />
-              <path d="M8 11.45h.01" stroke-linecap="round" stroke-width="2" />
-            </svg>
+            <Keyboard :size="18" :stroke-width="1.8" aria-hidden="true" />
           </ToolbarButton>
           <ThemeToggle :theme="props.theme" @toggle="handleThemeChange" />
         </div>
@@ -352,46 +328,89 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px var(--app-gutter);
+  padding: 10px 18px;
   flex-shrink: 0;
   z-index: 10;
 }
 
 .toolbar__top {
-  display: flex;
+  display: grid;
+  grid-template-areas: 'brand document github controls' 'actions actions actions actions';
+  grid-template-columns: auto minmax(100px, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px 18px;
   min-width: 0;
 }
 
 .toolbar__brand-group {
+  grid-area: brand;
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  gap: 8px;
+  gap: 9px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.06em;
 }
 
 .brand {
-  font-family: 'Fraunces', serif;
-  font-size: 17px;
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  color: var(--accent);
-  margin-right: 4px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
 }
 
-.brand em {
-  font-style: italic;
-  font-weight: 300;
+.toolbar__document {
+  grid-area: document;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
 }
 
-.divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
+.toolbar__document strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbar__document-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.toolbar__document-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-mid);
+}
+
+.toolbar__document-status--dirty .toolbar__document-dot {
+  background: var(--brass);
 }
 
 .toolbar__actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -411,12 +430,13 @@ onUnmounted(() => {
   }
 
   .toolbar__actions :deep(.toolbar-btn svg) {
-    width: 12px;
-    height: 12px;
+    width: 18px;
+    height: 18px;
   }
 }
 
 .toolbar__desktop-controls {
+  grid-area: controls;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -429,8 +449,8 @@ onUnmounted(() => {
 }
 
 .shortcuts-button.shortcuts-button :deep(svg) {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .export-menu {
@@ -446,8 +466,8 @@ onUnmounted(() => {
 }
 
 .export-menu__trigger {
-  height: 34px;
-  min-width: 34px;
+  height: 38px;
+  min-width: 38px;
   padding: 0 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -461,7 +481,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 5px;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .export-menu__trigger:hover,
@@ -472,8 +495,8 @@ onUnmounted(() => {
 }
 
 .export-menu__trigger svg {
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -531,8 +554,9 @@ onUnmounted(() => {
 }
 
 .github-link {
-  height: 34px;
-  min-width: 34px;
+  grid-area: github;
+  height: 38px;
+  min-width: 38px;
   padding: 0 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -546,7 +570,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 5px;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   text-decoration: none;
 }
 
@@ -557,8 +584,8 @@ onUnmounted(() => {
 }
 
 .github-link svg {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 

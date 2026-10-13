@@ -186,7 +186,7 @@ onUnmounted(() => {
   border-radius: 5px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
@@ -198,7 +198,7 @@ onUnmounted(() => {
 }
 
 .update-banner__copy-btn:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -214,7 +214,7 @@ onUnmounted(() => {
   border-radius: 5px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
@@ -226,7 +226,7 @@ onUnmounted(() => {
 }
 
 .update-banner__download-btn:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

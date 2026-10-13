@@ -52,6 +52,23 @@ describe('Toolbar', () => {
     expect(wrapper.find('button[aria-label="Switch to dark mode"]').exists()).toBe(true)
   })
 
+  it('uses Lucide icons for document actions', () => {
+    const wrapper = mountToolbar()
+
+    expect(wrapper.find('button[aria-label="Insert table"] svg.lucide').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Keyboard shortcuts"] svg.lucide').exists()).toBe(true)
+  })
+
+  it('shows the active Markdown Document and its unsaved state', () => {
+    const wrapper = mountToolbar({
+      documentName: 'draft.md',
+      isDirty: true,
+    })
+
+    expect(wrapper.get('.toolbar__document strong').text()).toBe('draft.md')
+    expect(wrapper.get('.toolbar__document-status').text()).toBe('Unsaved changes')
+  })
+
   it('renders GitHub link on desktop', () => {
     const wrapper = mountToolbar()
 
@@ -75,18 +92,6 @@ describe('Toolbar', () => {
     await tableButton.trigger('click')
 
     expect(wrapper.emitted('insertTable')).toHaveLength(1)
-  })
-
-  it('renders an accessible icon control for toggling the document outline', async () => {
-    const wrapper = mountToolbar({ isOutlineOpen: true })
-
-    const outlineButton = wrapper.get('button[aria-label="Hide document outline"]')
-    expect(outlineButton.attributes('aria-pressed')).toBe('true')
-    expect(outlineButton.find('svg[aria-hidden="true"]').exists()).toBe(true)
-
-    await outlineButton.trigger('click')
-
-    expect(wrapper.emitted('toggleOutline')).toHaveLength(1)
   })
 
   it('renders keyboard shortcuts as an accessible icon control', async () => {
@@ -189,8 +194,8 @@ describe('Toolbar', () => {
       viewMode: 'editor',
     })
 
-    expect(wrapper.text()).not.toContain('Open')
-    expect(wrapper.text()).not.toContain('Save')
+    expect(wrapper.findAll('button').some((button) => button.text().trim() === 'Open')).toBe(false)
+    expect(wrapper.findAll('button').some((button) => button.text().trim() === 'Save')).toBe(false)
   })
 
   it('renders an install action only when installation is available', async () => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
+import { Moon, Sun } from '@lucide/vue'
 
 import type { Theme } from '@/types/editor'
 
@@ -45,16 +46,26 @@ function toggle(): void {
     @click="toggle"
   >
     <span class="theme-toggle__halo"></span>
-    <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀</span>
-    <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">☾</span>
+    <Sun
+      class="theme-toggle__icon theme-toggle__icon--sun"
+      :size="18"
+      :stroke-width="1.8"
+      aria-hidden="true"
+    />
+    <Moon
+      class="theme-toggle__icon theme-toggle__icon--moon"
+      :size="18"
+      :stroke-width="1.8"
+      aria-hidden="true"
+    />
   </button>
 </template>
 
 <style scoped>
 .theme-toggle {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background:
@@ -100,8 +111,6 @@ function toggle(): void {
 
 .theme-toggle__icon {
   position: absolute;
-  font-size: 14px;
-  line-height: 1;
   transition:
     opacity 0.35s ease,
     transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
@@ -135,10 +144,6 @@ function toggle(): void {
   .theme-toggle {
     width: 44px;
     height: 44px;
-  }
-
-  .theme-toggle__icon {
-    font-size: 18px;
   }
 }
 </style>

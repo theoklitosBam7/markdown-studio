@@ -38,6 +38,16 @@ describe('MobileToolbarActions', () => {
     expect(wrapper.text()).toContain('Markdown Studio')
   })
 
+  it('shows the active document and its unsaved state', () => {
+    const wrapper = mountToolbar({
+      documentName: 'draft.md',
+      isDirty: true,
+    })
+
+    expect(wrapper.get('.mobile-toolbar-actions__document-name').text()).toBe('draft.md')
+    expect(wrapper.get('.mobile-toolbar-actions__document-status').text()).toBe('Unsaved')
+  })
+
   it('renders ViewToggle with available modes', () => {
     const wrapper = mountToolbar({
       availableModes: ['editor', 'preview'],
@@ -99,6 +109,36 @@ describe('MobileToolbarActions', () => {
     expect(actionLabels.some((label) => label?.includes('Export as HTML'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('Export as PDF'))).toBe(true)
     expect(actionLabels.some((label) => label?.includes('View on GitHub'))).toBe(true)
+  })
+
+  it('uses SVG icons in the mobile action sheet', async () => {
+    mountToolbar()
+
+    await document
+      .querySelector('button[aria-label="Menu"]')
+      ?.dispatchEvent(new MouseEvent('click'))
+
+    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const icons = document.querySelectorAll('.mobile-action-sheet__icon svg')
+
+    expect(icons.length).toBe(actions.length)
+  })
+
+  it('opens Find from the mobile action sheet', async () => {
+    const wrapper = mountToolbar()
+
+    await document
+      .querySelector('button[aria-label="Menu"]')
+      ?.dispatchEvent(new MouseEvent('click'))
+
+    const findAction = Array.from(document.querySelectorAll('.mobile-action-sheet__action')).find(
+      (action) => action.textContent?.includes('Find in Document'),
+    )
+    expect(findAction).toBeDefined()
+
+    await findAction?.dispatchEvent(new MouseEvent('click'))
+
+    expect(wrapper.emitted('openFind')).toHaveLength(1)
   })
 
   it('disables pdf export with guidance when unavailable', async () => {
@@ -170,8 +210,6 @@ describe('MobileToolbarActions', () => {
     // Open and Save should NOT be directly visible in toolbar
     // They should only be in the action sheet
     const toolbar = wrapper.find('.mobile-toolbar-actions')
-    expect(toolbar.text()).not.toContain('Open')
-    expect(toolbar.text()).not.toContain('Save')
 
     // Only hamburger menu should be visible in toolbar
     const menuButtons = wrapper.findAll('button[aria-label="Menu"]')

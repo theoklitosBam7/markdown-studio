@@ -11,6 +11,7 @@
     "test": "vp test run"
   },
   "dependencies": {
+    "@lucide/vue": "^1.55.0",
     "@markdown-studio/desktop-contract": "workspace:*",
     "dompurify": "^3.4.17",
     "marked": "^18.1.1",

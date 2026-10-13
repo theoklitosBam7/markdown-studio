@@ -103,7 +103,7 @@ const emit = defineEmits<{
   border-radius: 5px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;

@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 import { computed } from 'vue'
+import { BookOpen, Columns2, PanelLeft } from '@lucide/vue'
 
 import type { ViewMode } from '@/types/editor'
 
@@ -18,10 +21,10 @@ const emit = defineEmits<{
   'update:modelValue': [mode: ViewMode]
 }>()
 
-const allModes: { label: string; value: ViewMode }[] = [
-  { label: 'Editor', value: 'editor' },
-  { label: 'Split', value: 'split' },
-  { label: 'Preview', value: 'preview' },
+const allModes: { icon: Component; label: string; value: ViewMode }[] = [
+  { icon: PanelLeft, label: 'Editor', value: 'editor' },
+  { icon: Columns2, label: 'Split', value: 'split' },
+  { icon: BookOpen, label: 'Preview', value: 'preview' },
 ]
 
 const activeMode = computed({
@@ -43,10 +46,12 @@ function setMode(mode: ViewMode): void {
       :key="mode.value"
       :data-mode="mode.value"
       :class="{ active: activeMode === mode.value }"
+      :aria-pressed="activeMode === mode.value"
       type="button"
       @click="setMode(mode.value)"
     >
-      {{ mode.label }}
+      <component :is="mode.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
+      <span>{{ mode.label }}</span>
     </button>
   </div>
 </template>
@@ -64,7 +69,11 @@ function setMode(mode: ViewMode): void {
 }
 
 .view-toggle button {
-  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
   padding: 0 10px;
   border: none;
   background: transparent;
@@ -73,7 +82,9 @@ function setMode(mode: ViewMode): void {
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
 .view-toggle.compact button {
@@ -86,7 +97,7 @@ function setMode(mode: ViewMode): void {
 
 .view-toggle button.active {
   background: var(--accent);
-  color: white;
+  color: var(--accent-contrast);
 }
 
 .view-toggle button:not(.active):hover {
