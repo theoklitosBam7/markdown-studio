@@ -44,6 +44,11 @@ describe('EditorFormattingToolbar', () => {
       'true',
     )
     expect(wrapper.get('.editor-formatting-toolbar__menu').isVisible()).toBe(true)
+    expect(
+      wrapper
+        .get('.editor-formatting-toolbar__more')
+        .element.contains(wrapper.get('.editor-formatting-toolbar__menu').element),
+    ).toBe(true)
     await wrapper.get('.editor-formatting-toolbar__menu button').trigger('click')
 
     expect(wrapper.emitted('format')).toEqual([
@@ -51,6 +56,19 @@ describe('EditorFormattingToolbar', () => {
       [{ style: 'numbered-list', type: 'block' }],
     ])
 
+    wrapper.unmount()
+  })
+
+  it('closes the More formatting menu when clicking outside it', async () => {
+    const wrapper = mount(EditorFormattingToolbar, { attachTo: document.body })
+
+    await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+    expect(wrapper.get('.editor-formatting-toolbar__menu').isVisible()).toBe(true)
+
+    document.body.click()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.editor-formatting-toolbar__menu').exists()).toBe(false)
     wrapper.unmount()
   })
 })
