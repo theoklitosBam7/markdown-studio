@@ -9,8 +9,9 @@ interface PopupCapture {
   name: string
 }
 
-function openExportMenu(): void {
-  cy.get('.export-menu summary').click()
+function clickDocumentAction(ariaLabel: string): void {
+  cy.get('button[aria-label="Document actions"]').click()
+  cy.get(`button[aria-label="${ariaLabel}"]`).click()
 }
 
 function stubBrowserDownload(
@@ -208,8 +209,9 @@ describe('Markdown Studio responsive shell', () => {
   it('keeps split view on desktop and hides it on mobile', () => {
     cy.viewport(1280, 900)
     cy.visit('/')
-    cy.get('.toolbar__actions').contains('button', 'Open').should('be.visible')
-    cy.get('.toolbar__actions').contains('button', 'Save').should('be.visible')
+    cy.get('button[aria-label="Document actions"]').click()
+    cy.get('button[aria-label="Open document"]').should('be.visible')
+    cy.get('button[aria-label="Save document"]').should('be.visible')
     cy.get('.toolbar__desktop-controls').contains('button', 'Split').should('be.visible')
     cy.get('.editor-pane').should('be.visible')
     cy.get('.preview-pane').should('be.visible')
@@ -229,7 +231,7 @@ describe('Markdown Studio responsive shell', () => {
       },
     })
 
-    cy.get('.toolbar__actions').contains('button', 'Open').click()
+    clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Imported from Cypress')
     cy.get('.status-item--document').should('contain', 'web-notes.md')
@@ -246,7 +248,7 @@ describe('Markdown Studio responsive shell', () => {
       },
     })
 
-    cy.get('.toolbar__actions').contains('button', 'Open').click()
+    clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Loaded via fallback')
     cy.get('.status-item--document').should('contain', 'brave-delayed.md')
@@ -263,7 +265,7 @@ describe('Markdown Studio responsive shell', () => {
       },
     })
 
-    cy.get('.toolbar__actions').contains('button', 'Open').click()
+    clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Recovered from picker error')
     cy.get('.status-item--document').should('contain', 'picker-fallback.md')
@@ -282,7 +284,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Downloaded from web')
-    cy.get('.toolbar__actions').contains('button', 'Save').click()
+    clickDocumentAction('Save document')
 
     cy.wrap(null).then(() => {
       expect(downloads).to.have.length(1)
@@ -307,12 +309,12 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# First save')
-    cy.get('.toolbar__actions').contains('button', 'Save').click()
+    clickDocumentAction('Save document')
     cy.get('.status-item--document').should('contain', 'picked-from-browser.md')
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Second save')
-    cy.get('.toolbar__actions').contains('button', 'Save').click()
+    clickDocumentAction('Save document')
 
     cy.wrap(null).then(() => {
       expect(writes).to.deep.equal(['# First save', '# Second save'])
@@ -332,8 +334,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Exported as HTML')
-    openExportMenu()
-    cy.contains('.export-menu__item', 'Export HTML').click()
+    clickDocumentAction('Export HTML')
 
     cy.wrap(null).then(() => {
       expect(downloads).to.have.length(1)
@@ -360,8 +361,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Exported as PDF')
-    openExportMenu()
-    cy.contains('.export-menu__item', 'Export PDF').click()
+    clickDocumentAction('Export PDF')
 
     cy.wrap(null).then(() => {
       expect(popupCapture.locationHref).to.match(/^\/export\/print\?job=/)
@@ -457,14 +457,14 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.editor-pane').should('not.be.visible')
   })
 
-  it('closes the export menu when clicking outside of it', () => {
+  it('closes the document actions menu when clicking outside of it', () => {
     cy.viewport(1280, 900)
     cy.visit('/')
 
-    openExportMenu()
-    cy.get('.export-menu__popover').should('be.visible')
+    cy.get('button[aria-label="Document actions"]').click()
+    cy.get('#workspace-document-actions').should('be.visible')
 
     cy.get('textarea').click('topLeft')
-    cy.get('.export-menu__popover').should('not.be.visible')
+    cy.get('#workspace-document-actions').should('not.exist')
   })
 })

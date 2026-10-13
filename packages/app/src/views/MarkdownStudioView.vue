@@ -253,8 +253,23 @@ function handleTableInsertionConfirm(): void {
 
     <WorkspaceRail
       v-if="!isMobile"
+      :can-export-pdf="canExportPdf"
+      :can-install="canInstall"
+      :can-open-documents="canOpenDocuments"
+      :can-save-documents="canSaveDocuments"
+      :is-copied="isCopied"
       :is-outline-open="isOutlineOpen"
+      :pdf-export-unavailable-reason="pdfExportUnavailableReason"
+      @clear="handleStartNewDocument"
+      @copy="workspace.toolbar.copy"
+      @export-html="handleExportHtml"
+      @export-pdf="handleExportPdf"
       @find="workspace.find.open"
+      @insert-table="handleInsertTable"
+      @install="handleInstall"
+      @open-document="workspace.document.open"
+      @open-examples="workspace.examples.open"
+      @save-document="workspace.document.save"
       @toggle-outline="workspace.outline.toggle"
     />
 
