@@ -55,10 +55,12 @@ describe('getShortcutPlatform', () => {
   })
 
   it('returns "other" when navigator is undefined', () => {
-    const originalNavigator = globalThis.navigator
-    // @ts-expect-error — simulating non-browser environment
-    globalThis.navigator = undefined
-    expect(getShortcutPlatform()).toBe('other')
-    globalThis.navigator = originalNavigator
+    vi.stubGlobal('navigator', undefined)
+
+    try {
+      expect(getShortcutPlatform()).toBe('other')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

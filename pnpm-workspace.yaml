@@ -3,7 +3,7 @@ packages:
   - apps/*
 
 minimumReleaseAge: 1440 # 1 day, in minutes
-nodeVersionFile: .node-version
+nodeVersion: 24.21.0
 
 allowBuilds:
   cypress: true
@@ -16,15 +16,16 @@ allowBuilds:
 
 catalog:
   typescript: ~6.0.3
-  vite: npm:@voidzero-dev/vite-plus-core@0.2.9
-  vue-tsc: ^3.3.8
+  vite: npm:@voidzero-dev/vite-plus-core@1.1.0
+  vue-tsc: ^3.3.13
   '@types/node': ^24.13.2
-  '@vitejs/plugin-vue': ^6.0.8
+  '@vitejs/plugin-vue': ^6.0.10
   vite-plugin-vue-devtools: ^8.2.1
-  mermaid: ^11.16.0
-  vite-plus: 0.2.9
+  mermaid: ^12.1.0
+  vite-plus: 1.1.0
 overrides:
   vite: 'catalog:'
+  vitest: 5.0.3
 peerDependencyRules:
   allowAny:
     - vite
