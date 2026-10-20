@@ -66,7 +66,7 @@ const measurements = Object.fromEntries(cases.map(({ name }) => [name, []]))
 function runLint(variant) {
   writeFileSync(configPath, variant.config)
   const start = performance.now()
-  const result = spawnSync('vp', ['lint'], {
+  const result = spawnSync('vp', ['lint', '--ignore-pattern=.github/benchmarks/lint-plugins.mjs'], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 16 * 1024 * 1024,
