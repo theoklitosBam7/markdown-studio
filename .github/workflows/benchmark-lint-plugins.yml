@@ -1,0 +1,32 @@
+name: Temporary lint plugin benchmark
+
+on:
+  push:
+    branches:
+      - perf/benchmark-lint-plugins-20261020
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Compare lint plugin overhead
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version-file: .node-version
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
+
+      - name: Benchmark current config and disabled plugins
+        env:
+          BENCHMARK_ROUNDS: '5'
+        run: node .github/benchmarks/lint-plugins.mjs
