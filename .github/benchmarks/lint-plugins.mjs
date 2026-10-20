@@ -53,6 +53,20 @@ const cases = [
       "      'no-array-constructor': 'error',",
     ),
   },
+  {
+    name: 'without-both',
+    config: removePlugin(
+      removePlugin(
+        original,
+        "      'eslint-plugin-perfectionist',\n",
+        "      'perfectionist/sort-array-includes': [",
+        "      'typescript/ban-ts-comment': 'error',",
+      ),
+      "      'eslint-plugin-boundaries',\n",
+      "      'boundaries/dependencies': [",
+      "      'no-array-constructor': 'error',",
+    ),
+  },
 ]
 
 for (const variant of cases.slice(1)) {
