@@ -137,11 +137,13 @@ vpr dist:mac      # Create macOS distribution package (unsigned)
 
 ### Project language
 
-`CONTEXT.md` is the canonical project-language reference generated from domain review sessions. Use its terms when naming concepts, writing documentation, opening issues, and describing changes. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
+`GLOSSARY.md` is the canonical project-language reference. Use its terms when naming concepts, writing documentation, opening issues, and describing changes. For example, prefer **Shortcut** over "keybind" or "hotkey", **Editor Workspace** over "page", and **Live Preview** over "preview pane" when those concepts match the change.
+
+Architecture decisions live in [`docs/adr`](./docs/adr). Read the decision that covers a boundary before you change it. Coding conventions live in [`CODING_STANDARDS.md`](./CODING_STANDARDS.md), and the workflow rules live in [`AGENTS.md`](./AGENTS.md).
 
 ### Commit scopes and release notes
 
-Release notes group commits by Conventional Commit scope. The supported scopes and aliases are defined in `scripts/generate-release-notes.mjs`; prefer those scopes when writing commit subjects, especially while the project does not have commitlint enforcement.
+Release notes group commits by Conventional Commit scope. The `commit-msg` hook enforces the allowed scopes from `commitlint.config.ts`, and `scripts/generate-release-notes.mjs` maps them into release-note groups.
 
 Recommended examples:
 
@@ -150,7 +152,7 @@ Recommended examples:
 - `docs(docs): clarify release-note scopes`
 - `test(testing): cover shortcut dispatch rules`
 
-Avoid relying on aliases unless the mapping is intentional. For example, `markdown` currently normalizes to `preview`, so editor-workspace changes should usually use `editor` instead.
+The generator also normalizes alias scopes such as `app`, `markdown`, `electron`, and `workflows`. Those appear in older commits, and `commitlint` rejects them in new ones. When a change spans editing and preview, prefer `editor`, because `markdown` normalizes to `preview`.
 
 ### Labels
 
@@ -178,12 +180,14 @@ intentionally want to remove labels that are absent from `.github/labels.yml`.
 - **PWA install support** — Install as a standalone desktop-like app from supported browsers
 - **Auto-save drafts** — Web app automatically persists unsaved work to localStorage
 - **Offline ready** — Service worker caching enables continued use without an internet connection
+- **Document Folders** — Keep folders open in the desktop app and move between their Markdown files
 
 ### For Developers
 
 - **Safe HTML rendering** — Content is sanitized with DOMPurify
 - **File System Access API** — Open and save files directly in supported browsers
-- **Desktop file operations** — Full file management in the Electron app
+- **Desktop file operations** — Native open, save, and save as in the Electron app
+- **Constrained folder reads** — Every folder listing is resolved with `realpath` and confined to the folder the user opened
 - **Responsive design** — Works on desktop and mobile devices
 - **Keyboard shortcuts** — Efficient editing with familiar shortcuts
 - **Scroll synchronization** — Source map tracking enables editor-preview sync
@@ -246,7 +250,7 @@ The kitchen-sink example loads by default on first visit.
 
 **Desktop App:**
 
-- **Open** — Load existing `.md` files via native dialogs
+- **Open** — Load an existing `.md`, `.markdown`, `.mdown`, or `.txt` file from a native dialog
 - **Save** — Save your current document
 - **Save As** — Save with a new name or location
 - **Clear** — Start fresh with an empty editor
@@ -256,6 +260,20 @@ The kitchen-sink example loads by default on first visit.
 - **Open** — Load `.md` files using the File System Access API (Chrome/Edge) or file picker
 - **Save** — Save to previously opened file, or download if using the fallback
 - **Save As** — Save with a new name (uses File System Access API when available, otherwise downloads)
+
+### Browsing Document Folders
+
+The desktop app can keep folders open so you can move between files without the system dialog.
+
+1. Select **Add Folder…** in the Folders panel, from the File menu, or from the Command Palette.
+2. Expand a folder to list its Markdown files.
+3. Click a file to open it. The open document is highlighted in the tree.
+
+The panel remembers the folders you added between sessions. It lists files with the `.md`, `.markdown`, `.mdown`, and `.txt` extensions and hides dotfiles and `node_modules`.
+
+Move through the tree with the arrow keys, expand and collapse with Left and Right, and open a file with Enter. `Cmd+Shift+E` shows the folder panel and `Cmd+Shift+O` adds a folder. Removing a folder from the panel leaves the open document alone.
+
+If another program changes the open document, Markdown Studio reloads it when nothing is unsaved. When you have unsaved edits, it warns you instead, because saving would overwrite the other change.
 
 ## Development
 
@@ -276,11 +294,16 @@ apps/
 │   └── electron.vite.config.ts
 └── landing-page/          # Marketing site workspace
 
+docs/adr/                  # Architecture decision records
+cypress/                   # End-to-end tests for the Editor Workspace
+.agents/skills/            # Agent skills used in this repository
+.changeset/                # Pending release changesets
+
 packages/app/              # Shared Vue application package
 ├── src/
 │   ├── features/markdown/
-│   │   ├── components/    # UI components (EditorPane, PreviewPane, Toolbar, etc.)
-│   │   ├── composables/   # Business logic (useMarkdownEditor, useDocumentSession, useDocumentActions)
+│   │   ├── components/    # UI components (EditorPane, PreviewPane, Toolbar, FolderSidebar, etc.)
+│   │   ├── composables/   # Business logic (useMarkdownEditor, useDocumentSession, useDocumentFolders)
 │   │   └── types/         # TypeScript types for the markdown feature
 │   ├── components/        # Shared UI components (ThemeToggle, ViewToggle, Modal, ToolbarButton)
 │   ├── composables/       # Shared composables (useTheme, useThemeTransition, useDesktop)
@@ -330,6 +353,7 @@ vpr preview:desktop  # Preview Electron build
 
 # Testing
 vpr test:unit     # Run unit tests across the workspace
+vpr test:scripts  # Run the repository script tests
 vpr test:e2e:dev  # Run Cypress in dev mode
 vpr test:e2e      # Run Cypress against production build
 
@@ -339,6 +363,12 @@ vpr check         # Run formatting and lint checks
 vpr lint          # Lint code
 vpr format        # Format code and Markdown
 vpr format:check  # Check formatting without writing changes
+
+# Changesets
+vpr changeset:status          # Show the pending changesets
+vpr changeset:validate-scopes # Validate changeset package scopes
+vpr changeset:pre:enter       # Enter prerelease mode on the next tag
+vpr changeset:pre:exit        # Leave prerelease mode
 
 # Dependencies
 vp install            # Install dependencies (delegates to pnpm)
