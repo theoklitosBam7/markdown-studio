@@ -19,6 +19,10 @@ _Avoid_: launcher, quick actions
 The name or saved file path Markdown Studio uses to recognize a **Markdown Document** across editing, saving, restoring, and exporting.
 _Avoid_: display name, current path
 
+**Document Folder**:
+A directory a user opens in Markdown Studio so its **Markdown Documents** can be browsed and opened.
+_Avoid_: vault, project, library, workspace
+
 **Embedded Diagram**:
 A diagram authored inside a **Markdown Document** using a supported diagram syntax such as Mermaid.
 _Avoid_: SVG, chart
@@ -75,6 +79,10 @@ _Avoid_: route, layout
 - A **Markdown Document** can produce one or more **Rendered Markdown Documents**.
 - A **Markdown Document** may contain zero or more **Embedded Diagrams**.
 - An **Editor Workspace** has at most one active **Markdown Document**.
+- A **Document Folder** contains zero or more **Markdown Documents**.
+- An **Editor Workspace** can browse zero or more **Document Folders**.
+- Opening a **Markdown Document** from a **Document Folder** replaces the active **Markdown Document**.
+- A **Document Folder** can be browsed in the desktop **Runtime** only.
 - An **Editor Workspace** may restore a **Workspace Draft**.
 - An **Editor Workspace** can show a **Rendered Markdown Document** through the **Live Preview**.
 - Loading an **Example Document** replaces the active **Markdown Document** in the **Editor Workspace**.
