@@ -8,6 +8,8 @@ import { computed, type ComputedRef, reactive, readonly, ref, type Ref } from 'v
 
 import { useDesktop } from '@/composables/useDesktop'
 
+import type { DocumentFolderNode } from '../types'
+
 interface DocumentFolderView extends DesktopDocumentFolder {
   label: string
 }
@@ -22,6 +24,7 @@ interface UseDocumentFoldersReturn {
   folders: ComputedRef<DocumentFolderView[]>
   isAvailable: ComputedRef<boolean>
   message: Readonly<Ref<null | string>>
+  nodes: ComputedRef<DocumentFolderNode[]>
   open: (folderId: string, relativePath: string) => Promise<void>
   remove: (folderId: string) => Promise<void>
   restore: () => Promise<void>
@@ -39,6 +42,57 @@ export function useDocumentFolders(options: UseDocumentFoldersOptions): UseDocum
   const foldersApi = () => desktop.value.folders
   const isAvailable = computed(() => foldersApi() !== undefined)
   const folders = computed<DocumentFolderView[]>(() => toFolderViews(rootFolders.value))
+  const nodes = computed<DocumentFolderNode[]>(() => {
+    const flattened: DocumentFolderNode[] = []
+
+    for (const folder of folders.value) {
+      appendFolderNode(flattened, folder, folder.label, '.', 0)
+    }
+
+    return flattened
+  })
+
+  function appendFolderNode(
+    flattened: DocumentFolderNode[],
+    folder: DesktopDocumentFolder,
+    label: string,
+    relativePath: string,
+    depth: number,
+  ): void {
+    const key = toKey(folder.id, relativePath)
+    const isExpanded = expandedKeys.has(key)
+
+    flattened.push({
+      depth,
+      folderId: folder.id,
+      isExpanded,
+      key,
+      kind: 'folder',
+      label,
+      path: toNodePath(folder.path, relativePath),
+      relativePath,
+    })
+
+    if (!isExpanded) return
+
+    for (const entry of listings.get(key) ?? []) {
+      if (entry.kind === 'folder') {
+        appendFolderNode(flattened, folder, entry.name, entry.relativePath, depth + 1)
+        continue
+      }
+
+      flattened.push({
+        depth: depth + 1,
+        folderId: folder.id,
+        isExpanded: false,
+        key: toKey(folder.id, entry.relativePath),
+        kind: 'file',
+        label: entry.name,
+        path: toNodePath(folder.path, entry.relativePath),
+        relativePath: entry.relativePath,
+      })
+    }
+  }
 
   async function add(): Promise<void> {
     const api = foldersApi()
@@ -139,6 +193,7 @@ export function useDocumentFolders(options: UseDocumentFoldersOptions): UseDocum
     folders,
     isAvailable,
     message: readonly(message),
+    nodes,
     open,
     remove,
     restore,
@@ -179,4 +234,15 @@ function toFolderViews(folders: DesktopDocumentFolder[]): DocumentFolderView[] {
 
 function toKey(folderId: string, relativePath: string): string {
   return `${folderId}:${relativePath}`
+}
+
+// The renderer has no platform path helper, so reuse the separator the main process
+// already put in the Document Folder path.
+function toNodePath(folderPath: string, relativePath: string): string {
+  if (relativePath === '.') return folderPath
+
+  const separator = folderPath.includes('\\') ? '\\' : '/'
+  const rootPath = folderPath.replace(/[\\/]+$/, '')
+
+  return `${rootPath}${separator}${relativePath.split('/').join(separator)}`
 }

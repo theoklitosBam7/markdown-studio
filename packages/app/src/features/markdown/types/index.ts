@@ -6,6 +6,8 @@ export type {
   MarkdownSourceMapEntry,
 } from './common'
 
+export type { DocumentFolderNode, SidebarTab } from './folders'
+
 export type { Shortcut, ShortcutBinding, ShortcutId } from './shortcuts'
 
 export type {

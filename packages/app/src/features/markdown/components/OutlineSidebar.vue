@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import type { MarkdownOutlineHeading } from '../types'
+import type { MarkdownOutlineHeading, SidebarTab } from '../types'
+
+import SidebarTabs from './SidebarTabs.vue'
 
 interface Props {
   activeHeadingId?: null | string
+  folderTabAvailable?: boolean
   headings: MarkdownOutlineHeading[]
+  tab?: SidebarTab
 }
 
 withDefaults(defineProps<Props>(), {
   activeHeadingId: null,
+  folderTabAvailable: false,
+  tab: 'outline',
 })
 
 const emit = defineEmits<{
+  changeTab: [tab: SidebarTab]
   navigate: [offset: number]
 }>()
 
@@ -21,7 +28,10 @@ function headingStyle(depth: number): Record<string, string> {
 
 <template>
   <aside class="outline-sidebar">
-    <div class="outline-sidebar__header">Outline</div>
+    <div class="outline-sidebar__header">
+      <SidebarTabs v-if="folderTabAvailable" :active="tab" @change="emit('changeTab', $event)" />
+      <template v-else>Outline</template>
+    </div>
     <nav aria-label="Document outline" class="outline-sidebar__navigation">
       <p v-if="headings.length === 0" class="outline-sidebar__empty">No headings</p>
       <button
@@ -55,11 +65,17 @@ function headingStyle(depth: number): Record<string, string> {
   display: flex;
   align-items: center;
   padding: 0 18px;
+  gap: 8px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
   font-size: 12px;
   font-weight: 650;
   letter-spacing: -0.01em;
+}
+
+.outline-sidebar__header :deep(.sidebar-tabs) {
+  flex: 1;
+  padding: 6px 0;
 }
 
 .outline-sidebar__navigation {
