@@ -5,6 +5,7 @@ import MobileToolbarActions from '../MobileToolbarActions.vue'
 
 describe('MobileToolbarActions', () => {
   let container: HTMLDivElement
+  const mountedToolbars: { unmount: () => void }[] = []
 
   beforeEach(() => {
     container = document.createElement('div')
@@ -12,11 +13,15 @@ describe('MobileToolbarActions', () => {
   })
 
   afterEach(() => {
+    for (const wrapper of mountedToolbars.splice(0)) {
+      wrapper.unmount()
+    }
+
     document.body.innerHTML = ''
   })
 
   function mountToolbar(overrides: Record<string, unknown> = {}) {
-    return mount(MobileToolbarActions, {
+    const wrapper = mount(MobileToolbarActions, {
       attachTo: container,
       props: {
         availableModes: ['editor', 'preview'],
@@ -29,6 +34,9 @@ describe('MobileToolbarActions', () => {
         ...overrides,
       },
     })
+
+    mountedToolbars.push(wrapper)
+    return wrapper
   }
 
   function getMenuButton(): HTMLElement | null {

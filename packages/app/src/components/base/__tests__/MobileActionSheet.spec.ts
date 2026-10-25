@@ -7,6 +7,7 @@ import MobileActionSheet from '../MobileActionSheet.vue'
 
 describe('MobileActionSheet', () => {
   let container: HTMLDivElement
+  const mountedSheets: { unmount: () => void }[] = []
 
   beforeEach(() => {
     container = document.createElement('div')
@@ -14,11 +15,15 @@ describe('MobileActionSheet', () => {
   })
 
   afterEach(() => {
+    for (const wrapper of mountedSheets.splice(0)) {
+      wrapper.unmount()
+    }
+
     document.body.innerHTML = ''
   })
 
   function mountSheet(overrides: Record<string, unknown> = {}) {
-    return mount(MobileActionSheet, {
+    const wrapper = mount(MobileActionSheet, {
       attachTo: container,
       props: {
         groups: [
@@ -39,6 +44,9 @@ describe('MobileActionSheet', () => {
         ...overrides,
       },
     })
+
+    mountedSheets.push(wrapper)
+    return wrapper
   }
 
   function getActionButtons(): Element[] {
@@ -275,6 +283,25 @@ describe('MobileActionSheet', () => {
     await nextTick()
 
     expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+
+  it('leaves no pending close work after unmounting while closing', async () => {
+    vi.useFakeTimers()
+
+    try {
+      const wrapper = mountSheet({ isOpen: true })
+      await nextTick()
+      const pendingBeforeClose = vi.getTimerCount()
+
+      await getCancelButton()?.dispatchEvent(new MouseEvent('click'))
+      expect(vi.getTimerCount()).toBe(pendingBeforeClose + 1)
+
+      wrapper.unmount()
+
+      expect(vi.getTimerCount()).toBe(pendingBeforeClose)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('removes event listeners on unmount', async () => {

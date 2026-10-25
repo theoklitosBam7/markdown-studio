@@ -34,26 +34,26 @@ const isVisible = shallowRef(false)
 const isClosing = shallowRef(false)
 const backdropRef = useTemplateRef<HTMLElement>('backdrop')
 const sheetRef = useTemplateRef<HTMLElement>('sheet')
+let closeFallbackTimer: ReturnType<typeof setTimeout> | undefined
 let previouslyFocused: HTMLElement | null = null
 let touchStartY = 0
 let touchEndY = 0
 let savedOverflow = ''
 
+function clearCloseFallback(): void {
+  if (closeFallbackTimer !== undefined) {
+    clearTimeout(closeFallbackTimer)
+    closeFallbackTimer = undefined
+  }
+}
+
 function close(): void {
   isClosing.value = true
+  clearCloseFallback()
   // Fallback in case animationend doesn't fire (e.g. prefers-reduced-motion)
-  const fallbackTimer = setTimeout(handleAnimationEnd, 300)
-  const backdrop = backdropRef.value
-  if (backdrop) {
-    backdrop.addEventListener(
-      'animationend',
-      () => {
-        clearTimeout(fallbackTimer)
-        handleAnimationEnd()
-      },
-      { once: true },
-    )
-  }
+  closeFallbackTimer = setTimeout(handleAnimationEnd, 300)
+
+  backdropRef.value?.addEventListener('animationend', handleAnimationEnd, { once: true })
 }
 
 function getFocusableElements(): HTMLElement[] {
@@ -69,13 +69,17 @@ function handleAction(item: ActionItem, element: HTMLElement): void {
 }
 
 function handleAnimationEnd(): void {
-  if (isClosing.value) {
-    isVisible.value = false
-    isClosing.value = false
-    unlockBodyScroll()
-    restoreFocus()
-    emit('close')
+  clearCloseFallback()
+
+  if (!isClosing.value) {
+    return
   }
+
+  isVisible.value = false
+  isClosing.value = false
+  unlockBodyScroll()
+  restoreFocus()
+  emit('close')
 }
 
 function handleBackdropClick(event: MouseEvent): void {
@@ -181,6 +185,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  clearCloseFallback()
   document.removeEventListener('keydown', handleKeydown)
   unlockBodyScroll()
   restoreFocus()
