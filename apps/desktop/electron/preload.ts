@@ -2,6 +2,7 @@ import type { DesktopApi } from '@markdown-studio/desktop-contract/types'
 
 import {
   APP_COMMAND_CHANNEL,
+  DOCUMENTS_CHECK_MODIFICATION_CHANNEL,
   DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
   DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
@@ -11,7 +12,6 @@ import {
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL,
-  DOCUMENTS_STAT_MODIFICATION_CHANNEL,
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
@@ -44,6 +44,7 @@ function createDesktopApi(): DesktopApi {
       },
     },
     documents: {
+      checkModification: (input) => ipcRenderer.invoke(DOCUMENTS_CHECK_MODIFICATION_CHANNEL, input),
       clearLastOpened: () => ipcRenderer.invoke(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL),
       clearWorkspaceDraft: () => ipcRenderer.invoke(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL),
       open: () => ipcRenderer.invoke(DOCUMENTS_OPEN_CHANNEL),
@@ -54,7 +55,6 @@ function createDesktopApi(): DesktopApi {
       saveAs: (input) => ipcRenderer.invoke(DOCUMENTS_SAVE_AS_CHANNEL, input),
       saveWorkspaceDraft: (input) =>
         ipcRenderer.invoke(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL, input),
-      statModification: (path) => ipcRenderer.invoke(DOCUMENTS_STAT_MODIFICATION_CHANNEL, path),
     },
     editing: {
       insertText: (text) => ipcRenderer.invoke(EDITING_INSERT_TEXT_CHANNEL, text),

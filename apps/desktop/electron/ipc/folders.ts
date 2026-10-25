@@ -1,4 +1,5 @@
 import type {
+  DesktopDocumentCheck,
   DesktopDocumentFolder,
   DesktopDocumentFolderAddResult,
   DesktopDocumentFolderRestore,
@@ -27,6 +28,20 @@ export interface DocumentFolderRegistry {
 export interface DocumentFolderStore {
   readDocumentFolderPaths: () => Promise<string[]>
   writeDocumentFolderPaths: (paths: string[]) => Promise<void>
+}
+
+export async function checkDocumentModification(
+  documentPath: string,
+  modifiedAt: number,
+): Promise<DesktopDocumentCheck> {
+  const currentModifiedAt = await readDocumentModificationTime(documentPath)
+
+  if (currentModifiedAt === null) return { status: 'missing' }
+  if (currentModifiedAt === modifiedAt) return { status: 'unchanged' }
+
+  const document = await readDocumentByPath(documentPath)
+
+  return document ? { document, status: 'changed' } : { status: 'missing' }
 }
 
 export function createDocumentFolderRegistry(store: DocumentFolderStore): DocumentFolderRegistry {
@@ -112,10 +127,7 @@ export async function readDocumentFolderFile(
   relativePath: string,
 ): Promise<DesktopDocumentHandle | null> {
   try {
-    const documentPath = await resolveInsideDocumentFolder(documentFolder, relativePath)
-    const [content, stats] = await Promise.all([readFile(documentPath, 'utf8'), stat(documentPath)])
-
-    return { content, modifiedAt: stats.mtimeMs, path: documentPath }
+    return await readDocumentByPath(await resolveInsideDocumentFolder(documentFolder, relativePath))
   } catch {
     return null
   }
@@ -149,6 +161,16 @@ function isOpen(folders: Map<string, DesktopDocumentFolder>, folderPath: string)
 
 function joinRelativePath(parentRelativePath: string, name: string): string {
   return parentRelativePath === '.' ? name : `${parentRelativePath}/${name}`
+}
+
+async function readDocumentByPath(documentPath: string): Promise<DesktopDocumentHandle | null> {
+  try {
+    const [content, stats] = await Promise.all([readFile(documentPath, 'utf8'), stat(documentPath)])
+
+    return { content, modifiedAt: stats.mtimeMs, path: documentPath }
+  } catch {
+    return null
+  }
 }
 
 async function resolveEntryKind(

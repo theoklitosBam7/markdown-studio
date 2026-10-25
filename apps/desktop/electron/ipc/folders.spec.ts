@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vite-plus/test'
 
 import {
+  checkDocumentModification,
   createDocumentFolderRegistry,
   type DocumentFolderStore,
   listDocumentFolder,
@@ -21,6 +22,38 @@ afterEach(async () => {
       .splice(0)
       .map((directory) => rm(directory, { force: true, recursive: true })),
   )
+})
+
+describe('document modification check', () => {
+  it('reports an unchanged document', async () => {
+    const documentFolder = await createDocumentFolder()
+    const documentPath = join(documentFolder, 'notes.md')
+    await writeFile(documentPath, '# Notes')
+    const modifiedAt = await readDocumentModificationTime(documentPath)
+
+    expect(await checkDocumentModification(documentPath, modifiedAt ?? 0)).toEqual({
+      status: 'unchanged',
+    })
+  })
+
+  it('reports a changed document with its current content', async () => {
+    const documentFolder = await createDocumentFolder()
+    const documentPath = join(documentFolder, 'notes.md')
+    await writeFile(documentPath, '# Changed elsewhere')
+
+    const check = await checkDocumentModification(documentPath, 0)
+
+    expect(check.status).toBe('changed')
+    expect(check.status === 'changed' ? check.document.content : null).toBe('# Changed elsewhere')
+  })
+
+  it('reports a missing document instead of throwing', async () => {
+    const documentFolder = await createDocumentFolder()
+
+    expect(await checkDocumentModification(join(documentFolder, 'missing.md'), Date.now())).toEqual(
+      { status: 'missing' },
+    )
+  })
 })
 
 describe('document folder registry', () => {

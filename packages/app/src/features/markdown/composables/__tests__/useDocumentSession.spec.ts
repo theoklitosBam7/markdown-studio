@@ -1,4 +1,8 @@
-import type { DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
+import type {
+  DesktopDocumentCheck,
+  DesktopDocumentCheckInput,
+  DesktopDocumentHandle,
+} from '@markdown-studio/desktop-contract/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { nextTick, shallowRef } from 'vue'
 
@@ -12,6 +16,11 @@ const desktopMock = {
     onAppCommand: vi.fn(() => () => undefined),
   },
   documents: {
+    checkModification: vi.fn(
+      async (_input: DesktopDocumentCheckInput): Promise<DesktopDocumentCheck> => ({
+        status: 'unchanged',
+      }),
+    ),
     clearLastOpened: vi.fn(async () => undefined),
     clearWorkspaceDraft: vi.fn(async () => undefined),
     open: vi.fn(async () => ({ content: '# Loaded', modifiedAt: 0, path: '/tmp/loaded.md' })),
@@ -88,6 +97,85 @@ describe('useDocumentSession', () => {
     expect(session.isDirty.value).toBe(false)
     expect(session.canOpenDocuments.value).toBe(true)
     expect(session.canSaveDocuments.value).toBe(true)
+  })
+
+  it('opens a Markdown Document from a Document Folder after the discard-changes confirm', async () => {
+    const { content, session } = createSession()
+
+    await session.openDocumentHandle({
+      content: '# From folder',
+      modifiedAt: 42,
+      path: '/tmp/notes/from-folder.md',
+    })
+    await nextTick()
+
+    expect(window.confirm).not.toHaveBeenCalled()
+    expect(content.value).toBe('# From folder')
+    expect(session.currentPath.value).toBe('/tmp/notes/from-folder.md')
+    expect(session.isDirty.value).toBe(false)
+    expect(session.statusText.value).toBe('Opened from-folder.md')
+  })
+
+  it('asks before replacing unsaved work when a Document Folder file is opened', async () => {
+    window.confirm = vi.fn(() => false)
+    const { content, session } = createSession()
+    content.value = '# Unsaved'
+
+    await session.openDocumentHandle({
+      content: '# From folder',
+      modifiedAt: 42,
+      path: '/tmp/notes/from-folder.md',
+    })
+
+    expect(window.confirm).toHaveBeenCalledTimes(1)
+    expect(content.value).toBe('# Unsaved')
+  })
+
+  it('reloads a clean document that changed on disk', async () => {
+    desktopMock.documents.checkModification.mockResolvedValueOnce({
+      document: { content: '# Changed elsewhere', modifiedAt: 99, path: '/tmp/loaded.md' },
+      status: 'changed',
+    })
+    const { content, session } = createSession()
+    await session.openDocument()
+
+    await session.checkForDiskChanges()
+    await nextTick()
+
+    expect(content.value).toBe('# Changed elsewhere')
+    expect(session.isDirty.value).toBe(false)
+    expect(session.statusText.value).toBe('Reloaded from disk')
+  })
+
+  it('warns instead of reloading a dirty document that changed on disk', async () => {
+    desktopMock.documents.checkModification.mockResolvedValueOnce({
+      document: { content: '# Changed elsewhere', modifiedAt: 99, path: '/tmp/loaded.md' },
+      status: 'changed',
+    })
+    const { content, session } = createSession()
+    await session.openDocument()
+    content.value = '# My unsaved edit'
+
+    await session.checkForDiskChanges()
+    await nextTick()
+
+    expect(content.value).toBe('# My unsaved edit')
+    expect(session.isDirty.value).toBe(true)
+    expect(session.statusText.value).toBe(
+      'This file changed on disk. Saving will overwrite it. • Edited',
+    )
+  })
+
+  it('reports a document that no longer exists on disk', async () => {
+    desktopMock.documents.checkModification.mockResolvedValueOnce({ status: 'missing' })
+    const { content, session } = createSession()
+    await session.openDocument()
+
+    await session.checkForDiskChanges()
+    await nextTick()
+
+    expect(content.value).toBe('# Loaded')
+    expect(session.statusText.value).toBe('This file no longer exists on disk.')
   })
 
   it('restores the last opened desktop document as clean saved work', async () => {

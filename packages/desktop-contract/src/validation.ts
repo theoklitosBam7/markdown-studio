@@ -1,4 +1,5 @@
 import type {
+  DesktopDocumentCheckInput,
   DesktopExportInput,
   DesktopFolderListInput,
   DesktopSaveAsInput,
@@ -7,6 +8,20 @@ import type {
   DesktopWorkspaceDraft,
   DesktopWorkspaceDraftInput,
 } from './types'
+
+export function assertDocumentCheckInput(value: unknown): DesktopDocumentCheckInput {
+  assertObject(value, 'Document check payload must be an object.')
+  const input = value as Record<string, unknown>
+
+  if (typeof input.modifiedAt !== 'number' || Number.isNaN(input.modifiedAt)) {
+    throw new TypeError('A document modification time is required.')
+  }
+
+  return {
+    modifiedAt: input.modifiedAt,
+    path: assertNonEmptyPath(input.path),
+  }
+}
 
 export function assertDocumentFolderPaths(value: unknown): string[] {
   if (!Array.isArray(value)) {
@@ -41,10 +56,6 @@ export function assertExternalUrl(value: string): string {
   }
 
   return url.toString()
-}
-
-export function assertFilePath(value: unknown): string {
-  return assertNonEmptyPath(value)
 }
 
 export function assertFolderId(value: unknown): string {

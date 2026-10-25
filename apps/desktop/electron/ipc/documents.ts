@@ -5,6 +5,7 @@ import type {
 } from '@markdown-studio/desktop-contract/types'
 
 import {
+  DOCUMENTS_CHECK_MODIFICATION_CHANNEL,
   DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
   DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
@@ -14,7 +15,6 @@ import {
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL,
-  DOCUMENTS_STAT_MODIFICATION_CHANNEL,
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
@@ -26,10 +26,10 @@ import {
   SHELL_OPEN_EXTERNAL_CHANNEL,
 } from '@markdown-studio/desktop-contract/channels'
 import {
+  assertDocumentCheckInput,
   assertDocumentFolderPaths,
   assertExportInput,
   assertExternalUrl,
-  assertFilePath,
   assertFolderId,
   assertFolderListInput,
   assertSaveAsInput,
@@ -45,6 +45,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 import {
+  checkDocumentModification,
   createDocumentFolderRegistry,
   type DocumentFolderRegistry,
   type DocumentFolderStore,
@@ -186,7 +187,7 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.removeHandler(DOCUMENTS_SAVE_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_AS_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL)
-  ipcMain.removeHandler(DOCUMENTS_STAT_MODIFICATION_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
   ipcMain.removeHandler(EDITING_INSERT_TEXT_CHANNEL)
   ipcMain.removeHandler(EXPORTS_HTML_CHANNEL)
   ipcMain.removeHandler(EXPORTS_PDF_CHANNEL)
@@ -216,9 +217,11 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.handle(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL, async (_, payload) =>
     saveWorkspaceDraft(payload),
   )
-  ipcMain.handle(DOCUMENTS_STAT_MODIFICATION_CHANNEL, async (_, path) =>
-    readDocumentModificationTime(assertFilePath(path)),
-  )
+  ipcMain.handle(DOCUMENTS_CHECK_MODIFICATION_CHANNEL, async (_, payload) => {
+    const input = assertDocumentCheckInput(payload)
+
+    return checkDocumentModification(input.path, input.modifiedAt)
+  })
   ipcMain.handle(EDITING_INSERT_TEXT_CHANNEL, async (_, text) => {
     await mainWindow.webContents.insertText(String(text))
   })

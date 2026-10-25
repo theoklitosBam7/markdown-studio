@@ -24,6 +24,16 @@ export interface DesktopCommandsApi {
   onAppCommand: (listener: (command: AppCommand) => void) => () => void
 }
 
+export type DesktopDocumentCheck =
+  | { document: DesktopDocumentHandle; status: 'changed' }
+  | { status: 'missing' }
+  | { status: 'unchanged' }
+
+export interface DesktopDocumentCheckInput {
+  modifiedAt: number
+  path: string
+}
+
 export interface DesktopDocumentFolder {
   id: string
   name: string
@@ -46,6 +56,7 @@ export interface DesktopDocumentHandle {
 }
 
 export interface DesktopDocumentsApi {
+  checkModification?: (input: DesktopDocumentCheckInput) => Promise<DesktopDocumentCheck>
   clearLastOpened: () => Promise<void>
   clearWorkspaceDraft: () => Promise<void>
   open: () => Promise<DesktopDocumentHandle | null>
@@ -55,7 +66,6 @@ export interface DesktopDocumentsApi {
   save: (input: DesktopSaveInput) => Promise<{ path: string } | null>
   saveAs: (input: DesktopSaveAsInput) => Promise<{ path: string } | null>
   saveWorkspaceDraft: (input: DesktopWorkspaceDraftInput) => Promise<void>
-  statModification?: (path: string) => Promise<null | number>
 }
 
 export interface DesktopEditingApi {

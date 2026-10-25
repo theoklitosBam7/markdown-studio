@@ -194,6 +194,7 @@ describe('useDocumentActions', () => {
 
     await expect(openPromise).resolves.toEqual({
       content: '# Loaded from fallback',
+      modifiedAt: 0,
       path: 'fallback.md',
     })
     expect(clickSpy).toHaveBeenCalled()
@@ -225,6 +226,7 @@ describe('useDocumentActions', () => {
 
     await expect(actions.open()).resolves.toEqual({
       content: '# Fallback file',
+      modifiedAt: 0,
       path: 'fallback-from-picker.md',
     })
     expect(clickSpy).toHaveBeenCalled()
@@ -255,6 +257,7 @@ describe('useDocumentActions', () => {
 
     await expect(actions.open()).resolves.toEqual({
       content: '# Loaded',
+      modifiedAt: 0,
       path: 'loaded.md',
     })
 

@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  assertDocumentCheckInput,
   assertDocumentFolderPaths,
   assertExportInput,
   assertExternalUrl,
@@ -90,6 +91,19 @@ describe('desktop validation', () => {
     expect(() =>
       assertFolderListInput({ folderId: 'folder-1', relativePath: '../outside' }),
     ).toThrow('A relative path is required')
+  })
+
+  it('accepts a document modification check payload', () => {
+    expect(assertDocumentCheckInput({ modifiedAt: 1717000000000, path: '/tmp/notes.md' })).toEqual({
+      modifiedAt: 1717000000000,
+      path: '/tmp/notes.md',
+    })
+  })
+
+  it('rejects a document modification check payload without a modification time', () => {
+    expect(() => assertDocumentCheckInput({ path: '/tmp/notes.md' })).toThrow(
+      'A document modification time is required.',
+    )
   })
 
   it('accepts a persisted Document Folder path list', () => {
