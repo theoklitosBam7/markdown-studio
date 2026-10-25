@@ -24,6 +24,8 @@ export function buildAppMenu(mainWindow: BrowserWindow): Menu {
       label: 'File',
       submenu: [
         createCommandMenuItem(mainWindow, 'Open…', 'CmdOrCtrl+O', 'document:open'),
+        createCommandMenuItem(mainWindow, 'Add Folder…', 'CmdOrCtrl+Shift+O', 'folder:add'),
+        createCommandMenuItem(mainWindow, 'Refresh Folders', '', 'folder:refresh'),
         createCommandMenuItem(mainWindow, 'Save', 'CmdOrCtrl+S', 'document:save'),
         createCommandMenuItem(mainWindow, 'Save As…', 'CmdOrCtrl+Shift+S', 'document:saveAs'),
         { type: 'separator' },

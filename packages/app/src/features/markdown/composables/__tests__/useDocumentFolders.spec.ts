@@ -181,6 +181,32 @@ describe('useDocumentFolders', () => {
     expect(folders.nodes.value[1]?.path).toBe('/tmp/notes/notes.md')
   })
 
+  it('refreshes the folders the user has open', async () => {
+    let entries: DesktopFolderEntry[] = [
+      { kind: 'file', name: 'notes.md', relativePath: 'notes.md' },
+    ]
+    const { desktop } = createDesktopMock({
+      list: async () => ({ entries, ok: true }),
+      restore: async () => ({
+        folders: [createFolder('folder-1', 'root', '/tmp/root')],
+        removedCount: 0,
+      }),
+    })
+    appWindow.desktop = desktop
+
+    const folders = useDocumentFolders({ openDocument: vi.fn() })
+    await folders.restore()
+    await folders.toggle('folder-1', '.')
+    entries = [...entries, { kind: 'file', name: 'later.md', relativePath: 'later.md' }]
+
+    await folders.refresh()
+
+    expect(folders.entriesOf('folder-1', '.').map((entry) => entry.name)).toEqual([
+      'notes.md',
+      'later.md',
+    ])
+  })
+
   it('opens a Markdown Document through the supplied callback', async () => {
     const opened: DesktopDocumentHandle = {
       content: '# Notes',

@@ -1,4 +1,4 @@
-import type { AppCommand } from '@markdown-studio/desktop-contract/types'
+import type { AppCommand, DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
 
 import { computed, nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 
@@ -9,7 +9,7 @@ import { usePwa } from '@/composables/usePwa'
 import { useThemeTransition } from '@/composables/useThemeTransition'
 import { useUpdateChecker } from '@/composables/useUpdateChecker'
 
-import type { Example } from '../types'
+import type { DocumentFolderNode, Example, SidebarTab } from '../types'
 import type {
   EditorPaneAdapter,
   EditorScrollPayload,
@@ -22,6 +22,7 @@ import { extractHeadings } from '../rendered-document'
 import { EXAMPLES } from './examples'
 import { useDesktopDraftPersistence } from './useDesktopDraftPersistence'
 import { useDocumentExport } from './useDocumentExport'
+import { useDocumentFolders } from './useDocumentFolders'
 import { useDocumentSession } from './useDocumentSession'
 import { useFindReplace } from './useFindReplace'
 import { useMarkdownEditor } from './useMarkdownEditor'
@@ -67,6 +68,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   const {
     canOpenDocuments,
     canSaveDocuments,
+    checkForDiskChanges,
     currentPath,
     displayName,
     handleAppCommand,
@@ -74,6 +76,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     isDirty,
     loadExampleDocument,
     openDocument,
+    openDocumentHandle,
     restoreDraft,
     restoreLastOpenedDocument,
     restoreWorkspaceDraft: restoreDocumentWorkspaceDraft,
@@ -111,6 +114,21 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   } = useFindReplace({
     content,
   })
+  const {
+    add: addFolder,
+    folders: documentFolders,
+    isAvailable: isFolderBrowserAvailable,
+    message: folderMessage,
+    nodes: folderNodes,
+    open: openFolderFile,
+    refresh: refreshFolders,
+    remove: removeFolder,
+    restore: restoreFolders,
+    toggle: toggleFolder,
+  } = useDocumentFolders({
+    openDocument: openDocumentFromFolder,
+  })
+  const sidebarTab = shallowRef<SidebarTab>('outline')
   const { transitionTheme } = useThemeTransition()
   const {
     checkNow,
@@ -261,6 +279,45 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     return contentValue.length
   }
 
+  async function openDocumentFromFolder(handle: DesktopDocumentHandle): Promise<void> {
+    await performDocumentAction(async () => {
+      await openDocumentHandle(handle)
+    })
+  }
+
+  async function addDocumentFolder(): Promise<void> {
+    await addFolder()
+
+    if (documentFolders.value.length > 0) {
+      showFolders()
+    }
+  }
+
+  async function openFolderDocument(node: DocumentFolderNode): Promise<void> {
+    await openFolderFile(node.folderId, node.relativePath)
+  }
+
+  async function toggleFolderNode(node: DocumentFolderNode): Promise<void> {
+    await toggleFolder(node.folderId, node.relativePath)
+  }
+
+  function changeSidebarTab(tab: SidebarTab): void {
+    sidebarTab.value = tab
+    isOutlineOpen.value = true
+  }
+
+  function showFolders(): void {
+    changeSidebarTab('folders')
+  }
+
+  async function restoreDocumentFolders(): Promise<void> {
+    await restoreFolders()
+
+    if (documentFolders.value.length > 0 && !isMobile.value) {
+      changeSidebarTab('folders')
+    }
+  }
+
   async function handleDesktopCommand(command: AppCommand): Promise<void> {
     switch (command) {
       case 'document:exportHtml':
@@ -276,6 +333,12 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
         return
       case 'editor:replace':
         openReplacePanel()
+        return
+      case 'folder:add':
+        await addDocumentFolder()
+        return
+      case 'folder:refresh':
+        await refreshFolders()
         return
       case 'update:check':
         await checkNow()
@@ -465,9 +528,11 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
     try {
       window.addEventListener('resize', handleWindowResize)
+      window.addEventListener('focus', handleWindowFocus)
       startUpdateChecks()
       syncViewport(window.innerWidth, window.innerHeight)
       await restoreWorkspaceDraft()
+      await restoreDocumentFolders()
 
       const onAppCommand = desktop.value?.commands?.onAppCommand
       if (onAppCommand) {
@@ -481,6 +546,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       }
     } catch (error) {
       window.removeEventListener('resize', handleWindowResize)
+      window.removeEventListener('focus', handleWindowFocus)
       removeDesktopCommandListener()
       removeDesktopCommandListener = () => undefined
       stopUpdateChecks()
@@ -498,11 +564,16 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
 
     if (typeof window !== 'undefined') {
       window.removeEventListener('resize', handleWindowResize)
+      window.removeEventListener('focus', handleWindowFocus)
     }
 
     removeDesktopCommandListener()
     removeDesktopCommandListener = () => undefined
     stopUpdateChecks()
+  }
+
+  function handleWindowFocus(): void {
+    void checkForDiskChanges()
   }
 
   function handleWindowResize(): void {
@@ -625,6 +696,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       setReplaceText,
       state: findState,
     },
+    folders: {
+      add: addDocumentFolder,
+      changeTab: changeSidebarTab,
+      open: openFolderDocument,
+      refresh: refreshFolders,
+      remove: removeFolder,
+      toggle: toggleFolderNode,
+    },
     outline: {
       navigate: navigateFromOutline,
       toggle: toggleOutline,
@@ -649,11 +728,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       content,
       currentPath,
       displayName,
+      folderMessage,
+      folderNodes,
       homebrewUpgradeCommand,
       isCopied,
       isDesktop,
       isDirty,
       isExamplesModalOpen,
+      isFolderBrowserAvailable,
       isHomebrewInstall: isHomebrewInstallRef,
       isMobile,
       isOutlineOpen,
@@ -664,6 +746,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       renderedHtml,
       showBanner,
       showPwaBanner,
+      sidebarTab,
       sourceMap,
       stats,
       statusText,

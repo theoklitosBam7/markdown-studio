@@ -6,6 +6,7 @@ import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/t
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
+import FolderSidebar from '@/features/markdown/components/FolderSidebar.vue'
 import OutlineSidebar from '@/features/markdown/components/OutlineSidebar.vue'
 import PreviewPane from '@/features/markdown/components/PreviewPane.vue'
 import PwaBanner from '@/features/markdown/components/PwaBanner.vue'
@@ -95,10 +96,13 @@ const {
   content,
   currentPath,
   displayName,
+  folderMessage,
+  folderNodes,
   homebrewUpgradeCommand,
   isCopied,
   isDirty,
   isExamplesModalOpen,
+  isFolderBrowserAvailable,
   isHomebrewInstall,
   isMobile,
   isOutlineOpen,
@@ -108,6 +112,7 @@ const {
   renderedHtml,
   showBanner,
   showPwaBanner,
+  sidebarTab,
   sourceMap,
   stats,
   statusText,
@@ -333,10 +338,27 @@ function handleTableInsertionConfirm(): void {
         :class="{ 'main-content--mobile-outline': isMobile && isOutlineOpen }"
       >
         <Transition name="outline-slide">
+          <FolderSidebar
+            v-if="isOutlineOpen && isFolderBrowserAvailable && sidebarTab === 'folders'"
+            key="folders"
+            :active-path="currentPath"
+            :message="folderMessage"
+            :nodes="folderNodes"
+            tab="folders"
+            @add="workspace.folders.add"
+            @change-tab="workspace.folders.changeTab"
+            @open="workspace.folders.open"
+            @remove="workspace.folders.remove"
+            @toggle="workspace.folders.toggle"
+          />
           <OutlineSidebar
-            v-if="isOutlineOpen"
+            v-else-if="isOutlineOpen"
+            key="outline"
             :active-heading-id="activeOutlineHeadingId"
+            :folder-tab-available="isFolderBrowserAvailable"
             :headings="outlineHeadings"
+            tab="outline"
+            @change-tab="workspace.folders.changeTab"
             @navigate="workspace.outline.navigate"
           />
         </Transition>

@@ -6,6 +6,8 @@ export type AppCommand =
   | 'document:saveAs'
   | 'editor:find'
   | 'editor:replace'
+  | 'folder:add'
+  | 'folder:refresh'
   | 'update:check'
 
 export interface DesktopApi {

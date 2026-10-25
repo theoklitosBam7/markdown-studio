@@ -26,6 +26,7 @@ interface UseDocumentFoldersReturn {
   message: Readonly<Ref<null | string>>
   nodes: ComputedRef<DocumentFolderNode[]>
   open: (folderId: string, relativePath: string) => Promise<void>
+  refresh: () => Promise<void>
   remove: (folderId: string) => Promise<void>
   restore: () => Promise<void>
   toggle: (folderId: string, relativePath: string) => Promise<void>
@@ -144,6 +145,14 @@ export function useDocumentFolders(options: UseDocumentFoldersOptions): UseDocum
     await loadListing(folderId, relativePath)
   }
 
+  async function refresh(): Promise<void> {
+    for (const key of expandedKeys) {
+      const separatorIndex = key.indexOf(':')
+
+      await loadListing(key.slice(0, separatorIndex), key.slice(separatorIndex + 1))
+    }
+  }
+
   async function open(folderId: string, relativePath: string): Promise<void> {
     if (!foldersApi()) return
 
@@ -195,6 +204,7 @@ export function useDocumentFolders(options: UseDocumentFoldersOptions): UseDocum
     message: readonly(message),
     nodes,
     open,
+    refresh,
     remove,
     restore,
     toggle,

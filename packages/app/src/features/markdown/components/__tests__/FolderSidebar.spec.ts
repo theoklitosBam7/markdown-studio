@@ -40,7 +40,6 @@ function mountSidebar(overrides: Record<string, unknown> = {}) {
     attachTo: document.body,
     props: {
       activePath: null,
-      isAvailable: true,
       message: null,
       nodes: [rootNode, fileNode],
       tab: 'folders',

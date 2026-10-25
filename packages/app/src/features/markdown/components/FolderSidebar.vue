@@ -5,7 +5,6 @@ import SidebarTabs from './SidebarTabs.vue'
 
 interface Props {
   activePath?: null | string
-  isAvailable: boolean
   message?: null | string
   nodes: DocumentFolderNode[]
   tab: SidebarTab

@@ -15,6 +15,7 @@ Markdown Studio is a split-pane Markdown editor that lets you write on one side 
 - Built-in diagram support via Mermaid
 - Dark and light themes
 - File management (open, save, save as)
+- Document Folder browsing in the desktop app
 - Example templates to get you started
 - Available as a web app, desktop application, or installable PWA
 
