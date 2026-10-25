@@ -68,16 +68,25 @@ describe('document folder registry', () => {
     expect(restored.folders[0].path).toBe(await realpath(documentFolder))
   })
 
-  it('drops a remembered Document Folder that no longer exists', async () => {
-    const documentFolder = await createDocumentFolder()
-    const registry = createDocumentFolderRegistry(
-      createStore([documentFolder, join(documentFolder, 'gone')]),
-    )
+  it('persists existing Document Folders after dropping a missing root', async () => {
+    const firstFolder = await createDocumentFolder()
+    const secondFolder = await createDocumentFolder()
+    const missingFolder = join(firstFolder, 'gone')
+    const store = createStore([firstFolder, missingFolder, secondFolder])
 
-    const restored = await registry.restore()
+    const firstRestore = await createDocumentFolderRegistry(store).restore()
+    const secondRestore = await createDocumentFolderRegistry(store).restore()
 
-    expect(restored.removedCount).toBe(1)
-    expect(restored.folders).toHaveLength(1)
+    expect(firstRestore.removedCount).toBe(1)
+    expect(firstRestore.folders.map((folder) => folder.path)).toEqual([
+      await realpath(firstFolder),
+      await realpath(secondFolder),
+    ])
+    expect(secondRestore.removedCount).toBe(0)
+    expect(secondRestore.folders.map((folder) => folder.path)).toEqual([
+      await realpath(firstFolder),
+      await realpath(secondFolder),
+    ])
   })
 
   it('refuses to add a Document Folder that is already open', async () => {

@@ -98,7 +98,10 @@ export function createDocumentFolderRegistry(store: DocumentFolderStore): Docume
         restored.push(folder)
       }
 
-      return { folders: restored, removedCount: storedPaths.length - restored.length }
+      const removedCount = storedPaths.length - restored.length
+      if (removedCount > 0) await persist()
+
+      return { folders: restored, removedCount }
     },
   }
 }
