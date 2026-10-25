@@ -84,15 +84,19 @@ jobs:
       - name: Verify npm package contents
         run: vpr --filter markdown-studio pack:check
 
-      - name: Publish npm package
+      - name: Create release app token
+        id: release-app-token
         if: ${{ !inputs.dry_run }}
-        working-directory: packages/cli
-        run: npm publish --provenance --tag "${{ steps.publish_meta.outputs.npm_tag }}"
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
 
       - name: Ensure publish tag exists
         if: ${{ !inputs.dry_run }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
           RELEASE_SHA: ${{ steps.publish_meta.outputs.sha }}
           RELEASE_TAG: ${{ steps.publish_meta.outputs.tag }}
         shell: bash
@@ -110,6 +114,11 @@ jobs:
               -f ref="refs/tags/${RELEASE_TAG}" \
               -f sha="$RELEASE_SHA" >/dev/null
           fi
+
+      - name: Publish npm package
+        if: ${{ !inputs.dry_run }}
+        working-directory: packages/cli
+        run: npm publish --provenance --tag "${{ steps.publish_meta.outputs.npm_tag }}"
 
       - name: Publish GitHub release
         if: ${{ !inputs.dry_run }}
