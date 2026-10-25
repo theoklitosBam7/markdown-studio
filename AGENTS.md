@@ -9,6 +9,12 @@ Use **Vite+** for repository commands. Vite+ delegates dependency operations to 
 
 Respect the pnpm version declared under `devEngines.packageManager` in the root `package.json`. When CI behavior matters, use the workflow files as the source of truth; they install with Vite+ and a frozen lockfile.
 
+## Test-driven development
+
+For every coding task that adds or changes executable behavior, load and follow the `.agents/skills/tdd/SKILL.md` skill before implementation. If the skill is unavailable or a meaningful executable test is blocked, stop and report the blocker before continuing.
+
+Skip TDD for discovery, documentation, compatibility audits, and repository maintenance that do not change executable behavior. Run checks appropriate to that work.
+
 ## Completion Criteria
 
 - A task is complete when `vpr check` and `vpr type-check` pass. `vpr check` covers formatting and linting; `vpr type-check` runs the separate Vue and TypeScript build check.

@@ -1,12 +1,30 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 import { computed, shallowRef } from 'vue'
+import {
+  Copy,
+  Download,
+  FileDown,
+  FileText,
+  FolderOpen,
+  Grid2X2,
+  Keyboard,
+  Menu,
+  Moon,
+  PanelLeft,
+  Save,
+  Search,
+  Sun,
+  Table2,
+  Trash2,
+} from '@lucide/vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
 
 import { GITHUB_REPO_URL } from '@/utils/constants'
 
 import MobileActionSheet from './MobileActionSheet.vue'
-import ThemeToggle from './ThemeToggle.vue'
 import ToolbarButton from './ToolbarButton.vue'
 import ViewToggle from './ViewToggle.vue'
 
@@ -16,11 +34,27 @@ interface Props {
   canInstall?: boolean
   canOpenDocuments?: boolean
   canSaveDocuments?: boolean
+  documentName?: string
   isCopied: boolean
+  isDirty?: boolean
   isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
   theme: Theme
   viewMode: ViewMode
+}
+
+interface SheetAction {
+  action: (element?: HTMLElement) => void
+  description?: string
+  disabled?: boolean
+  icon: 'github' | Component
+  label: string
+  variant?: 'danger' | 'default' | 'primary'
+}
+
+interface SheetGroup {
+  items: SheetAction[]
+  label: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,6 +63,8 @@ const props = withDefaults(defineProps<Props>(), {
   canInstall: false,
   canOpenDocuments: false,
   canSaveDocuments: false,
+  documentName: 'Untitled.md',
+  isDirty: false,
   isOutlineOpen: false,
   pdfExportUnavailableReason: '',
 })
@@ -42,6 +78,7 @@ const emit = defineEmits<{
   install: []
   openDocument: []
   openExamples: []
+  openFind: []
   openShortcuts: []
   saveDocument: []
   toggleOutline: []
@@ -50,105 +87,120 @@ const emit = defineEmits<{
 }>()
 
 const isActionSheetOpen = shallowRef(false)
+const outlineLabel = computed(() =>
+  props.isOutlineOpen ? 'Hide document outline' : 'Show document outline',
+)
+const nextTheme = computed<Theme>(() => (props.theme === 'light' ? 'dark' : 'light'))
 
-const secondaryActions = computed(() => {
-  const actions: {
-    action: () => void
-    description?: string
-    disabled?: boolean
-    icon: string
-    label: string
-    variant?: 'danger' | 'default' | 'primary'
-  }[] = []
+const actionGroups = computed<SheetGroup[]>(() => {
+  const documentActions: SheetAction[] = []
 
   if (props.canOpenDocuments) {
-    actions.push({
+    documentActions.push({
       action: () => emit('openDocument'),
-      icon: '📂',
+      icon: FolderOpen,
       label: 'Open',
     })
   }
 
   if (props.canSaveDocuments) {
-    actions.push({
+    documentActions.push({
       action: () => emit('saveDocument'),
-      icon: '💾',
+      icon: Save,
       label: 'Save',
     })
   }
 
   if (props.canInstall) {
-    actions.push({
+    documentActions.push({
       action: () => emit('install'),
-      icon: '⬇️',
+      icon: Download,
       label: 'Install App',
       variant: 'primary',
     })
   }
 
-  actions.push(
-    {
-      action: () => emit('openExamples'),
-      icon: '✨',
-      label: 'Load Examples',
-    },
-    {
-      action: () => emit('insertTable'),
-      icon: '▦',
-      label: 'Insert Table',
-    },
-    {
-      action: () => emit('copy'),
-      icon: '📋',
-      label: props.isCopied ? 'Copied!' : 'Copy Markdown',
-      variant: props.isCopied ? 'primary' : 'default',
-    },
-    {
-      action: () => emit('clear'),
-      icon: '🗑️',
-      label: 'Clear Document',
-      variant: 'danger',
-    },
-  )
+  const groups: SheetGroup[] = []
 
-  actions.push(
-    {
-      action: () => emit('exportHtml'),
-      icon: '📄',
-      label: 'Export as HTML',
-    },
-    {
-      action: () => emit('exportPdf'),
-      description: props.canExportPdf ? undefined : props.pdfExportUnavailableReason,
-      disabled: !props.canExportPdf,
-      icon: '📑',
-      label: 'Export as PDF',
-    },
-  )
+  if (documentActions.length > 0) {
+    groups.push({ items: documentActions, label: 'Document' })
+  }
 
-  // GitHub link - opens in new tab
-  actions.push({
-    action: () => window.open(GITHUB_REPO_URL, '_blank', 'noopener,noreferrer'),
-    icon: '🐙',
-    label: 'View on GitHub',
-    variant: 'primary',
+  groups.push({
+    items: [
+      { action: () => emit('openFind'), icon: Search, label: 'Find in Document' },
+      { action: () => emit('insertTable'), icon: Table2, label: 'Insert Table' },
+      { action: () => emit('openExamples'), icon: Grid2X2, label: 'Load Examples' },
+      {
+        action: () => emit('copy'),
+        icon: Copy,
+        label: props.isCopied ? 'Copied!' : 'Copy Markdown',
+        variant: props.isCopied ? 'primary' : 'default',
+      },
+    ],
+    label: 'Edit',
   })
 
-  actions.push({
-    action: () => emit('openShortcuts'),
-    icon: '⌨️',
-    label: 'Keyboard Shortcuts',
+  groups.push({
+    items: [
+      { action: () => emit('exportHtml'), icon: FileText, label: 'Export as HTML' },
+      {
+        action: () => emit('exportPdf'),
+        description: props.canExportPdf ? undefined : props.pdfExportUnavailableReason,
+        disabled: !props.canExportPdf,
+        icon: FileDown,
+        label: 'Export as PDF',
+      },
+    ],
+    label: 'Export',
   })
 
-  return actions
+  groups.push({
+    items: [
+      {
+        action: (element) =>
+          emit('update:theme', { origin: getOrigin(element), theme: nextTheme.value }),
+        icon: props.theme === 'light' ? Moon : Sun,
+        label: `Switch to ${nextTheme.value} mode`,
+      },
+    ],
+    label: 'Appearance',
+  })
+
+  groups.push({
+    items: [
+      {
+        action: () => window.open(GITHUB_REPO_URL, '_blank', 'noopener,noreferrer'),
+        icon: 'github',
+        label: 'View on GitHub',
+      },
+      { action: () => emit('openShortcuts'), icon: Keyboard, label: 'Keyboard Shortcuts' },
+    ],
+    label: 'More',
+  })
+
+  groups.push({
+    items: [
+      { action: () => emit('clear'), icon: Trash2, label: 'Clear Document', variant: 'danger' },
+    ],
+    label: 'Danger',
+  })
+
+  return groups
 })
 
 function closeActionSheet(): void {
   isActionSheetOpen.value = false
 }
 
-function handleThemeChange(payload: { origin: { x: number; y: number }; theme: Theme }): void {
-  emit('update:theme', payload)
+function getOrigin(element?: HTMLElement): { x: number; y: number } {
+  const rect = element?.getBoundingClientRect()
+
+  if (!rect) {
+    return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+  }
+
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
 function handleViewModeChange(mode: ViewMode): void {
@@ -166,141 +218,118 @@ function openActionSheet(): void {
       <ToolbarButton
         icon-only
         aria-label="Menu"
+        aria-controls="mobile-action-sheet"
+        :aria-expanded="isActionSheetOpen"
+        aria-haspopup="dialog"
         class="mobile-toolbar-actions__menu-btn"
         @click="openActionSheet"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 6h16" stroke-linecap="round" />
-          <path d="M4 12h16" stroke-linecap="round" />
-          <path d="M4 18h16" stroke-linecap="round" />
-        </svg>
+        <Menu :size="20" :stroke-width="1.8" aria-hidden="true" />
       </ToolbarButton>
 
-      <span class="mobile-toolbar-actions__brand">
-        <span class="brand-short">MD</span>
-        <span class="brand-full">Markdown <em>Studio</em></span>
-      </span>
+      <div class="mobile-toolbar-actions__identity">
+        <strong class="mobile-toolbar-actions__document-name">{{ props.documentName }}</strong>
+        <span
+          class="mobile-toolbar-actions__document-status"
+          :class="{ 'mobile-toolbar-actions__document-status--dirty': props.isDirty }"
+          aria-live="polite"
+        >
+          <span class="mobile-toolbar-actions__document-dot" aria-hidden="true"></span>
+          {{ props.isDirty ? 'Unsaved' : 'Saved' }}
+        </span>
+      </div>
 
-      <ThemeToggle compact :theme="theme" @toggle="handleThemeChange" />
-    </div>
-
-    <div class="mobile-toolbar-actions__row mobile-toolbar-actions__row--secondary">
       <ToolbarButton
         icon-only
-        :aria-label="props.isOutlineOpen ? 'Hide document outline' : 'Show document outline'"
+        class="mobile-toolbar-actions__outline-btn"
+        :active="props.isOutlineOpen"
+        :aria-label="outlineLabel"
         :aria-pressed="props.isOutlineOpen"
         @click="emit('toggleOutline')"
       >
-        <svg
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          aria-hidden="true"
-        >
-          <rect x="2" y="2.5" width="12" height="11" rx="1.5" />
-          <path d="M6 2.5v11" />
-          <path d="M3.5 5h1M3.5 7.5h1M3.5 10h1" />
-        </svg>
+        <PanelLeft :size="20" :stroke-width="1.8" aria-hidden="true" />
       </ToolbarButton>
+
       <ViewToggle
+        v-if="!props.isOutlineOpen"
         compact
+        icons-only
         :available-modes="availableModes"
         :model-value="viewMode"
         @update:model-value="handleViewModeChange"
       />
-    </div>
 
-    <MobileActionSheet
-      :is-open="isActionSheetOpen"
-      title="Actions"
-      :actions="secondaryActions"
-      @close="closeActionSheet"
-    />
+      <MobileActionSheet
+        id="mobile-action-sheet"
+        :groups="actionGroups"
+        :is-open="isActionSheetOpen"
+        title="Actions"
+        @close="closeActionSheet"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
 .mobile-toolbar-actions {
   display: flex;
+  width: 100%;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 16px;
+  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px
+    max(12px, env(safe-area-inset-left));
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
 }
 
 .mobile-toolbar-actions__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 44px;
+  gap: 8px;
+  min-height: 48px;
 }
 
-.mobile-toolbar-actions__row--secondary {
-  justify-content: center;
+.mobile-toolbar-actions__identity {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--text-muted);
 }
 
-.mobile-toolbar-actions__brand {
+.mobile-toolbar-actions__document-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-toolbar-actions__document-status {
   display: flex;
   align-items: center;
-  font-family: 'Fraunces', serif;
-  font-weight: 300;
-  color: var(--accent);
-  flex-shrink: 0;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
-.brand-short {
-  display: none;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+.mobile-toolbar-actions__document-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-mid);
 }
 
-.brand-full {
-  font-size: 17px;
-  letter-spacing: -0.02em;
+.mobile-toolbar-actions__document-status--dirty .mobile-toolbar-actions__document-dot {
+  background: var(--brass);
 }
 
-.brand-full em {
-  font-style: italic;
-  font-weight: 300;
+.mobile-toolbar-actions__menu-btn,
+.mobile-toolbar-actions__outline-btn {
+  flex: 0 0 auto;
 }
 
-.mobile-toolbar-actions__menu-btn {
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-
-/* Prevent ViewToggle from stretching full width in centered row */
-.mobile-toolbar-actions__row--secondary :deep(.view-toggle) {
-  width: auto;
-  max-width: 280px;
-}
-
-.mobile-toolbar-actions :deep(.theme-toggle) {
-  flex-shrink: 0;
-  min-width: 44px;
-  min-height: 44px;
-  aspect-ratio: 1;
-}
-
-/* Compact mode for very small screens */
-@media (max-width: 380px) {
-  .brand-short {
-    display: block;
-  }
-
-  .brand-full {
-    display: none;
-  }
-
-  .mobile-toolbar-actions {
-    padding: 10px 12px;
-    gap: 10px;
-  }
+.mobile-toolbar-actions :deep(.view-toggle) {
+  flex: 0 0 auto;
 }
 </style>

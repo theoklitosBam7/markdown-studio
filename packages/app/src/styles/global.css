@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
 *,
 *::before,
 *::after {
@@ -11,18 +11,26 @@
   color-scheme: light;
 
   /* Colors */
-  --bg: #f7f5f0;
-  --surface: #ffffff;
-  --panel: #f0ede6;
-  --border: #e2ddd5;
-  --border-dark: #c8c2b8;
-  --text: #1a1814;
-  --text-muted: #6b6560;
-  --text-faint: #9b958f;
-  --accent: #2a5f4f;
-  --accent-light: #e8f2ef;
-  --accent-mid: #4a8c78;
-  --code-bg: #f3f0eb;
+  --bg: #e9efea;
+  --surface: #f8faf8;
+  --panel: #eef3ef;
+  --border: #d5dfd7;
+  --border-dark: #b9c8bd;
+  --text: #1f3128;
+  --text-muted: #627469;
+  --text-faint: #85938a;
+  --accent: #3b6a4d;
+  --accent-light: #e5eee7;
+  --accent-mid: #5b8767;
+  --accent-contrast: #ffffff;
+  --brass: #ad7c43;
+  --focus-ring: #4f8b9b;
+  --rail-bg: #f0f5f1;
+  --workspace-bg: #e9efea;
+  --editor-bg: #f2f6f2;
+  --preview-bg: #e8eee9;
+  --raised-bg: #ffffff;
+  --code-bg: #eff4ef;
   --find-match-bg: #f3d98f;
   --find-match-active-bg: #d8b44f;
   --editor-active-line-bg: color-mix(in srgb, var(--accent) 7%, transparent);
@@ -50,18 +58,26 @@
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --bg: #141210;
-  --surface: #1e1c19;
-  --panel: #252320;
-  --border: #2e2b27;
-  --border-dark: #3d3a35;
-  --text: #f0ece4;
-  --text-muted: #8a8480;
-  --text-faint: #5a5550;
-  --accent: #5ab89a;
-  --accent-light: #1a2e28;
-  --accent-mid: #4a9a80;
-  --code-bg: #1a1814;
+  --bg: #101612;
+  --surface: #18221c;
+  --panel: #1d2a22;
+  --border: #2d3c32;
+  --border-dark: #415449;
+  --text: #e7ece6;
+  --text-muted: #a0afa3;
+  --text-faint: #78887c;
+  --accent: #83a989;
+  --accent-light: #26382c;
+  --accent-mid: #a0c0a0;
+  --accent-contrast: #142018;
+  --brass: #d1a46b;
+  --focus-ring: #80c4d0;
+  --rail-bg: #111a15;
+  --workspace-bg: #101612;
+  --editor-bg: #111914;
+  --preview-bg: #17221b;
+  --raised-bg: #202c24;
+  --code-bg: #121a15;
   --find-match-bg: #5c4a1e;
   --find-match-active-bg: #8a7432;
   --editor-active-line-bg: color-mix(in srgb, var(--accent) 9%, transparent);
@@ -107,6 +123,11 @@ button,
 input,
 textarea {
   font: inherit;
+}
+
+:where(button, a, input, textarea, summary):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 :where(button, input, textarea, .toolbar, .editor-pane, .preview-pane, .status-bar, .modal) {

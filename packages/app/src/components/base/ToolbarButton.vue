@@ -41,8 +41,8 @@ function handleClick(): void {
 
 <style scoped>
 .toolbar-btn {
-  height: 34px;
-  min-width: 34px;
+  height: 38px;
+  min-width: 38px;
   padding: 0 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -55,7 +55,11 @@ function handleClick(): void {
   display: flex;
   align-items: center;
   gap: 5px;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
   white-space: nowrap;
 }
 
@@ -64,6 +68,8 @@ function handleClick(): void {
 }
 
 .toolbar-btn.icon-only {
+  width: 40px;
+  height: 40px;
   padding: 0;
   justify-content: center;
 }
@@ -89,7 +95,7 @@ function handleClick(): void {
   background: var(--accent);
   border-color: var(--accent);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
-  color: #fff;
+  color: var(--accent-contrast);
   font-weight: 600;
 }
 
@@ -97,7 +103,7 @@ function handleClick(): void {
 .toolbar-btn--primary.active {
   background: var(--accent-mid);
   border-color: var(--accent-mid);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 .toolbar-btn--primary:focus-visible {
@@ -140,6 +146,19 @@ function handleClick(): void {
   .toolbar-btn :deep(svg) {
     width: 18px;
     height: 18px;
+  }
+}
+
+/* Touch devices keep 44px targets even in the wide layout. */
+@media (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .toolbar-btn {
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .toolbar-btn.icon-only {
+    width: 44px;
+    height: 44px;
   }
 }
 </style>

@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
+import { Moon, Sun } from '@lucide/vue'
 
 import type { Theme } from '@/types/editor'
 
 interface Props {
-  compact?: boolean
   theme: Theme
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  compact: false,
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   toggle: [payload: { origin: { x: number; y: number }; theme: Theme }]
@@ -38,23 +36,33 @@ function toggle(): void {
 <template>
   <button
     ref="button"
-    :class="['theme-toggle', { 'is-dark': isDark, compact: props.compact }]"
+    :class="['theme-toggle', { 'is-dark': isDark }]"
     type="button"
     :title="`Switch to ${nextTheme} mode`"
     :aria-label="`Switch to ${nextTheme} mode`"
     @click="toggle"
   >
     <span class="theme-toggle__halo"></span>
-    <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀</span>
-    <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">☾</span>
+    <Sun
+      class="theme-toggle__icon theme-toggle__icon--sun"
+      :size="18"
+      :stroke-width="1.8"
+      aria-hidden="true"
+    />
+    <Moon
+      class="theme-toggle__icon theme-toggle__icon--moon"
+      :size="18"
+      :stroke-width="1.8"
+      aria-hidden="true"
+    />
   </button>
 </template>
 
 <style scoped>
 .theme-toggle {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background:
@@ -76,11 +84,6 @@ function toggle(): void {
     background-color 0.25s ease;
 }
 
-.theme-toggle.compact {
-  width: 36px;
-  height: 36px;
-}
-
 .theme-toggle:hover {
   transform: translateY(-1px) scale(1.03);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 18%, transparent);
@@ -100,8 +103,6 @@ function toggle(): void {
 
 .theme-toggle__icon {
   position: absolute;
-  font-size: 14px;
-  line-height: 1;
   transition:
     opacity 0.35s ease,
     transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
@@ -135,10 +136,6 @@ function toggle(): void {
   .theme-toggle {
     width: 44px;
     height: 44px;
-  }
-
-  .theme-toggle__icon {
-    font-size: 18px;
   }
 }
 </style>

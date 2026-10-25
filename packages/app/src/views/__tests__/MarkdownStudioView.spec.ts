@@ -124,13 +124,50 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
-  it('inserts a default table when the toolbar insert table button is clicked', async () => {
+  it('opens Find from the workspace rail', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+
+    await wrapper.get('button[aria-label="Find in document"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.find-replace-bar__input').exists()).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('formats selected source text and updates the Live Preview', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    await wrapper.get('textarea').setValue('make strong')
+    textarea.setSelectionRange(5, 11)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(textarea.value).toBe('make **strong**')
+    expect(wrapper.get('.rendered-md strong').text()).toBe('strong')
+    expect(wrapper.get('.editor-line-numbers').text()).toBe('1')
+
+    wrapper.unmount()
+  })
+
+  it('provides a skip link to the Editor Workspace', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+
+    expect(wrapper.get('a.skip-link').attributes('href')).toBe('#workspace-main')
+    expect(wrapper.get('#workspace-main').element.tagName).toBe('MAIN')
+
+    wrapper.unmount()
+  })
+
+  it('inserts a default table from the workspace rail actions', async () => {
     const { wrapper } = await mountMarkdownStudioView()
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
     const contentBeforeInsert = textarea.value
     const cursorOffset = 12
     textarea.setSelectionRange(cursorOffset, cursorOffset)
 
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
     await wrapper.get('button[aria-label="Insert table"]').trigger('click')
     await flushPromises()
 
@@ -194,6 +231,7 @@ describe('MarkdownStudioView', () => {
   it('suppresses global shortcuts while the table dimension picker is open', async () => {
     const { wrapper } = await mountMarkdownStudioView()
 
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
     await wrapper.get('button[aria-label="Insert table"]').trigger('click')
     await flushPromises()
 
@@ -213,6 +251,7 @@ describe('MarkdownStudioView', () => {
     const cursorOffset = 12
     textarea.setSelectionRange(cursorOffset, cursorOffset)
 
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
     await wrapper.get('button[aria-label="Insert table"]').trigger('click')
     await flushPromises()
 

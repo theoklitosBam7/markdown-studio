@@ -9,8 +9,9 @@ interface PopupCapture {
   name: string
 }
 
-function openExportMenu(): void {
-  cy.get('.export-menu summary').click()
+function clickDocumentAction(ariaLabel: string): void {
+  cy.get('button[aria-label="Document actions"]').click()
+  cy.get(`button[aria-label="${ariaLabel}"]`).click()
 }
 
 function stubBrowserDownload(
@@ -143,16 +144,32 @@ describe('Markdown Studio responsive shell', () => {
     cy.viewport('iphone-6')
     cy.visit('/')
 
-    // Mobile toolbar should show brand, view toggle, theme toggle, and hamburger menu
+    // Mobile toolbar should show the active document, view toggle, outline, and menu
     cy.get('.mobile-toolbar-actions').should('be.visible')
-    cy.get('.mobile-toolbar-actions__brand').should('contain', 'Markdown Studio')
+    cy.get('.mobile-toolbar-actions__document-name').should('contain', 'Untitled.md')
     cy.get('.mobile-toolbar-actions [data-mode="editor"]').should('be.visible')
     cy.get('.mobile-toolbar-actions [data-mode="preview"]').should('be.visible')
+    cy.get('button[aria-label="Show document outline"]').should('be.visible')
 
     // Open action sheet via hamburger menu
-    cy.get('button[aria-label="Menu"]').should('be.visible').click()
+    cy.get('button[aria-label="Menu"]')
+      .should('be.visible')
+      .and('have.attr', 'aria-expanded', 'false')
+      .click()
+    cy.get('button[aria-label="Menu"]').should('have.attr', 'aria-expanded', 'true')
     cy.get('.mobile-action-sheet').should('be.visible')
     cy.get('.mobile-action-sheet__title').should('contain', 'Actions')
+    cy.get('.mobile-action-sheet__group-label').then(($labels) => {
+      expect($labels.map((_, label) => label.textContent?.trim()).get()).to.deep.equal([
+        'Document',
+        'Edit',
+        'Export',
+        'Appearance',
+        'More',
+        'Danger',
+      ])
+    })
+    cy.get('.mobile-action-sheet__footer .mobile-action-sheet__cancel').should('be.visible')
 
     // All CTAs should be in the action sheet
     cy.get('.mobile-action-sheet__action').contains('Open').should('be.visible')
@@ -179,11 +196,11 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.preview-pane').should('be.visible')
     cy.get('.editor-pane').should('not.be.visible')
 
-    // Theme toggle should be visible and work
-    cy.get('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]')
-      .should('be.visible')
-      .click()
+    // Theme switching lives in the action sheet
+    cy.get('button[aria-label="Menu"]').click()
+    cy.get('.mobile-action-sheet__action').contains('Switch to dark mode').click()
     cy.get('html').should('have.attr', 'data-theme', 'dark')
+    cy.get('.mobile-action-sheet').should('not.exist')
 
     // Open examples from action sheet
     cy.get('button[aria-label="Menu"]').click()
@@ -208,8 +225,9 @@ describe('Markdown Studio responsive shell', () => {
   it('keeps split view on desktop and hides it on mobile', () => {
     cy.viewport(1280, 900)
     cy.visit('/')
-    cy.get('.toolbar__actions').contains('button', 'Open').should('be.visible')
-    cy.get('.toolbar__actions').contains('button', 'Save').should('be.visible')
+    cy.get('button[aria-label="Document actions"]').click()
+    cy.get('button[aria-label="Open document"]').should('be.visible')
+    cy.get('button[aria-label="Save document"]').should('be.visible')
     cy.get('.toolbar__desktop-controls').contains('button', 'Split').should('be.visible')
     cy.get('.editor-pane').should('be.visible')
     cy.get('.preview-pane').should('be.visible')
@@ -229,7 +247,7 @@ describe('Markdown Studio responsive shell', () => {
       },
     })
 
-    cy.get('.toolbar__actions').contains('button', 'Open').click()
+    clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Imported from Cypress')
     cy.get('.status-item--document').should('contain', 'web-notes.md')
@@ -246,7 +264,7 @@ describe('Markdown Studio responsive shell', () => {
       },
     })
 
-    cy.get('.toolbar__actions').contains('button', 'Open').click()
+    clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Loaded via fallback')
     cy.get('.status-item--document').should('contain', 'brave-delayed.md')
@@ -263,7 +281,7 @@ describe('Markdown Studio responsive shell', () => {
       },
     })
 
-    cy.get('.toolbar__actions').contains('button', 'Open').click()
+    clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Recovered from picker error')
     cy.get('.status-item--document').should('contain', 'picker-fallback.md')
@@ -282,7 +300,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Downloaded from web')
-    cy.get('.toolbar__actions').contains('button', 'Save').click()
+    clickDocumentAction('Save document')
 
     cy.wrap(null).then(() => {
       expect(downloads).to.have.length(1)
@@ -307,12 +325,12 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# First save')
-    cy.get('.toolbar__actions').contains('button', 'Save').click()
+    clickDocumentAction('Save document')
     cy.get('.status-item--document').should('contain', 'picked-from-browser.md')
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Second save')
-    cy.get('.toolbar__actions').contains('button', 'Save').click()
+    clickDocumentAction('Save document')
 
     cy.wrap(null).then(() => {
       expect(writes).to.deep.equal(['# First save', '# Second save'])
@@ -332,8 +350,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Exported as HTML')
-    openExportMenu()
-    cy.contains('.export-menu__item', 'Export HTML').click()
+    clickDocumentAction('Export HTML')
 
     cy.wrap(null).then(() => {
       expect(downloads).to.have.length(1)
@@ -360,8 +377,7 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Exported as PDF')
-    openExportMenu()
-    cy.contains('.export-menu__item', 'Export PDF').click()
+    clickDocumentAction('Export PDF')
 
     cy.wrap(null).then(() => {
       expect(popupCapture.locationHref).to.match(/^\/export\/print\?job=/)
@@ -457,14 +473,14 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.editor-pane').should('not.be.visible')
   })
 
-  it('closes the export menu when clicking outside of it', () => {
+  it('closes the document actions menu when clicking outside of it', () => {
     cy.viewport(1280, 900)
     cy.visit('/')
 
-    openExportMenu()
-    cy.get('.export-menu__popover').should('be.visible')
+    cy.get('button[aria-label="Document actions"]').click()
+    cy.get('#workspace-document-actions').should('be.visible')
 
     cy.get('textarea').click('topLeft')
-    cy.get('.export-menu__popover').should('not.be.visible')
+    cy.get('#workspace-document-actions').should('not.exist')
   })
 })

@@ -177,7 +177,7 @@ function handleSubmit(): void {
 
 .table-dimension-form__confirm {
   background: var(--accent);
-  color: white;
+  color: var(--accent-contrast);
   border-color: var(--accent);
 }
 

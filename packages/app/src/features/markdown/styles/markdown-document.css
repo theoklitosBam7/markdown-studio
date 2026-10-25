@@ -103,6 +103,12 @@
 .markdown-document em {
   font-family: 'Fraunces', Georgia, serif;
   font-style: italic;
+  font-weight: 300;
+}
+
+.markdown-document em strong,
+.markdown-document strong em {
+  font-weight: 700;
 }
 
 .markdown-document ul,

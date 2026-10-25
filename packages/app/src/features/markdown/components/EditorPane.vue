@@ -5,6 +5,7 @@ import type { AppWindow } from '@/browser-window'
 
 import { insertTextAtSelection } from '@/utils/insertTextAtSelection'
 
+import type { EditorFormattingCommand } from './EditorFormattingToolbar.vue'
 import type { EditorScrollPayload, EditorWorkspaceFindState } from '../types'
 
 type FindAction =
@@ -19,6 +20,7 @@ type FindAction =
   | { type: 'set-query'; value: string }
   | { type: 'set-replace-text'; value: string }
 
+import EditorFormattingToolbar from './EditorFormattingToolbar.vue'
 import FindReplaceBar from './FindReplaceBar.vue'
 import MatchOverlay from './MatchOverlay.vue'
 
@@ -26,7 +28,6 @@ interface Props {
   content: string
   documentPath?: null | string
   findState?: EditorWorkspaceFindState
-  lineCount: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -57,6 +58,7 @@ const isEditorFocused = shallowRef(false)
 const isImageDragging = shallowRef(false)
 const scrollbarWidth = shallowRef(0)
 const scrollTop = shallowRef(0)
+const rememberedSelection = shallowRef({ end: 0, start: 0 })
 let resizeObserver: null | ResizeObserver = null
 
 // Use computed for v-model to avoid direct prop mutation
@@ -64,6 +66,38 @@ const localContent = computed({
   get: () => props.content,
   set: (value: string) => emit('update:content', value),
 })
+const documentLineCount = computed(() => Math.max(1, props.content.split('\n').length))
+const lineNumbers = computed(() =>
+  Array.from({ length: documentLineCount.value }, (_, index) => index + 1),
+)
+
+async function applyFormattingCommand(command: EditorFormattingCommand): Promise<void> {
+  const editor = editorRef.value
+  if (!editor) return
+
+  if (command.type === 'history') {
+    editor.focus()
+    editor.ownerDocument.execCommand(command.direction)
+    return
+  }
+
+  const selection =
+    editor.ownerDocument.activeElement === editor
+      ? { end: editor.selectionEnd, start: editor.selectionStart }
+      : rememberedSelection.value
+
+  if (command.type === 'heading') {
+    await formatHeading(editor, selection.start, selection.end, command.level)
+    return
+  }
+
+  if (command.type === 'style') {
+    await formatInlineStyle(editor, selection.start, selection.end, command.style)
+    return
+  }
+
+  await formatBlock(editor, selection.start, selection.end, command.style)
+}
 
 function emitScroll(): void {
   const scrollState = getScrollState()
@@ -86,6 +120,124 @@ async function focusAtOffset(offset: number): Promise<void> {
 
 function focusFindQuery(): void {
   findReplaceBarRef.value?.focusQueryInput()
+}
+
+async function formatBlock(
+  editor: HTMLTextAreaElement,
+  selectionStart: number,
+  selectionEnd: number,
+  style: 'blockquote' | 'bullet-list' | 'code-block' | 'horizontal-rule' | 'numbered-list',
+): Promise<void> {
+  if (style === 'horizontal-rule') {
+    const lineBreak = selectionStart > 0 && editor.value[selectionStart - 1] !== '\n' ? '\n' : ''
+    const replacement = `${lineBreak}---\n`
+    const caret = selectionStart + replacement.length
+    await replaceEditorRange(editor, selectionStart, selectionEnd, replacement, caret, caret)
+    return
+  }
+
+  if (style === 'code-block') {
+    const selectedText = editor.value.slice(selectionStart, selectionEnd) || 'code'
+    const replacement = `\`\`\`\n${selectedText}\n\`\`\``
+    const contentStart = selectionStart + 4
+    await replaceEditorRange(
+      editor,
+      selectionStart,
+      selectionEnd,
+      replacement,
+      contentStart,
+      contentStart + selectedText.length,
+    )
+    return
+  }
+
+  const firstLineStart = editor.value.lastIndexOf('\n', Math.max(0, selectionStart - 1)) + 1
+  const lastSelectedCharacter = selectionEnd > selectionStart ? selectionEnd - 1 : selectionStart
+  const followingLineBreak = editor.value.indexOf('\n', lastSelectedCharacter)
+  const lastLineEnd = followingLineBreak === -1 ? editor.value.length : followingLineBreak
+  const lines = editor.value.slice(firstLineStart, lastLineEnd).split('\n')
+  const linePrefix = {
+    blockquote: '> ',
+    'bullet-list': '- ',
+    'numbered-list': '1. ',
+  }[style]
+  const replacement = lines.map((line) => `${linePrefix}${line}`).join('\n')
+  const selectedBlock = selectionEnd > selectionStart
+  const nextSelectionStart = selectedBlock ? firstLineStart : firstLineStart + linePrefix.length
+  const nextSelectionEnd = selectedBlock ? firstLineStart + replacement.length : nextSelectionStart
+
+  await replaceEditorRange(
+    editor,
+    firstLineStart,
+    lastLineEnd,
+    replacement,
+    nextSelectionStart,
+    nextSelectionEnd,
+  )
+}
+
+async function formatHeading(
+  editor: HTMLTextAreaElement,
+  selectionStart: number,
+  selectionEnd: number,
+  level: 1 | 2 | 3 | 4 | 5 | 6,
+): Promise<void> {
+  const lineStart = editor.value.lastIndexOf('\n', Math.max(0, selectionStart - 1)) + 1
+  const nextLineBreak = editor.value.indexOf('\n', selectionStart)
+  const lineEnd = nextLineBreak === -1 ? editor.value.length : nextLineBreak
+  const line = editor.value.slice(lineStart, lineEnd)
+  const existingPrefix = /^#{1,6}\s+/.exec(line)?.[0] ?? ''
+  const lineContent = line.slice(existingPrefix.length)
+  const headingPrefix = `${'#'.repeat(level)} `
+  const replacement = `${headingPrefix}${lineContent}`
+  const caretInContent = Math.max(0, selectionStart - lineStart - existingPrefix.length)
+  const nextSelectionStart =
+    lineStart + headingPrefix.length + Math.min(caretInContent, lineContent.length)
+  const selectionLength = Math.min(
+    selectionEnd - selectionStart,
+    lineContent.length - caretInContent,
+  )
+
+  await replaceEditorRange(
+    editor,
+    lineStart,
+    lineEnd,
+    replacement,
+    nextSelectionStart,
+    nextSelectionStart + selectionLength,
+  )
+}
+
+async function formatInlineStyle(
+  editor: HTMLTextAreaElement,
+  start: number,
+  end: number,
+  style: 'bold' | 'inline-code' | 'italic' | 'link',
+): Promise<void> {
+  const selectedText = editor.value.slice(start, end)
+  let replacement: string
+  let selectionStart: number
+  let selectionEnd: number
+
+  if (style === 'link') {
+    const linkText = selectedText || 'link text'
+    replacement = `[${linkText}](url)`
+    selectionStart = start + linkText.length + 3
+    selectionEnd = selectionStart + 3
+  } else {
+    const styleTokens = {
+      bold: { placeholder: 'bold text', token: '**' },
+      'inline-code': { placeholder: 'code', token: '`' },
+      italic: { placeholder: 'italic text', token: '*' },
+    }
+    const { placeholder, token } = styleTokens[style]
+    const formattedText = selectedText || placeholder
+    replacement = `${token}${formattedText}${token}`
+    selectionStart = start + token.length
+    selectionEnd = selectionStart + formattedText.length
+  }
+
+  await replaceEditorRange(editor, start, end, replacement, selectionStart, selectionEnd)
 }
 
 function getLineHeight(editor: HTMLTextAreaElement): number {
@@ -125,6 +277,7 @@ function handleDocumentSelectionChange(): void {
   const editor = editorRef.value
   if (!editor || editor.ownerDocument.activeElement !== editor) return
 
+  rememberSelection(editor)
   syncActiveLine()
 }
 
@@ -152,6 +305,16 @@ async function handleDrop(event: DragEvent): Promise<void> {
   if (!file) return
 
   await insertImage(file)
+}
+
+function handleEditorBlur(): void {
+  isEditorFocused.value = false
+  rememberSelection()
+}
+
+function handleEditorSelection(): void {
+  rememberSelection()
+  syncActiveLine()
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -226,6 +389,15 @@ function isSupportedImage(file: File): boolean {
   return /\.(gif|jpe?g|png|svg|webp)$/i.test(file.name)
 }
 
+function rememberSelection(editor = editorRef.value): void {
+  if (!editor) return
+
+  rememberedSelection.value = {
+    end: editor.selectionEnd,
+    start: editor.selectionStart,
+  }
+}
+
 async function replaceAllContent(nextContent: string): Promise<void> {
   const editor = editorRef.value
   if (!editor) return
@@ -241,6 +413,23 @@ async function replaceAllContent(nextContent: string): Promise<void> {
   }
 
   insertTextAtSelection(editor, nextContent, 0, editor.value.length)
+}
+
+async function replaceEditorRange(
+  editor: HTMLTextAreaElement,
+  start: number,
+  end: number,
+  replacement: string,
+  selectionStart: number,
+  selectionEnd: number,
+): Promise<void> {
+  editor.focus()
+  editor.setSelectionRange(start, end)
+  await insertText(replacement)
+  await nextTick()
+  editor.setSelectionRange(selectionStart, selectionEnd)
+  rememberSelection(editor)
+  syncActiveLine()
 }
 
 async function replaceRange(start: number, end: number, replacement: string): Promise<void> {
@@ -361,8 +550,12 @@ watch(
   >
     <div class="pane-header">
       <span class="pane-label">Markdown</span>
-      <span class="line-count">{{ lineCount }} line{{ lineCount !== 1 ? 's' : '' }}</span>
+      <span class="line-count">
+        {{ documentLineCount }} line{{ documentLineCount !== 1 ? 's' : '' }}
+      </span>
     </div>
+
+    <EditorFormattingToolbar @format="applyFormattingCommand" />
 
     <FindReplaceBar
       v-if="findState.isOpen"
@@ -396,6 +589,16 @@ watch(
         :style="{ height: `${activeLineHeight}px`, top: `${activeLineTop}px` }"
         aria-hidden="true"
       ></div>
+      <ol
+        class="editor-line-numbers"
+        aria-hidden="true"
+        :style="{
+          '--editor-line-count': lineNumbers.length,
+          transform: `translateY(${-scrollTop}px)`,
+        }"
+      >
+        <li v-for="lineNumber in lineNumbers" :key="lineNumber">{{ lineNumber }}</li>
+      </ol>
       <MatchOverlay
         :active-match-index="findState.activeMatchIndex"
         :content="content"
@@ -409,11 +612,11 @@ watch(
         class="editor"
         spellcheck="false"
         placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
-        @blur="isEditorFocused = false"
+        @blur="handleEditorBlur"
         @focus="isEditorFocused = true"
         @keydown="handleKeydown"
         @scroll="emitScroll"
-        @select="syncActiveLine"
+        @select="handleEditorSelection"
       ></textarea>
     </div>
   </div>
@@ -446,6 +649,36 @@ watch(
 
 .active-line-highlight--focused {
   background: var(--editor-active-line-bg);
+}
+
+.editor-line-numbers {
+  --editor-line-height: 22.95px;
+  --editor-gutter-vertical-padding: 48px;
+
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: calc(
+    var(--editor-line-height) * var(--editor-line-count) + var(--editor-gutter-vertical-padding)
+  );
+  margin: 0;
+  padding: 24px 10px 24px 0;
+  border-right: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-faint);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  line-height: var(--editor-line-height);
+  list-style: none;
+  pointer-events: none;
+  text-align: right;
+  user-select: none;
+}
+
+.editor-line-numbers li {
+  min-height: var(--editor-line-height);
 }
 
 .image-drop-overlay {
@@ -524,10 +757,10 @@ watch(
   border: none;
   outline: none;
   resize: none;
-  padding: 24px;
+  padding: 24px 24px 24px 64px;
   font-family: 'DM Mono', monospace;
   font-size: 13.5px;
-  line-height: 1.7;
+  line-height: 22.95px;
   tab-size: 2;
   caret-color: var(--text);
   text-shadow: 0 0 0 var(--text);
@@ -552,9 +785,31 @@ watch(
   }
 
   .editor {
-    padding: 16px var(--app-gutter) 24px;
-    font-size: 13px;
-    line-height: 1.6;
+    padding: 16px var(--app-gutter) 24px 52px;
+  }
+
+  .editor-line-numbers {
+    --editor-gutter-vertical-padding: 40px;
+
+    width: 40px;
+    padding-top: 16px;
+    font-size: 10px;
+  }
+
+  .editor-line-numbers li {
+    min-height: var(--editor-line-height);
+  }
+}
+
+/* 16px keeps iOS Safari from zooming the page when the editor takes focus. */
+@media (max-width: 700px), (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .editor {
+    font-size: 16px;
+    line-height: 25.6px;
+  }
+
+  .editor-line-numbers {
+    --editor-line-height: 25.6px;
   }
 }
 </style>

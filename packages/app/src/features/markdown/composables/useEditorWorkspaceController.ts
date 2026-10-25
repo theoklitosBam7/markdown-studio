@@ -30,6 +30,9 @@ import { useWebDraftPersistence } from './useWebDraftPersistence'
 
 const MOBILE_BREAKPOINT = 700
 
+const LANDSCAPE_PHONE_MAX_HEIGHT = 500
+const LANDSCAPE_PHONE_MAX_WIDTH = 1000
+
 /**
  * Initial controller boundary for editor workspace orchestration.
  *
@@ -319,8 +322,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     previewPane.value?.scrollToSourceOffset(sourceOffset)
   }
 
-  function syncViewport(width: number): void {
-    const nextIsMobile = width <= MOBILE_BREAKPOINT
+  function syncViewport(width: number, height: number): void {
+    const nextIsMobile =
+      width <= MOBILE_BREAKPOINT ||
+      (width <= LANDSCAPE_PHONE_MAX_WIDTH && height <= LANDSCAPE_PHONE_MAX_HEIGHT)
     isMobile.value = nextIsMobile
 
     if (nextIsMobile && viewMode.value === 'split') {
@@ -461,7 +466,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     try {
       window.addEventListener('resize', handleWindowResize)
       startUpdateChecks()
-      syncViewport(window.innerWidth)
+      syncViewport(window.innerWidth, window.innerHeight)
       await restoreWorkspaceDraft()
 
       const onAppCommand = desktop.value?.commands?.onAppCommand
@@ -501,11 +506,11 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   }
 
   function handleWindowResize(): void {
-    handleViewportResize(window.innerWidth)
+    handleViewportResize(window.innerWidth, window.innerHeight)
   }
 
-  function handleViewportResize(width: number): void {
-    syncViewport(width)
+  function handleViewportResize(width: number, height: number = window.innerHeight): void {
+    syncViewport(width, height)
   }
 
   async function navigateFromOutline(offset: number): Promise<void> {

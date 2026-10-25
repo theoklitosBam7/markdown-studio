@@ -7,7 +7,7 @@ const packageRoot = (relativePath: string) => fileURLToPath(new URL(relativePath
 export default defineConfig({
   fmt: {
     embeddedLanguageFormatting: 'auto',
-    ignorePatterns: ['.changeset/**', '**/CHANGELOG.md'],
+    ignorePatterns: ['.changeset/**', '**/CHANGELOG.md', '.agents/skills/**'],
     semi: false,
     singleQuote: true,
   },

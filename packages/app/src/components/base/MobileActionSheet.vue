@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import type { Component } from 'vue'
+
+import { nextTick, onMounted, onUnmounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
+
+interface ActionGroup {
+  items: ActionItem[]
+  label: string
+}
 
 interface ActionItem {
-  action: () => void
+  action: (element?: HTMLElement) => void
   description?: string
   disabled?: boolean
-  icon?: string
+  icon?: 'github' | Component
   label: string
   variant?: 'danger' | 'default' | 'primary'
 }
 
 interface Props {
-  actions: ActionItem[]
+  groups: ActionGroup[]
+  id?: string
   isOpen: boolean
   title?: string
 }
@@ -24,40 +32,54 @@ const emit = defineEmits<{
 
 const isVisible = shallowRef(false)
 const isClosing = shallowRef(false)
-const backdropRef = ref<HTMLElement | null>(null)
+const backdropRef = useTemplateRef<HTMLElement>('backdrop')
+const sheetRef = useTemplateRef<HTMLElement>('sheet')
+let closeFallbackTimer: ReturnType<typeof setTimeout> | undefined
+let previouslyFocused: HTMLElement | null = null
 let touchStartY = 0
 let touchEndY = 0
 let savedOverflow = ''
 
-function close(): void {
-  isClosing.value = true
-  // Fallback in case animationend doesn't fire (e.g. prefers-reduced-motion)
-  const fallbackTimer = setTimeout(handleAnimationEnd, 300)
-  const backdrop = backdropRef.value
-  if (backdrop) {
-    backdrop.addEventListener(
-      'animationend',
-      () => {
-        clearTimeout(fallbackTimer)
-        handleAnimationEnd()
-      },
-      { once: true },
-    )
+function clearCloseFallback(): void {
+  if (closeFallbackTimer !== undefined) {
+    clearTimeout(closeFallbackTimer)
+    closeFallbackTimer = undefined
   }
 }
 
-function handleAction(action: () => void): void {
-  action()
+function close(): void {
+  isClosing.value = true
+  clearCloseFallback()
+  // Fallback in case animationend doesn't fire (e.g. prefers-reduced-motion)
+  closeFallbackTimer = setTimeout(handleAnimationEnd, 300)
+
+  backdropRef.value?.addEventListener('animationend', handleAnimationEnd, { once: true })
+}
+
+function getFocusableElements(): HTMLElement[] {
+  const sheet = sheetRef.value
+  if (!sheet) return []
+
+  return Array.from(sheet.querySelectorAll<HTMLElement>('button:not([disabled])'))
+}
+
+function handleAction(item: ActionItem, element: HTMLElement): void {
+  item.action(element)
   close()
 }
 
 function handleAnimationEnd(): void {
-  if (isClosing.value) {
-    isVisible.value = false
-    isClosing.value = false
-    unlockBodyScroll()
-    emit('close')
+  clearCloseFallback()
+
+  if (!isClosing.value) {
+    return
   }
+
+  isVisible.value = false
+  isClosing.value = false
+  unlockBodyScroll()
+  restoreFocus()
+  emit('close')
 }
 
 function handleBackdropClick(event: MouseEvent): void {
@@ -66,17 +88,45 @@ function handleBackdropClick(event: MouseEvent): void {
   }
 }
 
-function handleItemClick(item: ActionItem): void {
+function handleItemClick(item: ActionItem, event: MouseEvent): void {
   if (item.disabled) {
     return
   }
 
-  handleAction(item.action)
+  handleAction(item, event.currentTarget as HTMLElement)
 }
 
 function handleKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape' && props.isOpen) {
     close()
+  }
+}
+
+function handleSheetKeydown(event: KeyboardEvent): void {
+  if (event.key !== 'Tab') {
+    return
+  }
+
+  const focusable = getFocusableElements()
+  if (focusable.length === 0) {
+    return
+  }
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const active = document.activeElement
+
+  if (event.shiftKey) {
+    if (active === first || active === sheetRef.value) {
+      event.preventDefault()
+      last?.focus()
+    }
+    return
+  }
+
+  if (active === last) {
+    event.preventDefault()
+    first?.focus()
   }
 }
 
@@ -104,6 +154,11 @@ function lockBodyScroll(): void {
   document.body.style.overflow = 'hidden'
 }
 
+function restoreFocus(): void {
+  previouslyFocused?.focus()
+  previouslyFocused = null
+}
+
 function unlockBodyScroll(): void {
   document.body.style.overflow = savedOverflow
 }
@@ -112,9 +167,12 @@ watch(
   () => props.isOpen,
   (newValue) => {
     if (newValue) {
+      const activeElement = document.activeElement
+      previouslyFocused = activeElement instanceof HTMLElement ? activeElement : null
       isVisible.value = true
       isClosing.value = false
       lockBodyScroll()
+      void nextTick(() => sheetRef.value?.focus())
     } else {
       isClosing.value = false
     }
@@ -127,8 +185,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  clearCloseFallback()
   document.removeEventListener('keydown', handleKeydown)
   unlockBodyScroll()
+  restoreFocus()
 })
 </script>
 
@@ -137,16 +197,20 @@ onUnmounted(() => {
     <Transition name="sheet">
       <div
         v-if="isVisible"
-        ref="backdropRef"
+        ref="backdrop"
         class="mobile-action-sheet-backdrop"
         :class="{ closing: isClosing }"
         @click="handleBackdropClick"
       >
         <div
+          :id="props.id"
+          ref="sheet"
           class="mobile-action-sheet"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="sheet-title"
+          aria-labelledby="mobile-action-sheet-title"
+          tabindex="-1"
+          @keydown="handleSheetKeydown"
           @touchstart="handleTouchStart"
           @touchmove="handleTouchMove"
           @touchend="handleTouchEnd"
@@ -155,37 +219,66 @@ onUnmounted(() => {
             <div class="mobile-action-sheet__handle-bar"></div>
           </div>
 
-          <h2 v-if="title" id="sheet-title" class="mobile-action-sheet__title">
+          <h2 v-if="title" id="mobile-action-sheet-title" class="mobile-action-sheet__title">
             {{ title }}
           </h2>
 
-          <div class="mobile-action-sheet__actions" role="menu">
-            <button
-              v-for="(item, index) in actions"
-              :key="index"
-              class="mobile-action-sheet__action"
-              :class="[
-                `mobile-action-sheet__action--${item.variant || 'default'}`,
-                { 'mobile-action-sheet__action--disabled': item.disabled },
-              ]"
-              :disabled="item.disabled"
-              role="menuitem"
-              type="button"
-              @click="handleItemClick(item)"
+          <div class="mobile-action-sheet__scroll">
+            <div
+              v-for="group in props.groups"
+              :key="group.label"
+              class="mobile-action-sheet__group"
+              role="group"
+              :aria-labelledby="`sheet-group-${group.label}`"
             >
-              <span v-if="item.icon" class="mobile-action-sheet__icon" aria-hidden="true">
-                {{ item.icon }}
-              </span>
-              <span class="mobile-action-sheet__content">
-                <span class="mobile-action-sheet__label">{{ item.label }}</span>
-                <span v-if="item.description" class="mobile-action-sheet__description">
-                  {{ item.description }}
-                </span>
-              </span>
-            </button>
+              <p :id="`sheet-group-${group.label}`" class="mobile-action-sheet__group-label">
+                {{ group.label }}
+              </p>
+              <div class="mobile-action-sheet__actions">
+                <button
+                  v-for="item in group.items"
+                  :key="item.label"
+                  class="mobile-action-sheet__action"
+                  :class="[
+                    `mobile-action-sheet__action--${item.variant || 'default'}`,
+                    { 'mobile-action-sheet__action--disabled': item.disabled },
+                  ]"
+                  :disabled="item.disabled"
+                  type="button"
+                  @click="handleItemClick(item, $event)"
+                >
+                  <span v-if="item.icon" class="mobile-action-sheet__icon" aria-hidden="true">
+                    <svg
+                      v-if="item.icon === 'github'"
+                      viewBox="0 0 16 16"
+                      class="mobile-action-sheet__github-icon"
+                    >
+                      <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                      />
+                    </svg>
+                    <component
+                      :is="item.icon"
+                      v-else
+                      :size="20"
+                      :stroke-width="1.8"
+                      aria-hidden="true"
+                    />
+                  </span>
+                  <span class="mobile-action-sheet__content">
+                    <span class="mobile-action-sheet__label">{{ item.label }}</span>
+                    <span v-if="item.description" class="mobile-action-sheet__description">
+                      {{ item.description }}
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <button class="mobile-action-sheet__cancel" type="button" @click="close">Cancel</button>
+          <div class="mobile-action-sheet__footer">
+            <button class="mobile-action-sheet__cancel" type="button" @click="close">Cancel</button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -210,16 +303,19 @@ onUnmounted(() => {
 }
 
 .mobile-action-sheet {
+  display: flex;
   width: 100%;
   max-width: 500px;
-  background: var(--surface);
+  max-height: min(80dvh, 720px);
+  flex-direction: column;
   border-radius: 20px 20px 0 0;
-  padding: 8px 0 24px;
+  background: var(--surface);
   transform: translateY(100%);
   animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  max-height: 80vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-action-sheet:focus {
+  outline: none;
 }
 
 .mobile-action-sheet-backdrop.closing .mobile-action-sheet {
@@ -228,6 +324,7 @@ onUnmounted(() => {
 
 .mobile-action-sheet__handle {
   display: flex;
+  flex-shrink: 0;
   justify-content: center;
   padding: 8px 0 12px;
 }
@@ -240,13 +337,36 @@ onUnmounted(() => {
 }
 
 .mobile-action-sheet__title {
+  flex-shrink: 0;
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
   text-align: center;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   padding: 0 16px;
+}
+
+.mobile-action-sheet__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+}
+
+.mobile-action-sheet__group + .mobile-action-sheet__group {
+  margin-top: 14px;
+}
+
+.mobile-action-sheet__group-label {
+  margin: 0 4px 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .mobile-action-sheet__actions {
@@ -254,7 +374,6 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 1px;
   background: var(--border);
-  margin: 0 16px;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -279,6 +398,11 @@ onUnmounted(() => {
   background: var(--panel);
 }
 
+.mobile-action-sheet__action:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
 .mobile-action-sheet__action:disabled {
   cursor: not-allowed;
 }
@@ -301,11 +425,19 @@ onUnmounted(() => {
 }
 
 .mobile-action-sheet__icon {
-  font-size: 20px;
+  display: grid;
   width: 24px;
-  text-align: center;
+  place-items: center;
   flex-shrink: 0;
-  padding-top: 1px;
+}
+
+.mobile-action-sheet__icon :deep(svg) {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-action-sheet__github-icon {
+  fill: currentColor;
 }
 
 .mobile-action-sheet__content {
@@ -328,10 +460,15 @@ onUnmounted(() => {
   text-align: left;
 }
 
+.mobile-action-sheet__footer {
+  flex-shrink: 0;
+  padding: 12px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+
 .mobile-action-sheet__cancel {
   display: block;
-  width: calc(100% - 32px);
-  margin: 12px 16px 0;
+  width: 100%;
   padding: 14px 16px;
   background: var(--panel);
   border: none;
@@ -347,6 +484,11 @@ onUnmounted(() => {
 
 .mobile-action-sheet__cancel:hover {
   background: var(--surface);
+}
+
+.mobile-action-sheet__cancel:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 @keyframes fadeIn {
@@ -389,6 +531,15 @@ onUnmounted(() => {
   .mobile-action-sheet-backdrop,
   .mobile-action-sheet {
     animation-duration: 0.01ms;
+  }
+}
+
+/* Short viewports (landscape phones) need the width and height for the action list. */
+@media (max-height: 500px) {
+  .mobile-action-sheet {
+    max-width: 100%;
+    max-height: calc(100dvh - 12px);
+    border-radius: 16px 16px 0 0;
   }
 }
 </style>

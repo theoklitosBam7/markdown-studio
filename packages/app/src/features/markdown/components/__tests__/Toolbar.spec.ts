@@ -1,7 +1,7 @@
 import type { VueWrapper } from '@vue/test-utils'
 
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, describe, expect, it } from 'vite-plus/test'
 import { nextTick } from 'vue'
 
 import Toolbar from '../Toolbar.vue'
@@ -46,10 +46,26 @@ describe('Toolbar', () => {
 
     expect(wrapper.find('.toolbar__desktop-controls').exists()).toBe(true)
     expect(wrapper.find('.mobile-toolbar-actions').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Open')
-    expect(wrapper.text()).toContain('Save')
     expect(wrapper.get('[data-mode="split"]').text()).toBe('Split')
     expect(wrapper.find('button[aria-label="Switch to dark mode"]').exists()).toBe(true)
+    expect(wrapper.find('.toolbar__brand-group').exists()).toBe(false)
+    expect(wrapper.find('.toolbar__actions').exists()).toBe(false)
+  })
+
+  it('uses a Lucide icon for the keyboard shortcuts control', () => {
+    const wrapper = mountToolbar()
+
+    expect(wrapper.find('button[aria-label="Keyboard shortcuts"] svg.lucide').exists()).toBe(true)
+  })
+
+  it('shows the active Markdown Document and its unsaved state', () => {
+    const wrapper = mountToolbar({
+      documentName: 'draft.md',
+      isDirty: true,
+    })
+
+    expect(wrapper.get('.toolbar__document strong').text()).toBe('draft.md')
+    expect(wrapper.get('.toolbar__document-status').text()).toBe('Unsaved changes')
   })
 
   it('renders GitHub link on desktop', () => {
@@ -61,32 +77,6 @@ describe('Toolbar', () => {
     expect(githubLink.attributes('target')).toBe('_blank')
     expect(githubLink.attributes('rel')).toBe('noopener noreferrer')
     expect(githubLink.text()).toContain('GitHub')
-  })
-
-  it('renders an accessible insert table button that emits insert-table on click', async () => {
-    const wrapper = mountToolbar()
-
-    const tableButton = wrapper.get('button[aria-label="Insert table"]')
-    expect(tableButton.text()).toContain('Table')
-    expect(tableButton.classes()).toContain('toolbar-btn')
-    expect(tableButton.element.closest('.toolbar__actions')).not.toBeNull()
-    expect(tableButton.find('svg').exists()).toBe(true)
-
-    await tableButton.trigger('click')
-
-    expect(wrapper.emitted('insertTable')).toHaveLength(1)
-  })
-
-  it('renders an accessible icon control for toggling the document outline', async () => {
-    const wrapper = mountToolbar({ isOutlineOpen: true })
-
-    const outlineButton = wrapper.get('button[aria-label="Hide document outline"]')
-    expect(outlineButton.attributes('aria-pressed')).toBe('true')
-    expect(outlineButton.find('svg[aria-hidden="true"]').exists()).toBe(true)
-
-    await outlineButton.trigger('click')
-
-    expect(wrapper.emitted('toggleOutline')).toHaveLength(1)
   })
 
   it('renders keyboard shortcuts as an accessible icon control', async () => {
@@ -124,10 +114,8 @@ describe('Toolbar', () => {
     expect(wrapper.find('.mobile-toolbar-actions__menu-btn').exists()).toBe(true)
     expect(wrapper.find('button[aria-label="Menu"]').exists()).toBe(true)
 
-    // Should have theme toggle
-    expect(
-      wrapper.find('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]').exists(),
-    ).toBe(true)
+    // Theme switching lives in the action sheet, not in the header row
+    expect(wrapper.find('.mobile-toolbar-actions .theme-toggle').exists()).toBe(false)
   })
 
   it('keeps the outline toggle available in the compact mobile toolbar', async () => {
@@ -181,82 +169,17 @@ describe('Toolbar', () => {
     expect(wrapper.emitted('insertTable')).toHaveLength(1)
   })
 
-  it('hides open and save when document actions are unavailable', () => {
+  it('keeps document actions in the mobile action sheet', async () => {
     const wrapper = mountToolbar({
       availableModes: ['editor', 'preview'],
-      canOpenDocuments: false,
-      canSaveDocuments: false,
+      isMobile: true,
       viewMode: 'editor',
     })
 
-    expect(wrapper.text()).not.toContain('Open')
-    expect(wrapper.text()).not.toContain('Save')
-  })
+    await wrapper.get('button[aria-label="Menu"]').trigger('click')
 
-  it('renders an install action only when installation is available', async () => {
-    const wrapper = mountToolbar({
-      canInstall: true,
-    })
-
-    const installButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Install'))
-
-    expect(installButton).toBeDefined()
-
-    await installButton?.trigger('click')
-
-    expect(installButton?.classes()).toContain('toolbar-btn--primary')
-    expect(wrapper.emitted('install')).toHaveLength(1)
-  })
-
-  describe('export menu', () => {
-    it('closes the export menu when clicking outside', () => {
-      const wrapper = mountToolbar()
-
-      const summary = wrapper.get('.export-menu summary')
-      summary.trigger('click')
-      expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(true)
-      expect(wrapper.get('.export-menu__popover').isVisible()).toBe(true)
-
-      document.body.click()
-      expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(false)
-      expect(wrapper.get('.export-menu__popover').isVisible()).toBe(false)
-    })
-
-    it('keeps the export menu open when clicking inside the popover', () => {
-      const wrapper = mountToolbar()
-
-      const summary = wrapper.get('.export-menu summary')
-      summary.trigger('click')
-      expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(true)
-
-      wrapper.get('.export-menu__item').trigger('click')
-      expect(wrapper.find('.export-menu').element.hasAttribute('open')).toBe(false)
-    })
-
-    it('shows disabled pdf export guidance when pdf export is unavailable', async () => {
-      const wrapper = mountToolbar({
-        canExportPdf: false,
-        pdfExportUnavailableReason:
-          "PDF export isn't available on mobile or installed PWAs yet. Use Export as HTML instead.",
-      })
-
-      await wrapper.get('.export-menu summary').trigger('click')
-
-      const items = wrapper.findAll('.export-menu__item')
-      expect(items[1]?.attributes('disabled')).toBeDefined()
-      expect(wrapper.get('.export-menu__hint').text()).toContain('Use Export as HTML instead')
-    })
-
-    it('removes the click-outside listener when the component is unmounted', () => {
-      const wrapper = mountToolbar()
-      const removeSpy = vi.spyOn(document, 'removeEventListener')
-
-      wrapper.unmount()
-
-      expect(removeSpy).toHaveBeenCalledWith('click', expect.any(Function), true)
-      removeSpy.mockRestore()
-    })
+    const actions = Array.from(document.querySelectorAll('.mobile-action-sheet__action'))
+    expect(actions.some((action) => action.textContent?.includes('Open'))).toBe(true)
+    expect(actions.some((action) => action.textContent?.includes('Save'))).toBe(true)
   })
 })

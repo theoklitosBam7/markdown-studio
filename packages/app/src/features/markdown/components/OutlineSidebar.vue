@@ -42,9 +42,9 @@ function headingStyle(depth: number): Record<string, string> {
 
 <style scoped>
 .outline-sidebar {
-  width: 260px;
+  width: 248px;
+  flex: 0 0 248px;
   min-width: 0;
-  flex-shrink: 0;
   overflow: hidden;
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -54,33 +54,32 @@ function headingStyle(depth: number): Record<string, string> {
   height: 42px;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 18px;
   border-bottom: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .outline-sidebar__navigation {
   height: calc(100% - 43px);
   overflow-y: auto;
-  padding: 8px;
+  padding: 12px 10px;
 }
 
 .outline-sidebar__heading {
   width: 100%;
   display: block;
   overflow: hidden;
-  padding: 7px 8px 7px calc(8px + var(--heading-depth) * 14px);
+  padding: 9px 10px 9px calc(10px + var(--heading-depth) * 14px);
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   font: inherit;
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.4;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -113,6 +112,7 @@ function headingStyle(depth: number): Record<string, string> {
 @media (max-width: 700px) {
   .outline-sidebar {
     width: 100%;
+    flex-basis: 100%;
     border-right: 0;
   }
 }
