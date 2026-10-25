@@ -1,5 +1,22 @@
 # markdown-studio
 
+## 0.11.0
+
+### Minor Changes
+
+- 4bfb4f0: Redesign the Editor Workspace with a workspace rail, light and dark themes, numbered source lines, and Markdown formatting tools.
+  
+  - Keep document, export, view-mode, and mobile actions available
+  - Show workspace navigation and document status
+  - Offer numbered lists, blockquotes, code blocks, and horizontal rules in the More menu
+- 4bfb4f0: Make the mobile Editor Workspace header fit one row on phones
+  
+  - Show the document name, save state, outline toggle, and view switch in a single header row
+  - Move the theme switch and document actions into grouped action sheet sections
+  - Keep the action sheet Cancel button visible and move focus into the sheet when it opens
+  - Size header, toolbar, and editor controls for touch and stop iOS focus zoom
+  - Keep the compact shell on landscape phones and honor device safe areas
+
 ## 0.10.2
 
 ### Patch Changes
