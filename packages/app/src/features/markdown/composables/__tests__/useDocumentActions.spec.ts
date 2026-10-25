@@ -11,7 +11,7 @@ const desktopMock = {
   documents: {
     clearLastOpened: vi.fn(async () => undefined),
     clearWorkspaceDraft: vi.fn(async () => undefined),
-    open: vi.fn(async () => ({ content: '# Loaded', path: '/tmp/loaded.md' })),
+    open: vi.fn(async () => ({ content: '# Loaded', modifiedAt: 0, path: '/tmp/loaded.md' })),
     restoreLastOpened: vi.fn(async () => null),
     restoreWorkspaceDraft: vi.fn(async () => null),
     save: vi.fn(async () => ({ path: '/tmp/saved.md' })),

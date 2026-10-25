@@ -352,6 +352,7 @@ describe('useEditorWorkspaceController', () => {
   it('restores the last opened desktop document during startup', async () => {
     const restoreLastOpened = vi.fn(async () => ({
       content: '# Desktop restored',
+      modifiedAt: 0,
       path: '/tmp/desktop-restored.md',
     }))
 
@@ -406,6 +407,7 @@ describe('useEditorWorkspaceController', () => {
   it('restores an unsaved desktop draft before the last opened document during startup', async () => {
     const restoreLastOpened = vi.fn(async () => ({
       content: '# Saved file',
+      modifiedAt: 0,
       path: '/tmp/saved-file.md',
     }))
     const restoreWorkspaceDraft = vi.fn(async () => ({
@@ -514,7 +516,7 @@ describe('useEditorWorkspaceController', () => {
   })
 
   it('restores editor focus after every document lifecycle action', async () => {
-    const open = vi.fn(async () => ({ content: '# Opened', path: 'opened.md' }))
+    const open = vi.fn(async () => ({ content: '# Opened', modifiedAt: 0, path: 'opened.md' }))
     const save = vi.fn(async () => ({ path: 'saved.md' }))
 
     appWindow.desktop = {

@@ -1,3 +1,4 @@
+import type { DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { nextTick, shallowRef } from 'vue'
 
@@ -13,10 +14,8 @@ const desktopMock = {
   documents: {
     clearLastOpened: vi.fn(async () => undefined),
     clearWorkspaceDraft: vi.fn(async () => undefined),
-    open: vi.fn(async () => ({ content: '# Loaded', path: '/tmp/loaded.md' })),
-    restoreLastOpened: vi.fn<() => Promise<{ content: string; path: string } | null>>(
-      async () => null,
-    ),
+    open: vi.fn(async () => ({ content: '# Loaded', modifiedAt: 0, path: '/tmp/loaded.md' })),
+    restoreLastOpened: vi.fn<() => Promise<DesktopDocumentHandle | null>>(async () => null),
     restoreWorkspaceDraft: vi.fn(async () => null),
     save: vi.fn(async ({ path }: { path: null | string }) => ({ path: path ?? '/tmp/saved.md' })),
     saveAs: vi.fn(async () => ({ path: '/tmp/saved-as.md' })),
@@ -94,6 +93,7 @@ describe('useDocumentSession', () => {
   it('restores the last opened desktop document as clean saved work', async () => {
     desktopMock.documents.restoreLastOpened.mockResolvedValueOnce({
       content: '# Restored file',
+      modifiedAt: 0,
       path: '/tmp/restored.md',
     })
     const { content, session } = createSession()
