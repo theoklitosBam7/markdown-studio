@@ -25,4 +25,23 @@ describe('OutlineSidebar', () => {
 
     expect(wrapper.emitted('navigate')).toEqual([[18]])
   })
+
+  it('hides the folder tab when the folder browser is unavailable', () => {
+    const wrapper = mount(OutlineSidebar, {
+      props: { headings: [] },
+    })
+
+    expect(wrapper.find('.sidebar-tabs').exists()).toBe(false)
+    expect(wrapper.find('.outline-sidebar__header').text()).toBe('Outline')
+  })
+
+  it('switches to the folder tab when the folder browser is available', async () => {
+    const wrapper = mount(OutlineSidebar, {
+      props: { folderTabAvailable: true, headings: [] },
+    })
+
+    await wrapper.findAll('.sidebar-tabs__tab')[1]?.trigger('click')
+
+    expect(wrapper.emitted('changeTab')).toEqual([['folders']])
+  })
 })
