@@ -1,6 +1,6 @@
 ---
-'@markdown-studio/desktop': patch
-'markdown-studio': patch
+'@markdown-studio/desktop': minor
+'markdown-studio': minor
 ---
 
 Make the mobile Editor Workspace header fit one row on phones

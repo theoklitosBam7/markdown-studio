@@ -1,6 +1,6 @@
 ---
-'@markdown-studio/desktop': patch
-'markdown-studio': patch
+'@markdown-studio/desktop': minor
+'markdown-studio': minor
 ---
 
 Redesign the Editor Workspace with a workspace rail, light and dark themes, numbered source lines, and Markdown formatting tools.
