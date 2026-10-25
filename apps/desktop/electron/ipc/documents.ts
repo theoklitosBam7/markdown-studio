@@ -139,6 +139,7 @@ export async function exportPdf(
 
 export async function openDocument(
   mainWindow: BrowserWindow,
+  authorizedDocumentPaths?: Set<string>,
 ): Promise<DesktopDocumentHandle | null> {
   const result = await dialog.showOpenDialog(mainWindow, {
     filters: MARKDOWN_FILTERS,
@@ -162,6 +163,7 @@ export async function openDocument(
     throw new Error(`Failed to read file: ${selectedPath}`)
   }
 
+  authorizedDocumentPaths?.add(selectedPath)
   await rememberLastOpenedPathSafe(selectedPath)
   await clearDocumentState('workspaceDraft')
   return { content, modifiedAt, path: selectedPath }
@@ -178,6 +180,7 @@ const documentFolderStore: DocumentFolderStore = {
 
 export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   const folders = createDocumentFolderRegistry(documentFolderStore)
+  const authorizedDocumentPaths = new Set<string>()
   ipcMain.removeHandler(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_OPEN_CHANNEL)
@@ -204,21 +207,42 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.handle(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL, async () =>
     clearDocumentState('workspaceDraft'),
   )
-  ipcMain.handle(DOCUMENTS_OPEN_CHANNEL, async () => openDocument(mainWindow))
-  ipcMain.handle(DOCUMENTS_OPEN_PATH_CHANNEL, async (_, payload) =>
-    openDocumentFromFolder(folders, payload),
+  ipcMain.handle(DOCUMENTS_OPEN_CHANNEL, async () =>
+    openDocument(mainWindow, authorizedDocumentPaths),
   )
-  ipcMain.handle(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL, async () => restoreLastOpenedDocument())
-  ipcMain.handle(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL, async () => restoreWorkspaceDraft())
-  ipcMain.handle(DOCUMENTS_SAVE_CHANNEL, async (_, payload) => saveDocument(mainWindow, payload))
+  ipcMain.handle(DOCUMENTS_OPEN_PATH_CHANNEL, async (_, payload) =>
+    openDocumentFromFolder(folders, payload, authorizedDocumentPaths),
+  )
+  ipcMain.handle(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL, async () => {
+    const document = await restoreLastOpenedDocument()
+    if (document) authorizedDocumentPaths.add(document.path)
+    return document
+  })
+  ipcMain.handle(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL, async () => {
+    const draft = await restoreWorkspaceDraft()
+    const draftPath = draft?.activeDocument.path
+
+    if (draftPath && (await readDocumentState()).lastOpenedPath === draftPath) {
+      authorizedDocumentPaths.add(draftPath)
+    }
+
+    return draft
+  })
+  ipcMain.handle(DOCUMENTS_SAVE_CHANNEL, async (_, payload) =>
+    saveDocument(mainWindow, payload, authorizedDocumentPaths),
+  )
   ipcMain.handle(DOCUMENTS_SAVE_AS_CHANNEL, async (_, payload) =>
-    saveDocumentAs(mainWindow, payload),
+    saveDocumentAs(mainWindow, payload, authorizedDocumentPaths),
   )
   ipcMain.handle(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL, async (_, payload) =>
     saveWorkspaceDraft(payload),
   )
   ipcMain.handle(DOCUMENTS_CHECK_MODIFICATION_CHANNEL, async (_, payload) => {
     const input = assertDocumentCheckInput(payload)
+
+    if (!authorizedDocumentPaths.has(input.path)) {
+      throw new Error('Document modification check is not authorized for this path.')
+    }
 
     return checkDocumentModification(input.path, input.modifiedAt)
   })
@@ -272,11 +296,12 @@ export async function restoreWorkspaceDraft(): Promise<DesktopWorkspaceDraft | n
 export async function saveDocument(
   mainWindow: BrowserWindow,
   payload: unknown,
+  authorizedDocumentPaths?: Set<string>,
 ): Promise<{ path: string } | null> {
   const input = assertSaveInput(payload)
 
   if (input.path === null) {
-    return saveDocumentAs(mainWindow, input)
+    return saveDocumentAs(mainWindow, input, authorizedDocumentPaths)
   }
 
   try {
@@ -285,6 +310,7 @@ export async function saveDocument(
     throw new Error(`Failed to save file: ${input.path}`)
   }
 
+  authorizedDocumentPaths?.add(input.path)
   await rememberLastOpenedPathSafe(input.path)
   await clearDocumentState('workspaceDraft')
   return { path: input.path }
@@ -293,6 +319,7 @@ export async function saveDocument(
 export async function saveDocumentAs(
   mainWindow: BrowserWindow,
   payload: unknown,
+  authorizedDocumentPaths?: Set<string>,
 ): Promise<{ path: string } | null> {
   const input = assertSaveAsInput(payload)
 
@@ -311,6 +338,7 @@ export async function saveDocumentAs(
     throw new Error(`Failed to save file: ${result.filePath}`)
   }
 
+  authorizedDocumentPaths?.add(result.filePath)
   await rememberLastOpenedPathSafe(result.filePath)
   await clearDocumentState('workspaceDraft')
   return { path: result.filePath }
@@ -347,10 +375,12 @@ function getDocumentStatePath(): string {
 async function openDocumentFromFolder(
   folders: DocumentFolderRegistry,
   payload: unknown,
+  authorizedDocumentPaths: Set<string>,
 ): Promise<DesktopDocumentHandle | null> {
   const handle = await folders.open(assertFolderListInput(payload))
   if (!handle) return null
 
+  authorizedDocumentPaths.add(handle.path)
   await rememberLastOpenedPathSafe(handle.path)
   await clearDocumentState('workspaceDraft')
   return handle
