@@ -279,9 +279,11 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     return contentValue.length
   }
 
-  async function openDocumentFromFolder(handle: DesktopDocumentHandle): Promise<void> {
+  async function openDocumentFromFolder(
+    loadHandle: () => Promise<DesktopDocumentHandle | null>,
+  ): Promise<void> {
     await performDocumentAction(async () => {
-      await openDocumentHandle(handle)
+      await openDocumentHandle(loadHandle)
     })
   }
 

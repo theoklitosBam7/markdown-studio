@@ -6,20 +6,25 @@ import type {
   DesktopFoldersApi,
 } from '@markdown-studio/desktop-contract/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { shallowRef } from 'vue'
 
 import type { AppWindow } from '../../../../browser-window'
 
+import { resetBrowserDocumentSessionForTests } from '../useDocumentActions'
 import { useDocumentFolders } from '../useDocumentFolders'
+import { useDocumentSession } from '../useDocumentSession'
 
 const appWindow = window as AppWindow
 const originalDesktop = appWindow.desktop
 
 beforeEach(() => {
+  resetBrowserDocumentSessionForTests()
   appWindow.desktop = undefined
   vi.clearAllMocks()
 })
 
 afterEach(() => {
+  resetBrowserDocumentSessionForTests()
   appWindow.desktop = originalDesktop
   vi.restoreAllMocks()
 })
@@ -207,13 +212,94 @@ describe('useDocumentFolders', () => {
     ])
   })
 
+  it('does not load or replace a Markdown Document from a Document Folder when discard is cancelled', async () => {
+    const opened: DesktopDocumentHandle = {
+      content: '# Notes',
+      modifiedAt: 1,
+      path: '/tmp/root/notes.md',
+    }
+    const openPath = vi.fn(async () => opened)
+    const { desktop } = createDesktopMock(
+      {
+        restore: async () => ({
+          folders: [createFolder('folder-1', 'root', '/tmp/root')],
+          removedCount: 0,
+        }),
+      },
+      { openPath },
+    )
+    appWindow.desktop = desktop
+    window.confirm = vi.fn(() => false)
+
+    const content = shallowRef('# Existing')
+    const session = useDocumentSession({
+      content,
+      replaceContent: (value) => {
+        content.value = value
+      },
+    })
+    content.value = '# Unsaved edits'
+    const folders = useDocumentFolders({
+      openDocument: (loadHandle) => session.openDocumentHandle(loadHandle),
+    })
+    await folders.restore()
+    await folders.open('folder-1', 'notes.md')
+
+    expect(window.confirm).toHaveBeenCalledTimes(1)
+    expect(openPath).not.toHaveBeenCalled()
+    expect(content.value).toBe('# Unsaved edits')
+    expect(session.currentPath.value).toBe(null)
+    expect(session.isDirty.value).toBe(true)
+  })
+
+  it('loads and opens a Markdown Document from a Document Folder after discard is accepted', async () => {
+    const opened: DesktopDocumentHandle = {
+      content: '# Notes',
+      modifiedAt: 1,
+      path: '/tmp/root/notes.md',
+    }
+    const openPath = vi.fn(async () => opened)
+    const { desktop } = createDesktopMock(
+      {
+        restore: async () => ({
+          folders: [createFolder('folder-1', 'root', '/tmp/root')],
+          removedCount: 0,
+        }),
+      },
+      { openPath },
+    )
+    appWindow.desktop = desktop
+    window.confirm = vi.fn(() => true)
+
+    const content = shallowRef('# Existing')
+    const session = useDocumentSession({
+      content,
+      replaceContent: (value) => {
+        content.value = value
+      },
+    })
+    content.value = '# Unsaved edits'
+    const folders = useDocumentFolders({
+      openDocument: (loadHandle) => session.openDocumentHandle(loadHandle),
+    })
+    await folders.restore()
+    await folders.open('folder-1', 'notes.md')
+
+    expect(openPath).toHaveBeenCalledWith({ folderId: 'folder-1', relativePath: 'notes.md' })
+    expect(content.value).toBe('# Notes')
+    expect(session.currentPath.value).toBe('/tmp/root/notes.md')
+    expect(session.isDirty.value).toBe(false)
+  })
+
   it('opens a Markdown Document through the supplied callback', async () => {
     const opened: DesktopDocumentHandle = {
       content: '# Notes',
       modifiedAt: 1,
       path: '/tmp/root/notes.md',
     }
-    const openDocument = vi.fn(async () => undefined)
+    const openDocument = vi.fn(async (loadHandle: () => Promise<DesktopDocumentHandle | null>) => {
+      await loadHandle()
+    })
     const { desktop } = createDesktopMock(
       {
         list: async () => ({
@@ -233,7 +319,8 @@ describe('useDocumentFolders', () => {
     await folders.restore()
     await folders.open('folder-1', 'notes.md')
 
-    expect(openDocument).toHaveBeenCalledWith(opened)
+    expect(openDocument).toHaveBeenCalledTimes(1)
+    await expect(openDocument.mock.calls[0]?.[0]()).resolves.toEqual(opened)
   })
 })
 

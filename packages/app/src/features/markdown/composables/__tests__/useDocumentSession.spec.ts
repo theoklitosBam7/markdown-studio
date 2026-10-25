@@ -102,11 +102,11 @@ describe('useDocumentSession', () => {
   it('opens a Markdown Document from a Document Folder after the discard-changes confirm', async () => {
     const { content, session } = createSession()
 
-    await session.openDocumentHandle({
+    await session.openDocumentHandle(async () => ({
       content: '# From folder',
       modifiedAt: 42,
       path: '/tmp/notes/from-folder.md',
-    })
+    }))
     await nextTick()
 
     expect(window.confirm).not.toHaveBeenCalled()
@@ -121,11 +121,11 @@ describe('useDocumentSession', () => {
     const { content, session } = createSession()
     content.value = '# Unsaved'
 
-    await session.openDocumentHandle({
+    await session.openDocumentHandle(async () => ({
       content: '# From folder',
       modifiedAt: 42,
       path: '/tmp/notes/from-folder.md',
-    })
+    }))
 
     expect(window.confirm).toHaveBeenCalledTimes(1)
     expect(content.value).toBe('# Unsaved')

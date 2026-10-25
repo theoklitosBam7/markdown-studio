@@ -15,7 +15,7 @@ interface DocumentFolderView extends DesktopDocumentFolder {
 }
 
 interface UseDocumentFoldersOptions {
-  openDocument: (handle: DesktopDocumentHandle) => Promise<void>
+  openDocument: (loadHandle: () => Promise<DesktopDocumentHandle | null>) => Promise<void>
 }
 
 interface UseDocumentFoldersReturn {
@@ -156,14 +156,12 @@ export function useDocumentFolders(options: UseDocumentFoldersOptions): UseDocum
   async function open(folderId: string, relativePath: string): Promise<void> {
     if (!foldersApi()) return
 
-    const handle = await desktop.value.documents.openPath?.({ folderId, relativePath })
+    await options.openDocument(async () => {
+      const handle = await desktop.value.documents.openPath?.({ folderId, relativePath })
 
-    if (!handle) {
-      message.value = 'This file cannot be opened.'
-      return
-    }
-
-    await options.openDocument(handle)
+      if (!handle) message.value = 'This file cannot be opened.'
+      return handle ?? null
+    })
   }
 
   async function loadListing(folderId: string, relativePath: string): Promise<void> {

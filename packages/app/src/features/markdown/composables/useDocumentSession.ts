@@ -28,7 +28,7 @@ interface UseDocumentSessionReturn {
   isDirty: ComputedRef<boolean>
   loadExampleDocument: (input: { content: string; title: string }) => Promise<void>
   openDocument: () => Promise<void>
-  openDocumentHandle: (handle: DesktopDocumentHandle) => Promise<void>
+  openDocumentHandle: (loadHandle: () => Promise<DesktopDocumentHandle | null>) => Promise<void>
   restoreDraft: (input: { content: string; label: string }) => Promise<void>
   restoreLastOpenedDocument: () => Promise<void>
   restoreWorkspaceDraft: (input: {
@@ -98,8 +98,13 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     applyDocument(opened)
   }
 
-  async function openDocumentHandle(handle: DesktopDocumentHandle): Promise<void> {
+  async function openDocumentHandle(
+    loadHandle: () => Promise<DesktopDocumentHandle | null>,
+  ): Promise<void> {
     if (!(await confirmDiscardChanges())) return
+
+    const handle = await loadHandle()
+    if (!handle) return
 
     applyDocument(handle)
   }
