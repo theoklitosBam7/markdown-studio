@@ -27,10 +27,10 @@ Use Markdown Studio instantly in your browser at **https://pwa.markdownstudio.eu
 
 Features at a glance:
 
-- **Live preview** — See your rendered Markdown as you type
-- **Mermaid diagrams** — Create flowcharts, sequence diagrams, and more
-- **PWA install** — Install as a standalone desktop app for offline use
-- **Auto-save** — Drafts persist automatically between sessions
+- **Live preview.** See your rendered Markdown as you type
+- **Mermaid diagrams.** Create flowcharts, sequence diagrams, and more
+- **PWA install.** Install as a standalone desktop app for offline use
+- **Auto-save.** Drafts persist automatically between sessions
 
 ### Install as PWA
 
@@ -38,14 +38,14 @@ Install Markdown Studio as a standalone desktop app:
 
 1. Visit https://pwa.markdownstudio.eu/ in Chrome, Edge, or Safari
 2. Click the **Install** button in the toolbar or use your browser's install option (look for the install icon in the address bar)
-3. Launch from your desktop or Start menu — it works offline
+3. Launch from your desktop or Start menu. It works offline.
 
 **PWA features:**
 
-- **Offline support** — Service worker caches the app for use without internet
-- **Auto-save drafts** — Unsaved work persists to browser storage
-- **Automatic updates** — New versions deploy automatically; a banner notifies you when an update is available
-- **Native feel** — Runs in its own window, separate from the browser
+- **Offline support.** Service worker caches the app for use without internet
+- **Auto-save drafts.** Unsaved work persists to browser storage
+- **Automatic updates.** New versions deploy automatically; a banner notifies you when an update is available
+- **Native feel.** Runs in its own window, separate from the browser
 
 ### Run Locally via NPX (Offline option)
 
@@ -96,22 +96,22 @@ brew upgrade --cask theoklitosBam7/tap/markdown-studio
 
 Get the macOS application from GitHub Releases:
 
-**[Download latest release →](https://github.com/theoklitosBam7/markdown-studio/releases/latest)**
+**[Download the latest release](https://github.com/theoklitosBam7/markdown-studio/releases/latest)**
 
-Download `Markdown-Studio-darwin-arm64.dmg` (Apple Silicon), open the DMG, and drag the app to your `/Applications` folder.
+Download the `Markdown Studio-<version>-arm64.dmg` asset for Apple Silicon, open the DMG, and drag the app to your `/Applications` folder.
 
 > [!IMPORTANT]
-> **macOS Security Warning — Action Required**
+> **Action required for the macOS security warning**
 >
 > macOS may show a warning that `Markdown Studio.app` is **damaged and can't be opened**. This happens because the app is unsigned.
 >
-> **Fix:** Clear the quarantine attribute in Terminal:
+> **Fix.** Clear the quarantine attribute in Terminal:
 >
 > ```sh
 > xattr -dr com.apple.quarantine /Applications/Markdown\ Studio.app
 > ```
 >
-> **Alternative:** Open `System Settings` → `Privacy & Security` and allow the app to run from there.
+> **Alternative.** Open `System Settings`, then `Privacy & Security`, and allow the app to run from there.
 
 ### Development
 
@@ -169,29 +169,29 @@ intentionally want to remove labels that are absent from `.github/labels.yml`.
 
 ### For Writers
 
-- **Split-pane editor** — Write on the left, preview on the right
-- **View modes** — Toggle between split view, editor-only, or preview-only modes
-- **Live Markdown rendering** — See changes instantly as you type
-- **Mermaid diagram support** — Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
-- **Theme switching** — Toggle between light and dark modes with smooth animated transitions
-- **Document statistics** — Track word, character, line, and diagram counts in real-time
-- **Example documents** — Load pre-made templates to learn Markdown or Mermaid syntax
-- **Copy to clipboard** — Quickly copy your Markdown source with visual feedback
-- **PWA install support** — Install as a standalone desktop-like app from supported browsers
-- **Auto-save drafts** — Web app automatically persists unsaved work to localStorage
-- **Offline ready** — Service worker caching enables continued use without an internet connection
-- **Document Folders** — Keep folders open in the desktop app and move between their Markdown files
+- **Split-pane editor.** Write on the left, preview on the right
+- **View modes.** Toggle between split view, editor-only, or preview-only modes
+- **Live Markdown rendering.** See changes instantly as you type
+- **Mermaid diagram support.** Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
+- **Theme switching.** Toggle between light and dark modes with smooth animated transitions
+- **Document statistics.** Track word, character, line, and diagram counts in real time
+- **Example documents.** Load pre-made templates to learn Markdown or Mermaid syntax
+- **Copy to clipboard.** Quickly copy your Markdown source with visual feedback
+- **PWA install support.** Install as a standalone desktop-like app from supported browsers
+- **Auto-save drafts.** Web app automatically persists unsaved work to localStorage
+- **Offline ready.** Service worker caching keeps the app usable without an internet connection
+- **Document Folders.** Keep folders open in the desktop app and move between their Markdown files
 
 ### For Developers
 
-- **Safe HTML rendering** — Content is sanitized with DOMPurify
-- **File System Access API** — Open and save files directly in supported browsers
-- **Desktop file operations** — Native open, save, and save as in the Electron app
-- **Constrained folder reads** — Every folder listing is resolved with `realpath` and confined to the folder the user opened
-- **Responsive design** — Works on desktop and mobile devices
-- **Keyboard shortcuts** — Efficient editing with familiar shortcuts
-- **Scroll synchronization** — Source map tracking enables editor-preview sync
-- **Service worker** — Offline caching and automatic update detection in the web app
+- **Safe HTML rendering.** Content is sanitized with DOMPurify
+- **File System Access API.** Open and save files directly in supported browsers
+- **Desktop file operations.** Native open, save, and save as in the Electron app
+- **Constrained folder reads.** Every folder listing is resolved with `realpath` and confined to the folder the user opened
+- **Responsive design.** Works on desktop and mobile devices
+- **Keyboard shortcuts.** Efficient editing with familiar shortcuts
+- **Scroll synchronization.** Source map tracking enables editor-preview sync
+- **Service worker.** Offline caching and automatic update detection in the web app
 
 ## Usage
 
@@ -203,9 +203,9 @@ Simply start typing in the editor pane. The preview pane updates automatically a
 
 Click the view toggle buttons to switch between:
 
-- **Editor** — Write without distractions
-- **Split** — Side-by-side editing and preview (default)
-- **Preview** — Focus on the rendered output
+- **Editor.** Write without distractions
+- **Split.** Side-by-side editing and preview, the default view
+- **Preview.** Focus on the rendered output
 
 The editor automatically adapts to your preferred layout.
 
@@ -238,11 +238,11 @@ Click the theme toggle button in the toolbar to switch between light and dark mo
 
 Click the "Examples" button in the toolbar to browse and load pre-made templates. Choose from:
 
-- **Flowchart diagram** — Git feature branch workflow
-- **Sequence diagram** — JWT authentication flow
-- **Entity relationship diagram** — Blog platform database schema
-- **Gantt chart** — Product launch timeline
-- **Full kitchen-sink** — Complete Markdown feature demonstration
+- **Flowchart diagram.** Git feature branch workflow
+- **Sequence diagram.** JWT authentication flow
+- **Entity relationship diagram.** Blog platform database schema
+- **Gantt chart.** Product launch timeline
+- **Full kitchen-sink.** Complete Markdown feature demonstration
 
 The kitchen-sink example loads by default on first visit.
 
@@ -250,16 +250,16 @@ The kitchen-sink example loads by default on first visit.
 
 **Desktop App:**
 
-- **Open** — Load an existing `.md`, `.markdown`, `.mdown`, or `.txt` file from a native dialog
-- **Save** — Save your current document
-- **Save As** — Save with a new name or location
-- **Clear** — Start fresh with an empty editor
+- **Open.** Load an existing `.md`, `.markdown`, `.mdown`, or `.txt` file from a native dialog
+- **Save.** Save your current document
+- **Save As.** Save with a new name or location
+- **Clear.** Start fresh with an empty editor
 
 **Web App:**
 
-- **Open** — Load `.md` files using the File System Access API (Chrome/Edge) or file picker
-- **Save** — Save to previously opened file, or download if using the fallback
-- **Save As** — Save with a new name (uses File System Access API when available, otherwise downloads)
+- **Open.** Load `.md` files using the File System Access API (Chrome/Edge) or file picker
+- **Save.** Save to previously opened file, or download if using the fallback
+- **Save As.** Save with a new name (uses File System Access API when available, otherwise downloads)
 
 ### Browsing Document Folders
 
@@ -321,18 +321,18 @@ packages/cli/              # NPX launcher package
 
 ### Tech Stack
 
-- **Vue 3** — Progressive JavaScript framework with Composition API
-- **Vite** — Fast build tool and dev server
-- **TypeScript** — Type-safe development
-- **Vue Router** — Client-side routing
-- **Marked** — Markdown parser and compiler
-- **DOMPurify** — HTML sanitization
-- **Mermaid** — Diagram generation from text
-- **Electron** — Cross-platform desktop app framework
-- **Vite+** — Unified toolchain for dev, build, test, lint, and format
-- **electron-builder** — Packaging and distribution
-- **Vitest** — Unit testing framework (via Vite+)
-- **Cypress** — End-to-end testing
+- **Vue 3.** Progressive JavaScript framework with Composition API
+- **Vite.** Fast build tool and dev server
+- **TypeScript.** Type-safe development
+- **Vue Router.** Client-side routing
+- **Marked.** Markdown parser and compiler
+- **DOMPurify.** HTML sanitization
+- **Mermaid.** Diagram generation from text
+- **Electron.** Cross-platform desktop app framework
+- **Vite+.** Unified toolchain for dev, build, test, lint, and format
+- **electron-builder.** Packaging and distribution
+- **Vitest.** Unit testing framework through Vite+
+- **Cypress.** End-to-end testing
 
 ### Available Scripts
 
@@ -428,11 +428,11 @@ Dry-run behavior:
 
 ### Architecture Highlights
 
-- **Composables-based architecture** — Logic is organized into reusable Vue composables (useTheme, useMarkdownEditor, useDocumentActions, useDocumentSession)
-- **Feature-based folder structure** — Related components and logic live together in `packages/app/src/features/`
-- **Desktop/web abstraction** — Clean separation between web and Electron APIs via useDesktop composable
-- **Source map tracking** — Line-level mapping enables scroll synchronization between editor and preview
-- **Theme transition system** — Smooth animated theme switches with useThemeTransition
+- **Composables-based architecture.** Logic is organized into reusable Vue composables such as useTheme, useMarkdownEditor, useDocumentSession, and useDocumentFolders
+- **Feature-based folder structure.** Related components and logic live together in `packages/app/src/features/`
+- **Desktop/web abstraction.** Clean separation between web and Electron APIs via useDesktop composable
+- **Source map tracking.** Line-level mapping enables scroll synchronization between editor and preview
+- **Theme transition system.** Smooth animated theme switches with useThemeTransition
 
 ## Browser Support
 
