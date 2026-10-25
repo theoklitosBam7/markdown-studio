@@ -1,11 +1,20 @@
 import type {
   DesktopExportInput,
+  DesktopFolderListInput,
   DesktopSaveAsInput,
   DesktopSaveImageInput,
   DesktopSaveInput,
   DesktopWorkspaceDraft,
   DesktopWorkspaceDraftInput,
 } from './types'
+
+export function assertDocumentFolderPaths(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError('Document Folder list must be an array.')
+  }
+
+  return value.map((path) => assertNonEmptyPath(path))
+}
 
 export function assertExportInput(value: unknown): DesktopExportInput {
   assertObject(value, 'Export payload must be an object.')
@@ -32,6 +41,24 @@ export function assertExternalUrl(value: string): string {
   }
 
   return url.toString()
+}
+
+export function assertFilePath(value: unknown): string {
+  return assertNonEmptyPath(value)
+}
+
+export function assertFolderId(value: unknown): string {
+  return assertNonEmptyPath(value)
+}
+
+export function assertFolderListInput(value: unknown): DesktopFolderListInput {
+  assertObject(value, 'Folder listing payload must be an object.')
+  const input = value as Record<string, unknown>
+
+  return {
+    folderId: assertNonEmptyPath(input.folderId),
+    relativePath: assertRelativePath(input.relativePath),
+  }
 }
 
 export function assertSaveAsInput(value: unknown): DesktopSaveAsInput {
@@ -147,6 +174,18 @@ function assertObject(value: unknown, message: string): asserts value is Record<
   }
 }
 
+// A node:path import would tie this module to the main process. Keep the check local
+// so the contract stays usable from the renderer.
+function assertRelativePath(value: unknown): string {
+  const normalized = assertNonEmptyPath(value)
+
+  if (isAbsolutePath(normalized) || normalized.split(/[\\/]/).includes('..')) {
+    throw new Error('A relative path is required.')
+  }
+
+  return normalized
+}
+
 function assertTextContent(value: unknown): string {
   if (typeof value !== 'string') {
     throw new TypeError('Markdown content must be a string.')
@@ -165,4 +204,8 @@ function assertWorkspaceDraftDocument(value: unknown): DesktopWorkspaceDraft['ac
     path: document.path === null ? null : assertNonEmptyPath(document.path),
     savedContent: assertTextContent(document.savedContent),
   }
+}
+
+function isAbsolutePath(value: string): boolean {
+  return /^([\\/]|[A-Za-z]:)/.test(value)
 }

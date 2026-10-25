@@ -1,4 +1,5 @@
 import type {
+  DesktopDocumentFolderAddResult,
   DesktopDocumentHandle,
   DesktopWorkspaceDraft,
 } from '@markdown-studio/desktop-contract/types'
@@ -7,20 +8,30 @@ import {
   DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
   DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
+  DOCUMENTS_OPEN_PATH_CHANNEL,
   DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL,
   DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_CHANNEL,
   DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL,
+  DOCUMENTS_STAT_MODIFICATION_CHANNEL,
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
+  FOLDERS_ADD_CHANNEL,
+  FOLDERS_LIST_CHANNEL,
+  FOLDERS_REMOVE_CHANNEL,
+  FOLDERS_RESTORE_CHANNEL,
   IMAGES_SAVE_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
 } from '@markdown-studio/desktop-contract/channels'
 import {
+  assertDocumentFolderPaths,
   assertExportInput,
   assertExternalUrl,
+  assertFilePath,
+  assertFolderId,
+  assertFolderListInput,
   assertSaveAsInput,
   assertSaveImageInput,
   assertSaveInput,
@@ -33,6 +44,12 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
+import {
+  createDocumentFolderRegistry,
+  type DocumentFolderRegistry,
+  type DocumentFolderStore,
+  readDocumentModificationTime,
+} from './folders'
 import { saveImage } from './images'
 
 const HTML_FILTERS = [
@@ -40,7 +57,7 @@ const HTML_FILTERS = [
   { extensions: ['*'], name: 'All Files' },
 ]
 const MARKDOWN_FILTERS = [
-  { extensions: ['md', 'markdown', 'mdown'], name: 'Markdown Files' },
+  { extensions: ['md', 'markdown', 'mdown', 'txt'], name: 'Markdown Files' },
   { extensions: ['*'], name: 'All Files' },
 ]
 const PDF_FILTERS = [
@@ -50,6 +67,7 @@ const PDF_FILTERS = [
 const DOCUMENT_STATE_FILE = 'document-state.json'
 
 interface DocumentState {
+  documentFolderPaths?: string[]
   lastOpenedPath?: string
   workspaceDraft?: DesktopWorkspaceDraft
 }
@@ -131,6 +149,11 @@ export async function openDocument(
     return null
   }
 
+  const modifiedAt = await readDocumentModificationTime(selectedPath)
+  if (modifiedAt === null) {
+    throw new Error(`Failed to read file: ${selectedPath}`)
+  }
+
   let content: string
   try {
     content = await readFile(selectedPath, 'utf8')
@@ -140,21 +163,37 @@ export async function openDocument(
 
   await rememberLastOpenedPathSafe(selectedPath)
   await clearDocumentState('workspaceDraft')
-  return { content, path: selectedPath }
+  return { content, modifiedAt, path: selectedPath }
+}
+
+const documentFolderStore: DocumentFolderStore = {
+  readDocumentFolderPaths: async () => (await readDocumentState()).documentFolderPaths ?? [],
+  writeDocumentFolderPaths: async (paths) => {
+    const state = await readDocumentState()
+    state.documentFolderPaths = paths
+    await writeDocumentState(state)
+  },
 }
 
 export function registerDesktopIpc(mainWindow: BrowserWindow): void {
+  const folders = createDocumentFolderRegistry(documentFolderStore)
   ipcMain.removeHandler(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_OPEN_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_OPEN_PATH_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_AS_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL)
+  ipcMain.removeHandler(DOCUMENTS_STAT_MODIFICATION_CHANNEL)
   ipcMain.removeHandler(EDITING_INSERT_TEXT_CHANNEL)
   ipcMain.removeHandler(EXPORTS_HTML_CHANNEL)
   ipcMain.removeHandler(EXPORTS_PDF_CHANNEL)
+  ipcMain.removeHandler(FOLDERS_ADD_CHANNEL)
+  ipcMain.removeHandler(FOLDERS_LIST_CHANNEL)
+  ipcMain.removeHandler(FOLDERS_REMOVE_CHANNEL)
+  ipcMain.removeHandler(FOLDERS_RESTORE_CHANNEL)
   ipcMain.removeHandler(IMAGES_SAVE_CHANNEL)
   ipcMain.removeHandler(SHELL_OPEN_EXTERNAL_CHANNEL)
 
@@ -165,6 +204,9 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
     clearDocumentState('workspaceDraft'),
   )
   ipcMain.handle(DOCUMENTS_OPEN_CHANNEL, async () => openDocument(mainWindow))
+  ipcMain.handle(DOCUMENTS_OPEN_PATH_CHANNEL, async (_, payload) =>
+    openDocumentFromFolder(folders, payload),
+  )
   ipcMain.handle(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL, async () => restoreLastOpenedDocument())
   ipcMain.handle(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL, async () => restoreWorkspaceDraft())
   ipcMain.handle(DOCUMENTS_SAVE_CHANNEL, async (_, payload) => saveDocument(mainWindow, payload))
@@ -174,11 +216,22 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.handle(DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL, async (_, payload) =>
     saveWorkspaceDraft(payload),
   )
+  ipcMain.handle(DOCUMENTS_STAT_MODIFICATION_CHANNEL, async (_, path) =>
+    readDocumentModificationTime(assertFilePath(path)),
+  )
   ipcMain.handle(EDITING_INSERT_TEXT_CHANNEL, async (_, text) => {
     await mainWindow.webContents.insertText(String(text))
   })
   ipcMain.handle(EXPORTS_HTML_CHANNEL, async (_, payload) => exportHtml(mainWindow, payload))
   ipcMain.handle(EXPORTS_PDF_CHANNEL, async (_, payload) => exportPdf(mainWindow, payload))
+  ipcMain.handle(FOLDERS_ADD_CHANNEL, async () => addDocumentFolder(mainWindow, folders))
+  ipcMain.handle(FOLDERS_LIST_CHANNEL, async (_, payload) =>
+    folders.list(assertFolderListInput(payload)),
+  )
+  ipcMain.handle(FOLDERS_REMOVE_CHANNEL, async (_, folderId) =>
+    folders.remove(assertFolderId(folderId)),
+  )
+  ipcMain.handle(FOLDERS_RESTORE_CHANNEL, async () => folders.restore())
   ipcMain.handle(IMAGES_SAVE_CHANNEL, async (_, payload) =>
     saveImage(assertSaveImageInput(payload)),
   )
@@ -193,9 +246,15 @@ export async function restoreLastOpenedDocument(): Promise<DesktopDocumentHandle
     return null
   }
 
+  const modifiedAt = await readDocumentModificationTime(state.lastOpenedPath)
+  if (modifiedAt === null) {
+    await clearDocumentState('lastOpenedPath')
+    return null
+  }
+
   try {
     const content = await readFile(state.lastOpenedPath, 'utf8')
-    return { content, path: state.lastOpenedPath }
+    return { content, modifiedAt, path: state.lastOpenedPath }
   } catch {
     await clearDocumentState('lastOpenedPath')
     return null
@@ -254,6 +313,20 @@ export async function saveDocumentAs(
   return { path: result.filePath }
 }
 
+async function addDocumentFolder(
+  mainWindow: BrowserWindow,
+  folders: DocumentFolderRegistry,
+): Promise<DesktopDocumentFolderAddResult> {
+  const result = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] })
+
+  const selectedPath = result.filePaths[0]
+  if (result.canceled || !selectedPath) {
+    return { ok: false, reason: 'cancelled' }
+  }
+
+  return folders.add(selectedPath)
+}
+
 async function clearDocumentState<K extends keyof DocumentState>(key: K): Promise<void> {
   try {
     const state = await readDocumentState()
@@ -268,6 +341,18 @@ function getDocumentStatePath(): string {
   return join(app.getPath('userData'), DOCUMENT_STATE_FILE)
 }
 
+async function openDocumentFromFolder(
+  folders: DocumentFolderRegistry,
+  payload: unknown,
+): Promise<DesktopDocumentHandle | null> {
+  const handle = await folders.open(assertFolderListInput(payload))
+  if (!handle) return null
+
+  await rememberLastOpenedPathSafe(handle.path)
+  await clearDocumentState('workspaceDraft')
+  return handle
+}
+
 async function readDocumentState(): Promise<DocumentState> {
   try {
     const raw = await readFile(getDocumentStatePath(), 'utf8')
@@ -279,6 +364,14 @@ async function readDocumentState(): Promise<DocumentState> {
 
     const record = parsed as Record<string, unknown>
     const state: DocumentState = {}
+
+    if ('documentFolderPaths' in record) {
+      try {
+        state.documentFolderPaths = assertDocumentFolderPaths(record.documentFolderPaths)
+      } catch {
+        state.documentFolderPaths = undefined
+      }
+    }
 
     if (typeof record.lastOpenedPath === 'string') {
       state.lastOpenedPath = record.lastOpenedPath
