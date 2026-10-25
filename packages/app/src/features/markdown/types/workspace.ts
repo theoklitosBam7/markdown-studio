@@ -87,7 +87,7 @@ export interface EditorWorkspaceController {
   }
   state: EditorWorkspaceState
   system: {
-    handleViewportResize(width: number): void
+    handleViewportResize(width: number, height?: number): void
     start(): Promise<void>
     stop(): void
   }

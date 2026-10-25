@@ -319,8 +319,8 @@ function toggleOutline(): void {
   }
 }
 
-/* Mobile styles removed - handled by MobileToolbarActions component */
-@media (max-width: 700px) {
+/* The compact header owns its own padding. */
+@media (max-width: 700px), (max-width: 1000px) and (max-height: 500px) {
   .toolbar {
     padding: 0;
   }

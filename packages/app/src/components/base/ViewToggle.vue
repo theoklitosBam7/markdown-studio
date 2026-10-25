@@ -2,19 +2,21 @@
 import type { Component } from 'vue'
 
 import { computed } from 'vue'
-import { BookOpen, Columns2, PanelLeft } from '@lucide/vue'
+import { BookOpen, Columns2, SquarePen } from '@lucide/vue'
 
 import type { ViewMode } from '@/types/editor'
 
 interface Props {
   availableModes?: ViewMode[]
   compact?: boolean
+  iconsOnly?: boolean
   modelValue: ViewMode
 }
 
 const props = withDefaults(defineProps<Props>(), {
   availableModes: () => ['editor', 'split', 'preview'],
   compact: false,
+  iconsOnly: false,
 })
 
 const emit = defineEmits<{
@@ -22,7 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const allModes: { icon: Component; label: string; value: ViewMode }[] = [
-  { icon: PanelLeft, label: 'Editor', value: 'editor' },
+  { icon: SquarePen, label: 'Editor', value: 'editor' },
   { icon: Columns2, label: 'Split', value: 'split' },
   { icon: BookOpen, label: 'Preview', value: 'preview' },
 ]
@@ -40,18 +42,20 @@ function setMode(mode: ViewMode): void {
 </script>
 
 <template>
-  <div :class="['view-toggle', { compact: props.compact }]">
+  <div :class="['view-toggle', { compact: props.compact, 'icons-only': props.iconsOnly }]">
     <button
       v-for="mode in modes"
       :key="mode.value"
       :data-mode="mode.value"
       :class="{ active: activeMode === mode.value }"
+      :aria-label="props.iconsOnly ? mode.label : undefined"
       :aria-pressed="activeMode === mode.value"
+      :title="props.iconsOnly ? mode.label : undefined"
       type="button"
       @click="setMode(mode.value)"
     >
       <component :is="mode.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
-      <span>{{ mode.label }}</span>
+      <span v-if="!props.iconsOnly">{{ mode.label }}</span>
     </button>
   </div>
 </template>
@@ -89,10 +93,15 @@ function setMode(mode: ViewMode): void {
 
 .view-toggle.compact button {
   flex: 1;
-  height: 36px;
+  height: 44px;
   font-size: 13px;
   font-weight: 600;
-  min-width: 36px;
+  min-width: 44px;
+  padding: 0 8px;
+}
+
+.view-toggle.compact.icons-only {
+  width: auto;
 }
 
 .view-toggle button.active {
@@ -116,6 +125,14 @@ function setMode(mode: ViewMode): void {
     font-size: 14px;
     min-width: 44px;
     padding: 0 14px;
+  }
+}
+
+/* Touch devices keep 44px targets even in the wide layout. */
+@media (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .view-toggle button {
+    height: 44px;
+    min-width: 44px;
   }
 }
 </style>

@@ -786,12 +786,9 @@ watch(
 
   .editor {
     padding: 16px var(--app-gutter) 24px 52px;
-    font-size: 13px;
-    line-height: 20.8px;
   }
 
   .editor-line-numbers {
-    --editor-line-height: 20.8px;
     --editor-gutter-vertical-padding: 40px;
 
     width: 40px;
@@ -801,6 +798,18 @@ watch(
 
   .editor-line-numbers li {
     min-height: var(--editor-line-height);
+  }
+}
+
+/* 16px keeps iOS Safari from zooming the page when the editor takes focus. */
+@media (max-width: 700px), (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .editor {
+    font-size: 16px;
+    line-height: 25.6px;
+  }
+
+  .editor-line-numbers {
+    --editor-line-height: 25.6px;
   }
 }
 </style>

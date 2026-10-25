@@ -62,6 +62,8 @@ const props = withDefaults(defineProps<Props>(), {
 @media (max-width: 700px) {
   .status-bar {
     gap: 10px;
+    padding: 0 max(var(--app-gutter), env(safe-area-inset-right)) env(safe-area-inset-bottom)
+      max(var(--app-gutter), env(safe-area-inset-left));
   }
 
   .status-item--document,

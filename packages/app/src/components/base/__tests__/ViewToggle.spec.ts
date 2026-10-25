@@ -42,4 +42,21 @@ describe('ViewToggle', () => {
 
     expect(wrapper.emitted('update:modelValue')).toEqual([['preview']])
   })
+
+  it('keeps an accessible name when the labels are hidden', () => {
+    const wrapper = mount(ViewToggle, {
+      props: {
+        availableModes: ['editor', 'preview'],
+        iconsOnly: true,
+        modelValue: 'editor',
+      },
+    })
+
+    const buttons = wrapper.findAll('button')
+
+    expect(buttons.map((button) => button.attributes('aria-label'))).toEqual(['Editor', 'Preview'])
+    expect(buttons.map((button) => button.attributes('title'))).toEqual(['Editor', 'Preview'])
+    expect(buttons.map((button) => button.text())).toEqual(['', ''])
+    expect(wrapper.get('[data-mode="editor"]').attributes('aria-pressed')).toBe('true')
+  })
 })

@@ -148,4 +148,17 @@ function handleClick(): void {
     height: 18px;
   }
 }
+
+/* Touch devices keep 44px targets even in the wide layout. */
+@media (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .toolbar-btn {
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .toolbar-btn.icon-only {
+    width: 44px;
+    height: 44px;
+  }
+}
 </style>

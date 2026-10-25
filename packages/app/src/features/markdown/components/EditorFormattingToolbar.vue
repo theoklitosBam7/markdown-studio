@@ -372,14 +372,31 @@ function handleHeadingChange(event: Event): void {
 
 @media (max-width: 700px) {
   .editor-formatting-toolbar__row {
-    min-height: 48px;
+    min-height: 52px;
     gap: 5px;
     padding: 4px 8px;
   }
 
   .editor-formatting-toolbar__button {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Landscape phones and tablets keep the desktop layout but still need touch targets. */
+@media (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .editor-formatting-toolbar__button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .editor-formatting-toolbar__heading {
+    height: 44px;
+  }
+
+  .editor-formatting-toolbar__heading select {
+    max-width: 96px;
+    font-size: 16px;
   }
 }
 </style>

@@ -307,6 +307,28 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
+  it('treats a landscape phone viewport as mobile', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+
+    workspace.system.handleViewportResize(844, 390)
+
+    expect(workspace.state.isMobile.value).toBe(true)
+    expect(workspace.state.availableModes.value).toEqual(['editor', 'preview'])
+
+    wrapper.unmount()
+  })
+
+  it('keeps a desktop viewport out of mobile mode', async () => {
+    const { workspace, wrapper } = await mountWorkspace()
+
+    workspace.system.handleViewportResize(1280, 800)
+
+    expect(workspace.state.isMobile.value).toBe(false)
+    expect(workspace.state.availableModes.value).toEqual(['editor', 'split', 'preview'])
+
+    wrapper.unmount()
+  })
+
   it('restores a stored draft during startup on the web', async () => {
     vi.useFakeTimers()
     window.localStorage.setItem(

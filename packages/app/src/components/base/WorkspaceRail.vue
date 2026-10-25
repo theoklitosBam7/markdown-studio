@@ -393,4 +393,12 @@ onUnmounted(() => {
     display: none;
   }
 }
+
+/* Touch devices need 44px rail targets. */
+@media (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
+  .workspace-rail__button {
+    width: 44px;
+    height: 44px;
+  }
+}
 </style>

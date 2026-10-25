@@ -114,10 +114,8 @@ describe('Toolbar', () => {
     expect(wrapper.find('.mobile-toolbar-actions__menu-btn').exists()).toBe(true)
     expect(wrapper.find('button[aria-label="Menu"]').exists()).toBe(true)
 
-    // Should have theme toggle
-    expect(
-      wrapper.find('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]').exists(),
-    ).toBe(true)
+    // Theme switching lives in the action sheet, not in the header row
+    expect(wrapper.find('.mobile-toolbar-actions .theme-toggle').exists()).toBe(false)
   })
 
   it('keeps the outline toggle available in the compact mobile toolbar', async () => {

@@ -144,16 +144,32 @@ describe('Markdown Studio responsive shell', () => {
     cy.viewport('iphone-6')
     cy.visit('/')
 
-    // Mobile toolbar should show brand, view toggle, theme toggle, and hamburger menu
+    // Mobile toolbar should show the active document, view toggle, outline, and menu
     cy.get('.mobile-toolbar-actions').should('be.visible')
-    cy.get('.mobile-toolbar-actions__brand').should('contain', 'Markdown Studio')
+    cy.get('.mobile-toolbar-actions__document-name').should('contain', 'Untitled.md')
     cy.get('.mobile-toolbar-actions [data-mode="editor"]').should('be.visible')
     cy.get('.mobile-toolbar-actions [data-mode="preview"]').should('be.visible')
+    cy.get('button[aria-label="Show document outline"]').should('be.visible')
 
     // Open action sheet via hamburger menu
-    cy.get('button[aria-label="Menu"]').should('be.visible').click()
+    cy.get('button[aria-label="Menu"]')
+      .should('be.visible')
+      .and('have.attr', 'aria-expanded', 'false')
+      .click()
+    cy.get('button[aria-label="Menu"]').should('have.attr', 'aria-expanded', 'true')
     cy.get('.mobile-action-sheet').should('be.visible')
     cy.get('.mobile-action-sheet__title').should('contain', 'Actions')
+    cy.get('.mobile-action-sheet__group-label').then(($labels) => {
+      expect($labels.map((_, label) => label.textContent?.trim()).get()).to.deep.equal([
+        'Document',
+        'Edit',
+        'Export',
+        'Appearance',
+        'More',
+        'Danger',
+      ])
+    })
+    cy.get('.mobile-action-sheet__footer .mobile-action-sheet__cancel').should('be.visible')
 
     // All CTAs should be in the action sheet
     cy.get('.mobile-action-sheet__action').contains('Open').should('be.visible')
@@ -180,11 +196,11 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.preview-pane').should('be.visible')
     cy.get('.editor-pane').should('not.be.visible')
 
-    // Theme toggle should be visible and work
-    cy.get('.mobile-toolbar-actions button[aria-label="Switch to dark mode"]')
-      .should('be.visible')
-      .click()
+    // Theme switching lives in the action sheet
+    cy.get('button[aria-label="Menu"]').click()
+    cy.get('.mobile-action-sheet__action').contains('Switch to dark mode').click()
     cy.get('html').should('have.attr', 'data-theme', 'dark')
+    cy.get('.mobile-action-sheet').should('not.exist')
 
     // Open examples from action sheet
     cy.get('button[aria-label="Menu"]').click()

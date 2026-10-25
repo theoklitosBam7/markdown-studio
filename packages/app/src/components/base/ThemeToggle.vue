@@ -5,13 +5,10 @@ import { Moon, Sun } from '@lucide/vue'
 import type { Theme } from '@/types/editor'
 
 interface Props {
-  compact?: boolean
   theme: Theme
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  compact: false,
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   toggle: [payload: { origin: { x: number; y: number }; theme: Theme }]
@@ -39,7 +36,7 @@ function toggle(): void {
 <template>
   <button
     ref="button"
-    :class="['theme-toggle', { 'is-dark': isDark, compact: props.compact }]"
+    :class="['theme-toggle', { 'is-dark': isDark }]"
     type="button"
     :title="`Switch to ${nextTheme} mode`"
     :aria-label="`Switch to ${nextTheme} mode`"
@@ -85,11 +82,6 @@ function toggle(): void {
     box-shadow 0.35s ease,
     transform 0.35s ease,
     background-color 0.25s ease;
-}
-
-.theme-toggle.compact {
-  width: 36px;
-  height: 36px;
 }
 
 .theme-toggle:hover {

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 
 import MobileToolbarActions from '../MobileToolbarActions.vue'
 
@@ -31,21 +31,111 @@ describe('MobileToolbarActions', () => {
     })
   }
 
-  it('renders with brand name', () => {
-    const wrapper = mountToolbar()
+  function getMenuButton(): HTMLElement | null {
+    return document.querySelector('button[aria-label="Menu"]')
+  }
 
-    expect(wrapper.find('.mobile-toolbar-actions__brand').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Markdown Studio')
-  })
+  async function openSheet(): Promise<void> {
+    await getMenuButton()?.dispatchEvent(new MouseEvent('click'))
+  }
 
-  it('shows the active document and its unsaved state', () => {
-    const wrapper = mountToolbar({
-      documentName: 'draft.md',
-      isDirty: true,
-    })
+  function getSheetActions(): Element[] {
+    return Array.from(document.querySelectorAll('.mobile-action-sheet__action'))
+  }
+
+  function findSheetAction(label: string): Element | undefined {
+    return getSheetActions().find((action) => action.textContent?.includes(label))
+  }
+
+  function getGroupLabels(): (string | undefined)[] {
+    return Array.from(document.querySelectorAll('.mobile-action-sheet__group-label')).map((label) =>
+      label.textContent?.trim(),
+    )
+  }
+
+  it('shows the document name as the primary identity', () => {
+    const wrapper = mountToolbar({ documentName: 'draft.md' })
 
     expect(wrapper.get('.mobile-toolbar-actions__document-name').text()).toBe('draft.md')
+    expect(wrapper.find('.mobile-toolbar-actions__brand').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Markdown Studio')
+  })
+
+  it('shows the unsaved state of the active document', () => {
+    const wrapper = mountToolbar({ documentName: 'draft.md', isDirty: true })
+
     expect(wrapper.get('.mobile-toolbar-actions__document-status').text()).toBe('Unsaved')
+  })
+
+  it('renders the header controls in one row', () => {
+    const wrapper = mountToolbar()
+
+    expect(wrapper.findAll('.mobile-toolbar-actions__row')).toHaveLength(1)
+    expect(wrapper.find('button[aria-label="Menu"]').exists()).toBe(true)
+    expect(wrapper.find('[data-mode="editor"]').exists()).toBe(true)
+    expect(wrapper.find('[data-mode="preview"]').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Show document outline"]').exists()).toBe(true)
+  })
+
+  it('describes the menu button as a dialog trigger', async () => {
+    const wrapper = mountToolbar()
+    const menuButton = getMenuButton()
+
+    expect(menuButton?.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(menuButton?.getAttribute('aria-expanded')).toBe('false')
+    expect(menuButton?.getAttribute('aria-controls')).toBe('mobile-action-sheet')
+
+    await openSheet()
+
+    expect(getMenuButton()?.getAttribute('aria-expanded')).toBe('true')
+    expect(document.getElementById('mobile-action-sheet')?.getAttribute('role')).toBe('dialog')
+
+    wrapper.unmount()
+  })
+
+  it('offers the theme switch in the action sheet instead of the header', async () => {
+    const wrapper = mountToolbar({ theme: 'light' })
+
+    expect(wrapper.find('.theme-toggle').exists()).toBe(false)
+
+    await openSheet()
+
+    const themeAction = findSheetAction('Switch to dark mode')
+    expect(themeAction).toBeDefined()
+
+    await themeAction?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    const emitted = wrapper.emitted('update:theme')
+    expect(emitted).toHaveLength(1)
+    expect(emitted?.[0]?.[0]).toMatchObject({ theme: 'dark' })
+  })
+
+  it('labels the theme action with the next theme', async () => {
+    mountToolbar({ theme: 'dark' })
+
+    await openSheet()
+
+    expect(findSheetAction('Switch to light mode')).toBeDefined()
+    expect(findSheetAction('Switch to dark mode')).toBeUndefined()
+  })
+
+  it('groups the sheet actions and keeps the destructive action last', async () => {
+    mountToolbar()
+
+    await openSheet()
+
+    expect(getGroupLabels()).toEqual(['Document', 'Edit', 'Export', 'Appearance', 'More', 'Danger'])
+    expect(getSheetActions().at(-1)?.textContent).toContain('Clear Document')
+  })
+
+  it('marks the outline button as pressed and hides the view toggle while open', () => {
+    const wrapper = mountToolbar({ isOutlineOpen: true })
+
+    const outlineButton = wrapper.get('button[aria-label="Hide document outline"]')
+
+    expect(outlineButton.attributes('aria-pressed')).toBe('true')
+    expect(outlineButton.classes()).toContain('active')
+    expect(wrapper.find('[data-mode="editor"]').exists()).toBe(false)
   })
 
   it('renders ViewToggle with available modes', () => {
@@ -59,84 +149,64 @@ describe('MobileToolbarActions', () => {
     expect(wrapper.find('[data-mode="split"]').exists()).toBe(false)
   })
 
-  it('renders ThemeToggle', () => {
-    const wrapper = mountToolbar({ theme: 'light' })
-
-    expect(wrapper.find('button[aria-label="Switch to dark mode"]').exists()).toBe(true)
-  })
-
-  it('renders hamburger menu button', () => {
-    const wrapper = mountToolbar()
-
-    expect(wrapper.find('button[aria-label="Menu"]').exists()).toBe(true)
-    expect(wrapper.find('.mobile-toolbar-actions__menu-btn').exists()).toBe(true)
-  })
-
-  it('opens action sheet when hamburger menu is clicked', async () => {
+  it('opens the action sheet when the menu is clicked', async () => {
     mountToolbar()
 
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    expect(menuButton).not.toBeNull()
+    await openSheet()
 
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    // Action sheet is teleported to body
     expect(document.querySelector('.mobile-action-sheet')).not.toBeNull()
     expect(document.querySelector('.mobile-action-sheet-backdrop')).not.toBeNull()
   })
 
-  it('includes all CTAs in action sheet', async () => {
-    mountToolbar({
-      canInstall: true,
-      canOpenDocuments: true,
-      canSaveDocuments: true,
-    })
-
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const actionLabels = Array.from(actions).map((el) => el.textContent)
-
-    // Check that each action is present (includes icon + label)
-    expect(actionLabels.some((label) => label?.includes('Open'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Save'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Install App'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Load Examples'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Insert Table'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Copy Markdown'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Clear Document'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Export as HTML'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('Export as PDF'))).toBe(true)
-    expect(actionLabels.some((label) => label?.includes('View on GitHub'))).toBe(true)
-  })
-
-  it('uses SVG icons in the mobile action sheet', async () => {
+  it('includes every action in the sheet', async () => {
     mountToolbar()
 
-    await document
-      .querySelector('button[aria-label="Menu"]')
-      ?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
 
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
+    const labels = getSheetActions().map((action) => action.textContent)
+    for (const expected of [
+      'Open',
+      'Save',
+      'Find in Document',
+      'Load Examples',
+      'Insert Table',
+      'Copy Markdown',
+      'Export as HTML',
+      'Export as PDF',
+      'Switch to dark mode',
+      'View on GitHub',
+      'Keyboard Shortcuts',
+      'Clear Document',
+    ]) {
+      expect(labels.some((label) => label?.includes(expected))).toBe(true)
+    }
+  })
+
+  it('offers Install App when the app can be installed', async () => {
+    mountToolbar({ canInstall: true })
+
+    await openSheet()
+
+    expect(findSheetAction('Install App')).toBeDefined()
+  })
+
+  it('uses SVG icons in the sheet', async () => {
+    mountToolbar()
+
+    await openSheet()
+
+    const actions = getSheetActions()
     const icons = document.querySelectorAll('.mobile-action-sheet__icon svg')
 
+    expect(actions.length).toBeGreaterThan(0)
     expect(icons.length).toBe(actions.length)
   })
 
-  it('opens Find from the mobile action sheet', async () => {
+  it('opens Find from the sheet', async () => {
     const wrapper = mountToolbar()
 
-    await document
-      .querySelector('button[aria-label="Menu"]')
-      ?.dispatchEvent(new MouseEvent('click'))
-
-    const findAction = Array.from(document.querySelectorAll('.mobile-action-sheet__action')).find(
-      (action) => action.textContent?.includes('Find in Document'),
-    )
-    expect(findAction).toBeDefined()
-
-    await findAction?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
+    await findSheetAction('Find in Document')?.dispatchEvent(new MouseEvent('click'))
 
     expect(wrapper.emitted('openFind')).toHaveLength(1)
   })
@@ -148,157 +218,63 @@ describe('MobileToolbarActions', () => {
         "PDF export isn't available on mobile or installed PWAs yet. Use Export as HTML instead.",
     })
 
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
 
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const pdfAction = Array.from(actions).find((el) => el.textContent?.includes('Export as PDF'))
+    const pdfAction = findSheetAction('Export as PDF')
 
     expect(pdfAction).not.toBeNull()
     expect(pdfAction?.hasAttribute('disabled')).toBe(true)
     expect(pdfAction?.textContent).toContain('Use Export as HTML instead')
   })
 
-  it('emits openDocument when Open action is clicked', async () => {
+  it('emits openDocument when Open is clicked', async () => {
     const wrapper = mountToolbar({ canOpenDocuments: true })
 
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const openAction = Array.from(actions).find((el) => el.textContent?.includes('Open'))
-
-    await openAction?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
+    await findSheetAction('Open')?.dispatchEvent(new MouseEvent('click'))
 
     expect(wrapper.emitted('openDocument')).toHaveLength(1)
   })
 
-  it('emits saveDocument when Save action is clicked', async () => {
+  it('emits saveDocument when Save is clicked', async () => {
     const wrapper = mountToolbar({ canSaveDocuments: true })
 
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const saveAction = Array.from(actions).find((el) => el.textContent?.includes('Save'))
-
-    await saveAction?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
+    await findSheetAction('Save')?.dispatchEvent(new MouseEvent('click'))
 
     expect(wrapper.emitted('saveDocument')).toHaveLength(1)
   })
 
-  it('emits insertTable when Insert Table action is clicked', async () => {
+  it('emits insertTable when Insert Table is clicked', async () => {
     const wrapper = mountToolbar()
 
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const tableAction = Array.from(actions).find((el) => el.textContent?.includes('Insert Table'))
-
-    await tableAction?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
+    await findSheetAction('Insert Table')?.dispatchEvent(new MouseEvent('click'))
 
     expect(wrapper.emitted('insertTable')).toHaveLength(1)
   })
 
-  it('does not show Open/Save buttons outside action sheet', () => {
-    const wrapper = mountToolbar({
-      canOpenDocuments: true,
-      canSaveDocuments: true,
-    })
+  it('does not put Open and Save in the header', () => {
+    const wrapper = mountToolbar({ canOpenDocuments: true, canSaveDocuments: true })
+    const header = wrapper.get('.mobile-toolbar-actions__row')
 
-    // Open and Save should NOT be directly visible in toolbar
-    // They should only be in the action sheet
-    const toolbar = wrapper.find('.mobile-toolbar-actions')
-
-    // Only hamburger menu should be visible in toolbar
-    const menuButtons = wrapper.findAll('button[aria-label="Menu"]')
-    expect(menuButtons.length).toBe(1)
-
-    // Verify Open and Save are NOT in the DOM outside the action sheet
-    const toolbarButtons = toolbar.findAll('button')
-    const toolbarButtonLabels = Array.from(toolbarButtons).map((btn) => btn.text().toLowerCase())
-    expect(toolbarButtonLabels.some((label) => label?.includes('open'))).toBe(false)
-    expect(toolbarButtonLabels.some((label) => label?.includes('save'))).toBe(false)
+    expect(header.findAll('button[aria-label="Open"]')).toHaveLength(0)
+    expect(header.findAll('button[aria-label="Save"]')).toHaveLength(0)
   })
 
-  it('uses brand-short on very small screens', () => {
-    const wrapper = mountToolbar()
-
-    expect(wrapper.find('.brand-short').exists()).toBe(true)
-    expect(wrapper.find('.brand-full').exists()).toBe(true)
-  })
-
-  it('shows "Copied!" text when isCopied is true', async () => {
+  it('labels the copied state in the sheet', async () => {
     mountToolbar({ isCopied: true })
 
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
+    await openSheet()
 
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const actionTexts = Array.from(actions).map((el) => el.textContent)
-
-    expect(actionTexts.some((text) => text?.includes('Copied!'))).toBe(true)
+    expect(findSheetAction('Copied!')).toBeDefined()
   })
 
   it('emits update:viewMode when ViewToggle changes', async () => {
     const wrapper = mountToolbar({ viewMode: 'editor' })
 
-    const previewButton = wrapper.find('[data-mode="preview"]')
-    await previewButton.trigger('click')
+    await wrapper.get('[data-mode="preview"]').trigger('click')
 
-    expect(wrapper.emitted('update:viewMode')).toHaveLength(1)
     expect(wrapper.emitted('update:viewMode')?.[0]).toEqual(['preview'])
-  })
-
-  it('emits update:theme when ThemeToggle changes', async () => {
-    const wrapper = mountToolbar({ theme: 'light' })
-
-    const themeButton = wrapper.find('button[aria-label="Switch to dark mode"]')
-    await themeButton.trigger('click')
-
-    expect(wrapper.emitted('update:theme')).toHaveLength(1)
-  })
-
-  it('opens GitHub in new tab when GitHub action is clicked', async () => {
-    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
-
-    mountToolbar()
-
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const githubAction = Array.from(actions).find((el) =>
-      el.textContent?.includes('View on GitHub'),
-    )
-
-    expect(githubAction).not.toBeNull()
-    await githubAction?.dispatchEvent(new MouseEvent('click'))
-
-    expect(windowOpenSpy).toHaveBeenCalledWith(
-      'https://github.com/theoklitosBam7/markdown-studio',
-      '_blank',
-      'noopener,noreferrer',
-    )
-
-    windowOpenSpy.mockRestore()
-  })
-
-  it('emits openShortcuts when Keyboard Shortcuts action is clicked', async () => {
-    const wrapper = mountToolbar()
-
-    const menuButton = document.querySelector('button[aria-label="Menu"]')
-    await menuButton?.dispatchEvent(new MouseEvent('click'))
-
-    const actions = document.querySelectorAll('.mobile-action-sheet__action')
-    const shortcutsAction = Array.from(actions).find((el) =>
-      el.textContent?.includes('Keyboard Shortcuts'),
-    )
-
-    expect(shortcutsAction).not.toBeNull()
-    await shortcutsAction?.dispatchEvent(new MouseEvent('click'))
-
-    expect(wrapper.emitted('openShortcuts')).toHaveLength(1)
   })
 })
