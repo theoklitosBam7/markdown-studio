@@ -79,10 +79,19 @@ jobs:
       - name: Build desktop artifacts
         run: vpr dist:mac
 
+      - name: Create release app token
+        id: release-app-token
+        if: ${{ !inputs.dry_run }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - name: Ensure release tag exists
         if: ${{ !inputs.dry_run }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
           RELEASE_SHA: ${{ steps.release_meta.outputs.sha }}
           RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
         shell: bash
