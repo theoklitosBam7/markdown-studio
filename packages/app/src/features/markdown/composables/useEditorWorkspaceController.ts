@@ -126,6 +126,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     restore: restoreFolders,
     toggle: toggleFolder,
   } = useDocumentFolders({
+    currentPath,
     openDocument: openDocumentFromFolder,
   })
   const sidebarTab = shallowRef<SidebarTab>('outline')

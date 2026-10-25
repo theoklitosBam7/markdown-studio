@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DocumentFolderNode, SidebarTab } from '../types'
 
+import { pathsEqual } from '../utils/pathComparison'
 import SidebarTabs from './SidebarTabs.vue'
 
 interface Props {
@@ -69,7 +70,9 @@ function handleKeydown(event: KeyboardEvent, index: number): void {
 }
 
 function isActiveDocument(node: DocumentFolderNode): boolean {
-  return node.kind === 'file' && node.path === props.activePath
+  return (
+    node.kind === 'file' && props.activePath !== null && pathsEqual(node.path, props.activePath)
+  )
 }
 
 function setNodeElement(element: unknown, index: number): void {

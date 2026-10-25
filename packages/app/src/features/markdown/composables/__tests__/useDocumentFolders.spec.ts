@@ -135,6 +135,193 @@ describe('useDocumentFolders', () => {
     expect(desktop.documents.clearWorkspaceDraft).not.toHaveBeenCalled()
   })
 
+  it('expands only the ancestors of the restored active Markdown Document', async () => {
+    const { desktop, folders: foldersApi } = createDesktopMock({
+      list: async ({ relativePath }) => {
+        let entries: DesktopFolderEntry[]
+
+        switch (relativePath) {
+          case '.':
+            entries = [
+              { kind: 'folder', name: 'projects', relativePath: 'projects' },
+              { kind: 'folder', name: 'archive', relativePath: 'archive' },
+            ]
+            break
+          case 'projects':
+            entries = [{ kind: 'folder', name: 'drafts', relativePath: 'projects/drafts' }]
+            break
+          default:
+            entries = [
+              { kind: 'file', name: 'current.md', relativePath: 'projects/drafts/current.md' },
+            ]
+        }
+
+        return { entries, ok: true }
+      },
+      restore: async () => ({
+        folders: [
+          createFolder('folder-1', 'notes', '/tmp/notes'),
+          createFolder('folder-2', 'other', '/tmp/other'),
+        ],
+        removedCount: 0,
+      }),
+    })
+    appWindow.desktop = desktop
+
+    const folders = useDocumentFolders({
+      currentPath: shallowRef('/tmp/notes/projects/drafts/current.md'),
+      openDocument: vi.fn(),
+    })
+    await folders.restore()
+
+    expect(folders.nodes.value.map((node) => node.path)).toEqual([
+      '/tmp/notes',
+      '/tmp/notes/projects',
+      '/tmp/notes/projects/drafts',
+      '/tmp/notes/projects/drafts/current.md',
+      '/tmp/notes/archive',
+      '/tmp/other',
+    ])
+    expect(foldersApi.list).toHaveBeenCalledTimes(3)
+    expect(foldersApi.list).toHaveBeenNthCalledWith(1, {
+      folderId: 'folder-1',
+      relativePath: '.',
+    })
+    expect(foldersApi.list).toHaveBeenNthCalledWith(2, {
+      folderId: 'folder-1',
+      relativePath: 'projects',
+    })
+    expect(foldersApi.list).toHaveBeenNthCalledWith(3, {
+      folderId: 'folder-1',
+      relativePath: 'projects/drafts',
+    })
+  })
+
+  it('restores a Windows active document through listed directory names when path casing differs', async () => {
+    const { desktop, folders: foldersApi } = createDesktopMock({
+      list: async ({ relativePath }) => {
+        switch (relativePath) {
+          case '.':
+            return {
+              entries: [
+                { kind: 'folder', name: 'Projects', relativePath: 'Projects' },
+                { kind: 'folder', name: 'Archive', relativePath: 'Archive' },
+              ],
+              ok: true,
+            }
+          case 'Projects':
+            return {
+              entries: [{ kind: 'folder', name: 'Drafts', relativePath: 'Projects/Drafts' }],
+              ok: true,
+            }
+          default:
+            return {
+              entries: [
+                {
+                  kind: 'file',
+                  name: 'Current.md',
+                  relativePath: 'Projects/Drafts/Current.md',
+                },
+              ],
+              ok: true,
+            }
+        }
+      },
+      restore: async () => ({
+        folders: [createFolder('folder-1', 'Notes', 'C:\\Users\\Theo\\Notes')],
+        removedCount: 0,
+      }),
+    })
+    appWindow.desktop = desktop
+
+    const folders = useDocumentFolders({
+      currentPath: shallowRef('c:\\users\\THEO\\notes\\projects\\DRAFTS\\current.md'),
+      openDocument: vi.fn(),
+    })
+    await folders.restore()
+
+    expect(folders.nodes.value.map((node) => node.path)).toEqual([
+      'C:\\Users\\Theo\\Notes',
+      'C:\\Users\\Theo\\Notes\\Projects',
+      'C:\\Users\\Theo\\Notes\\Projects\\Drafts',
+      'C:\\Users\\Theo\\Notes\\Projects\\Drafts\\Current.md',
+      'C:\\Users\\Theo\\Notes\\Archive',
+    ])
+    expect(foldersApi.list).toHaveBeenNthCalledWith(1, {
+      folderId: 'folder-1',
+      relativePath: '.',
+    })
+    expect(foldersApi.list).toHaveBeenNthCalledWith(2, {
+      folderId: 'folder-1',
+      relativePath: 'Projects',
+    })
+    expect(foldersApi.list).toHaveBeenNthCalledWith(3, {
+      folderId: 'folder-1',
+      relativePath: 'Projects/Drafts',
+    })
+  })
+
+  it('keeps restored Document Folders lazy when no active document is inside them', async () => {
+    const { desktop, folders: foldersApi } = createDesktopMock({
+      restore: async () => ({
+        folders: [createFolder('folder-1', 'notes', '/tmp/notes')],
+        removedCount: 0,
+      }),
+    })
+    appWindow.desktop = desktop
+
+    const folders = useDocumentFolders({
+      currentPath: shallowRef('/elsewhere/current.md'),
+      openDocument: vi.fn(),
+    })
+    await folders.restore()
+
+    expect(folders.nodes.value.map((node) => node.path)).toEqual(['/tmp/notes'])
+    expect(foldersApi.list).not.toHaveBeenCalled()
+  })
+
+  it('keeps restored Document Folders lazy when there is no active document', async () => {
+    const { desktop, folders: foldersApi } = createDesktopMock({
+      restore: async () => ({
+        folders: [createFolder('folder-1', 'notes', '/tmp/notes')],
+        removedCount: 0,
+      }),
+    })
+    appWindow.desktop = desktop
+
+    const folders = useDocumentFolders({
+      currentPath: shallowRef(null),
+      openDocument: vi.fn(),
+    })
+    await folders.restore()
+
+    expect(folders.nodes.value.map((node) => node.path)).toEqual(['/tmp/notes'])
+    expect(foldersApi.list).not.toHaveBeenCalled()
+  })
+
+  it('does not reopen ancestors after the user collapses them', async () => {
+    const currentPath = shallowRef<null | string>('/tmp/notes/current.md')
+    const { desktop, folders: foldersApi } = createDesktopMock({
+      list: async () => ({
+        entries: [{ kind: 'file', name: 'current.md', relativePath: 'current.md' }],
+        ok: true,
+      }),
+      restore: async () => ({
+        folders: [createFolder('folder-1', 'notes', '/tmp/notes')],
+        removedCount: 0,
+      }),
+    })
+    appWindow.desktop = desktop
+
+    const folders = useDocumentFolders({ currentPath, openDocument: vi.fn() })
+    await folders.restore()
+    await folders.toggle('folder-1', '.')
+    currentPath.value = '/tmp/notes/another.md'
+
+    expect(folders.nodes.value.map((node) => node.path)).toEqual(['/tmp/notes'])
+    expect(foldersApi.list).toHaveBeenCalledTimes(1)
+  })
+
   it('expands a Document Folder only when the user opens it', async () => {
     const entries: DesktopFolderEntry[] = [
       { kind: 'file', name: 'notes.md', relativePath: 'notes.md' },

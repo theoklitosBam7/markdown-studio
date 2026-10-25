@@ -404,6 +404,57 @@ describe('useEditorWorkspaceController', () => {
     wrapper.unmount()
   })
 
+  it('shows the restored desktop document in its Document Folder during startup', async () => {
+    appWindow.desktop = {
+      commands: { onAppCommand: vi.fn(() => () => undefined) },
+      documents: {
+        clearLastOpened: async () => undefined,
+        clearWorkspaceDraft: async () => undefined,
+        open: async () => null,
+        restoreLastOpened: async () => ({
+          content: '# Restored',
+          modifiedAt: 0,
+          path: '/tmp/notes/current.md',
+        }),
+        restoreWorkspaceDraft: async () => null,
+        save: async () => null,
+        saveAs: async () => null,
+        saveWorkspaceDraft: async () => undefined,
+      },
+      editing: { insertText: async () => undefined },
+      exports: { exportHtml: async () => null, exportPdf: async () => null },
+      folders: {
+        add: async () => ({ ok: false as const, reason: 'cancelled' as const }),
+        list: async ({ relativePath }) => ({
+          entries:
+            relativePath === '.'
+              ? [{ kind: 'file' as const, name: 'current.md', relativePath: 'current.md' }]
+              : [],
+          ok: true as const,
+        }),
+        remove: async () => undefined,
+        restore: async () => ({
+          folders: [{ id: 'folder-1', name: 'notes', path: '/tmp/notes' }],
+          removedCount: 0,
+        }),
+      },
+      install: { isHomebrew: async () => false },
+      isDesktop: true,
+      shell: { openExternal: async () => undefined },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    await flushPromises()
+
+    expect(workspace.state.currentPath.value).toBe('/tmp/notes/current.md')
+    expect(workspace.state.folderNodes.value.map((node) => node.path)).toEqual([
+      '/tmp/notes',
+      '/tmp/notes/current.md',
+    ])
+
+    wrapper.unmount()
+  })
+
   it('restores an unsaved desktop draft before the last opened document during startup', async () => {
     const restoreLastOpened = vi.fn(async () => ({
       content: '# Saved file',

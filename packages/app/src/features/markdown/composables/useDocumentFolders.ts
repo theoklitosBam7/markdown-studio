@@ -8,6 +8,7 @@ import { computed, type ComputedRef, reactive, readonly, ref, type Ref } from 'v
 
 import { useDesktop } from '@/composables/useDesktop'
 
+import { pathsEqual, toRelativePath } from '../utils/pathComparison'
 import type { DocumentFolderNode } from '../types'
 
 interface DocumentFolderView extends DesktopDocumentFolder {
@@ -15,6 +16,7 @@ interface DocumentFolderView extends DesktopDocumentFolder {
 }
 
 interface UseDocumentFoldersOptions {
+  currentPath?: Readonly<Ref<null | string>>
   openDocument: (loadHandle: () => Promise<DesktopDocumentHandle | null>) => Promise<void>
 }
 
@@ -118,6 +120,40 @@ export function useDocumentFolders(options: UseDocumentFoldersOptions): UseDocum
 
     rootFolders.value = restored.folders
     message.value = restored.removedCount > 0 ? 'Removed a folder that no longer exists.' : null
+
+    const activePath = options.currentPath?.value
+    if (!activePath) return
+
+    for (const folder of restored.folders) {
+      const relativePath = toRelativePath(folder.path, activePath)
+      if (relativePath === null) continue
+
+      let parentPath = '.'
+      for (const segment of relativePath.split('/').slice(0, -1)) {
+        const key = toKey(folder.id, parentPath)
+        expandedKeys.add(key)
+        await loadListing(folder.id, parentPath)
+
+        const listedFolder = listings
+          .get(key)
+          ?.find(
+            (entry) =>
+              entry.kind === 'folder' &&
+              pathsEqual(
+                toNodePath(folder.path, entry.relativePath),
+                toNodePath(folder.path, parentPath === '.' ? segment : `${parentPath}/${segment}`),
+              ),
+          )
+        if (!listedFolder) return
+
+        parentPath = listedFolder.relativePath
+      }
+
+      const key = toKey(folder.id, parentPath)
+      expandedKeys.add(key)
+      await loadListing(folder.id, parentPath)
+      return
+    }
   }
 
   async function remove(folderId: string): Promise<void> {

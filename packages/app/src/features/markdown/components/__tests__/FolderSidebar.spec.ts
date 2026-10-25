@@ -113,6 +113,28 @@ describe('FolderSidebar', () => {
     expect(fileButton?.classes()).toContain('folder-sidebar__node--active')
   })
 
+  it('highlights the active Windows document when its path casing differs', () => {
+    const windowsFileNode: DocumentFolderNode = {
+      ...fileNode,
+      path: 'C:\\Users\\Theo\\Notes\\current.md',
+    }
+    const wrapper = mountSidebar({
+      activePath: 'c:\\users\\theo\\notes\\CURRENT.md',
+      nodes: [rootNode, windowsFileNode],
+    })
+    const [, fileButton] = wrapper.findAll('.folder-sidebar__node')
+
+    expect(fileButton?.attributes('aria-current')).toBe('true')
+    expect(fileButton?.classes()).toContain('folder-sidebar__node--active')
+  })
+
+  it('keeps POSIX document path comparisons case-sensitive', () => {
+    const wrapper = mountSidebar({ activePath: '/tmp/notes/NOTES.md' })
+    const [, fileButton] = wrapper.findAll('.folder-sidebar__node')
+
+    expect(fileButton?.attributes('aria-current')).toBeUndefined()
+  })
+
   it('does not highlight a document opened outside every Document Folder', () => {
     const wrapper = mountSidebar({ activePath: '/elsewhere/notes.md' })
     const [, fileButton] = wrapper.findAll('.folder-sidebar__node')
