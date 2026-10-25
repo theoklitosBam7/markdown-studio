@@ -181,7 +181,7 @@ describe('useDocumentSession', () => {
   it('restores the last opened desktop document as clean saved work', async () => {
     desktopMock.documents.restoreLastOpened.mockResolvedValueOnce({
       content: '# Restored file',
-      modifiedAt: 0,
+      modifiedAt: 42,
       path: '/tmp/restored.md',
     })
     const { content, session } = createSession()
@@ -194,6 +194,18 @@ describe('useDocumentSession', () => {
     expect(session.displayName.value).toBe('restored.md')
     expect(session.isDirty.value).toBe(false)
     expect(session.statusText.value).toBe('Restored restored.md')
+
+    content.value = '# Edited restored file'
+    await session.saveDocument()
+
+    expect(desktopMock.documents.checkModification).toHaveBeenCalledWith({
+      modifiedAt: 42,
+      path: '/tmp/restored.md',
+    })
+    expect(desktopMock.documents.save).toHaveBeenCalledWith({
+      content: '# Edited restored file',
+      path: '/tmp/restored.md',
+    })
   })
 
   it('restores a saved web draft as unsaved work', async () => {
@@ -228,6 +240,116 @@ describe('useDocumentSession', () => {
     expect(session.displayName.value).toBe('notes.md')
     expect(session.isDirty.value).toBe(true)
     expect(session.statusText.value).toContain('Restored unsaved changes')
+  })
+
+  it('keeps a dirty draft and disk content when the user cancels an overwrite', async () => {
+    const diskContent = '# Changed elsewhere'
+    desktopMock.documents.checkModification.mockResolvedValueOnce({
+      document: { content: diskContent, modifiedAt: 99, path: '/tmp/loaded.md' },
+      status: 'changed',
+    })
+    window.confirm = vi.fn(() => false)
+    const { content, session } = createSession()
+    await session.openDocument()
+    content.value = '# My unsaved edit'
+
+    await session.saveDocument()
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      'This file changed on disk. Saving will overwrite it.',
+    )
+    expect(desktopMock.documents.save).not.toHaveBeenCalled()
+    expect(content.value).toBe('# My unsaved edit')
+    expect(session.isDirty.value).toBe(true)
+    expect(session.statusText.value).toBe(
+      'This file changed on disk. Saving will overwrite it. • Edited',
+    )
+  })
+
+  it('reloads clean content changed on disk instead of saving a stale buffer', async () => {
+    desktopMock.documents.checkModification.mockResolvedValueOnce({
+      document: { content: '# Changed elsewhere', modifiedAt: 99, path: '/tmp/loaded.md' },
+      status: 'changed',
+    })
+    const { content, session } = createSession()
+    await session.openDocument()
+
+    await session.saveDocument()
+
+    expect(content.value).toBe('# Changed elsewhere')
+    expect(desktopMock.documents.save).not.toHaveBeenCalled()
+    expect(session.isDirty.value).toBe(false)
+    expect(session.statusText.value).toBe('Reloaded from disk')
+  })
+
+  it('overwrites changed disk content only after explicit confirmation', async () => {
+    desktopMock.documents.checkModification.mockResolvedValueOnce({
+      document: { content: '# Changed elsewhere', modifiedAt: 99, path: '/tmp/loaded.md' },
+      status: 'changed',
+    })
+    window.confirm = vi.fn(() => true)
+    const { content, session } = createSession()
+    await session.openDocument()
+    content.value = '# My unsaved edit'
+
+    await session.saveDocument()
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      'This file changed on disk. Saving will overwrite it.',
+    )
+    expect(desktopMock.documents.save).toHaveBeenCalledWith({
+      content: '# My unsaved edit',
+      path: '/tmp/loaded.md',
+    })
+    expect(session.isDirty.value).toBe(false)
+  })
+
+  it('recreates a file that is missing when Save is used', async () => {
+    desktopMock.documents.checkModification.mockResolvedValueOnce({ status: 'missing' })
+    const { content, session } = createSession()
+    await session.openDocument()
+    content.value = '# Recreate this file'
+
+    await session.saveDocument()
+
+    expect(desktopMock.documents.save).toHaveBeenCalledWith({
+      content: '# Recreate this file',
+      path: '/tmp/loaded.md',
+    })
+    expect(session.isDirty.value).toBe(false)
+  })
+
+  it('uses the saved baseline when a restored draft has no disk timestamp', async () => {
+    desktopMock.documents.open.mockResolvedValueOnce({
+      content: '# Previous file',
+      modifiedAt: 42,
+      path: '/tmp/previous.md',
+    })
+    desktopMock.documents.checkModification.mockResolvedValueOnce({
+      document: { content: '# Saved file', modifiedAt: 99, path: '/tmp/notes.md' },
+      status: 'changed',
+    })
+    const { session } = createSession()
+    await session.openDocument()
+    await session.restoreWorkspaceDraft({
+      content: '# Unsaved desktop edit',
+      label: 'notes.md',
+      path: '/tmp/notes.md',
+      savedContent: '# Saved file',
+    })
+
+    await session.saveDocument()
+
+    expect(window.confirm).not.toHaveBeenCalled()
+    expect(desktopMock.documents.checkModification).toHaveBeenCalledWith({
+      modifiedAt: 0,
+      path: '/tmp/notes.md',
+    })
+    expect(desktopMock.documents.save).toHaveBeenCalledWith({
+      content: '# Unsaved desktop edit',
+      path: '/tmp/notes.md',
+    })
+    expect(session.isDirty.value).toBe(false)
   })
 
   it('tracks dirty state and save branching in desktop mode', async () => {

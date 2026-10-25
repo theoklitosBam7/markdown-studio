@@ -135,6 +135,43 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     lastAction.value = 'Reloaded from disk'
   }
 
+  async function confirmSafeToSave(): Promise<boolean> {
+    if (!currentPath.value) return true
+
+    const check = await documents.checkModification({
+      modifiedAt: currentModifiedAt.value,
+      path: currentPath.value,
+    })
+
+    if (check.status === 'unchanged' || check.status === 'missing') {
+      if (check.status === 'missing') {
+        lastAction.value = 'This file no longer exists on disk.'
+      }
+      return true
+    }
+
+    if (check.document.content === savedContent.value) {
+      currentModifiedAt.value = check.document.modifiedAt
+      return true
+    }
+
+    if (!isDirty.value) {
+      options.replaceContent(check.document.content)
+      savedContent.value = check.document.content
+      currentModifiedAt.value = check.document.modifiedAt
+      lastAction.value = 'Reloaded from disk'
+      syncDocumentTitle()
+      return false
+    }
+
+    const warning = 'This file changed on disk. Saving will overwrite it.'
+    lastAction.value = warning
+    if (typeof window === 'undefined' || !window.confirm(warning)) return false
+
+    currentModifiedAt.value = check.document.modifiedAt
+    return true
+  }
+
   async function rememberSavedModification(): Promise<void> {
     if (!currentPath.value) return
 
@@ -169,6 +206,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
 
     options.replaceContent(input.content)
     currentPath.value = input.path
+    currentModifiedAt.value = 0
     draftLabel.value = input.path ? null : input.label || 'Untitled.md'
     savedContent.value = input.savedContent
     lastAction.value = 'Restored unsaved changes'
@@ -181,6 +219,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
 
     options.replaceContent(restored.content)
     currentPath.value = restored.path
+    currentModifiedAt.value = restored.modifiedAt
     draftLabel.value = null
     savedContent.value = restored.content
     lastAction.value = `Restored ${getFileName(restored.path)}`
@@ -198,6 +237,8 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   async function saveDocument(): Promise<void> {
+    if (!(await confirmSafeToSave())) return
+
     const saved = await documents.save({
       content: options.content.value,
       path: currentPath.value,
