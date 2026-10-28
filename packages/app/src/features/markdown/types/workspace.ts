@@ -195,7 +195,6 @@ export interface TableDimensions {
 }
 
 export interface ThemeChangeRequest {
-  origin: { x: number; y: number }
   theme: Theme
 }
 
