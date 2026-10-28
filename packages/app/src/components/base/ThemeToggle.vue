@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { computed } from 'vue'
 import { Moon, Sun } from '@lucide/vue'
 
 import type { Theme } from '@/types/editor'
@@ -11,31 +11,20 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  toggle: [payload: { origin: { x: number; y: number }; theme: Theme }]
+  toggle: [payload: { theme: Theme }]
 }>()
 
-const buttonRef = useTemplateRef<HTMLButtonElement>('button')
 const nextTheme = computed<Theme>(() => (props.theme === 'light' ? 'dark' : 'light'))
 
 const isDark = computed(() => props.theme === 'dark')
 
 function toggle(): void {
-  const button = buttonRef.value
-  const rect = button?.getBoundingClientRect()
-
-  emit('toggle', {
-    origin: {
-      x: rect ? rect.left + rect.width / 2 : window.innerWidth - 56,
-      y: rect ? rect.top + rect.height / 2 : 56,
-    },
-    theme: nextTheme.value,
-  })
+  emit('toggle', { theme: nextTheme.value })
 }
 </script>
 
 <template>
   <button
-    ref="button"
     :class="['theme-toggle', { 'is-dark': isDark }]"
     type="button"
     :title="`Switch to ${nextTheme} mode`"

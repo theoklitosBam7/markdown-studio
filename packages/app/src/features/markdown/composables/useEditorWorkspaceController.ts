@@ -478,9 +478,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   async function setWorkspaceTheme(request: ThemeChangeRequest): Promise<void> {
     if (request.theme === theme.value) return
 
-    await transitionTheme(request.theme, setTheme, {
-      origin: request.origin,
-    })
+    await transitionTheme(request.theme, setTheme)
   }
 
   async function loadWorkspaceExample(exampleId: Example['id']): Promise<void> {

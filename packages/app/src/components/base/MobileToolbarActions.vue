@@ -82,7 +82,7 @@ const emit = defineEmits<{
   openShortcuts: []
   saveDocument: []
   toggleOutline: []
-  'update:theme': [payload: { origin: { x: number; y: number }; theme: Theme }]
+  'update:theme': [payload: { theme: Theme }]
   'update:viewMode': [mode: ViewMode]
 }>()
 
@@ -158,8 +158,7 @@ const actionGroups = computed<SheetGroup[]>(() => {
   groups.push({
     items: [
       {
-        action: (element) =>
-          emit('update:theme', { origin: getOrigin(element), theme: nextTheme.value }),
+        action: () => emit('update:theme', { theme: nextTheme.value }),
         icon: props.theme === 'light' ? Moon : Sun,
         label: `Switch to ${nextTheme.value} mode`,
       },
@@ -191,16 +190,6 @@ const actionGroups = computed<SheetGroup[]>(() => {
 
 function closeActionSheet(): void {
   isActionSheetOpen.value = false
-}
-
-function getOrigin(element?: HTMLElement): { x: number; y: number } {
-  const rect = element?.getBoundingClientRect()
-
-  if (!rect) {
-    return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-  }
-
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
 function handleViewModeChange(mode: ViewMode): void {

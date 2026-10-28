@@ -170,7 +170,7 @@ export function useEditorWorkspaceCommands(
         id: 'workspace:theme:light',
         isCurrent: theme === 'light',
         keywords: ['light mode'],
-        run: () => workspace.editor.setTheme({ origin: getViewportCenter(), theme: 'light' }),
+        run: () => workspace.editor.setTheme({ theme: 'light' }),
         title: 'Use Light Theme',
       },
       {
@@ -179,7 +179,7 @@ export function useEditorWorkspaceCommands(
         id: 'workspace:theme:dark',
         isCurrent: theme === 'dark',
         keywords: ['dark mode'],
-        run: () => workspace.editor.setTheme({ origin: getViewportCenter(), theme: 'dark' }),
+        run: () => workspace.editor.setTheme({ theme: 'dark' }),
         title: 'Use Dark Theme',
       },
       {
@@ -200,15 +200,4 @@ export function useEditorWorkspaceCommands(
       return true
     })
   })
-}
-
-function getViewportCenter(): { x: number; y: number } {
-  if (typeof window === 'undefined') {
-    return { x: 0, y: 0 }
-  }
-
-  return {
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 2,
-  }
 }
