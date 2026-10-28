@@ -3,6 +3,8 @@ import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
 
+import type { DocumentFolderNode, SidebarTab } from './folders'
+
 import type {
   EditorStats,
   Example,
@@ -77,6 +79,7 @@ export interface EditorWorkspaceController {
     pdf(): Promise<void>
   }
   find: EditorWorkspaceFindApi
+  folders: EditorWorkspaceFoldersApi
   outline: {
     navigate(offset: number): Promise<void>
     toggle(): void
@@ -126,6 +129,15 @@ export interface EditorWorkspaceFindState {
   showReplace: boolean
 }
 
+export interface EditorWorkspaceFoldersApi {
+  add(): Promise<void>
+  changeTab(tab: SidebarTab): void
+  open(node: DocumentFolderNode): Promise<void>
+  refresh(): Promise<void>
+  remove(folderId: string): Promise<void>
+  toggle(node: DocumentFolderNode): Promise<void>
+}
+
 /**
  * Controller-facing state shape consumed by the workspace view.
  *
@@ -145,11 +157,14 @@ export interface EditorWorkspaceState {
   content: Readonly<Ref<string>>
   currentPath: Readonly<Ref<null | string>>
   displayName: Readonly<Ref<string>>
+  folderMessage: Readonly<Ref<null | string>>
+  folderNodes: ComputedRef<DocumentFolderNode[]>
   homebrewUpgradeCommand: Readonly<ComputedRef<string>>
   isCopied: Readonly<Ref<boolean>>
   isDesktop: Readonly<Ref<boolean>>
   isDirty: Readonly<Ref<boolean>>
   isExamplesModalOpen: ShallowRef<boolean>
+  isFolderBrowserAvailable: ComputedRef<boolean>
   isHomebrewInstall: Readonly<Ref<boolean>>
   isMobile: ShallowRef<boolean>
   isOutlineOpen: ShallowRef<boolean>
@@ -160,6 +175,7 @@ export interface EditorWorkspaceState {
   renderedHtml: Readonly<Ref<string>>
   showBanner: Readonly<Ref<boolean>>
   showPwaBanner: Readonly<Ref<boolean>>
+  sidebarTab: ShallowRef<SidebarTab>
   sourceMap: Readonly<Ref<MarkdownSourceMapEntry[]>>
   stats: Readonly<Ref<EditorStats>>
   statusText: Readonly<Ref<string>>

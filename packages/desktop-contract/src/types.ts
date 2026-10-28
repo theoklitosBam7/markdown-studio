@@ -6,6 +6,8 @@ export type AppCommand =
   | 'document:saveAs'
   | 'editor:find'
   | 'editor:replace'
+  | 'folder:add'
+  | 'folder:refresh'
   | 'update:check'
 
 export interface DesktopApi {
@@ -13,6 +15,7 @@ export interface DesktopApi {
   documents: DesktopDocumentsApi
   editing: DesktopEditingApi
   exports: DesktopExportsApi
+  folders?: DesktopFoldersApi
   images?: DesktopImagesApi
   install: DesktopInstallApi
   isDesktop: boolean
@@ -23,15 +26,43 @@ export interface DesktopCommandsApi {
   onAppCommand: (listener: (command: AppCommand) => void) => () => void
 }
 
+export type DesktopDocumentCheck =
+  | { document: DesktopDocumentHandle; status: 'changed' }
+  | { status: 'missing' }
+  | { status: 'unchanged' }
+
+export interface DesktopDocumentCheckInput {
+  modifiedAt: number
+  path: string
+}
+
+export interface DesktopDocumentFolder {
+  id: string
+  name: string
+  path: string
+}
+
+export type DesktopDocumentFolderAddResult =
+  | { folder: DesktopDocumentFolder; ok: true }
+  | { ok: false; reason: 'cancelled' | 'duplicate' }
+
+export interface DesktopDocumentFolderRestore {
+  folders: DesktopDocumentFolder[]
+  removedCount: number
+}
+
 export interface DesktopDocumentHandle {
   content: string
+  modifiedAt: number
   path: string
 }
 
 export interface DesktopDocumentsApi {
+  checkModification?: (input: DesktopDocumentCheckInput) => Promise<DesktopDocumentCheck>
   clearLastOpened: () => Promise<void>
   clearWorkspaceDraft: () => Promise<void>
   open: () => Promise<DesktopDocumentHandle | null>
+  openPath?: (input: DesktopFolderListInput) => Promise<DesktopDocumentHandle | null>
   restoreLastOpened: () => Promise<DesktopDocumentHandle | null>
   restoreWorkspaceDraft: () => Promise<DesktopWorkspaceDraft | null>
   save: (input: DesktopSaveInput) => Promise<{ path: string } | null>
@@ -52,6 +83,26 @@ export interface DesktopExportInput {
 export interface DesktopExportsApi {
   exportHtml: (input: DesktopExportInput) => Promise<{ path: string } | null>
   exportPdf: (input: DesktopExportInput) => Promise<{ path: string } | null>
+}
+
+export interface DesktopFolderEntry {
+  kind: 'file' | 'folder'
+  name: string
+  relativePath: string
+}
+
+export type DesktopFolderListing = { entries: DesktopFolderEntry[]; ok: true } | { ok: false }
+
+export interface DesktopFolderListInput {
+  folderId: string
+  relativePath: string
+}
+
+export interface DesktopFoldersApi {
+  add: () => Promise<DesktopDocumentFolderAddResult>
+  list: (input: DesktopFolderListInput) => Promise<DesktopFolderListing>
+  remove: (folderId: string) => Promise<void>
+  restore: () => Promise<DesktopDocumentFolderRestore>
 }
 
 export interface DesktopImagesApi {

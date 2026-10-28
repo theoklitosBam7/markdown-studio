@@ -3,8 +3,11 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  assertDocumentCheckInput,
+  assertDocumentFolderPaths,
   assertExportInput,
   assertExternalUrl,
+  assertFolderListInput,
   assertSaveAsInput,
   assertSaveImageInput,
   assertSaveInput,
@@ -60,6 +63,67 @@ describe('desktop validation', () => {
     })
     expect(getDefaultExportPath('html', 'notes.md')).toBe('notes.html')
     expect(getDefaultExportPath('pdf')).toBe('Untitled.pdf')
+  })
+
+  it('accepts a folder list payload with an id and a relative path', () => {
+    expect(assertFolderListInput({ folderId: 'folder-1', relativePath: 'notes' })).toEqual({
+      folderId: 'folder-1',
+      relativePath: 'notes',
+    })
+  })
+
+  it('rejects a folder list payload with an empty id', () => {
+    expect(() => assertFolderListInput({ folderId: '  ', relativePath: 'notes' })).toThrow(
+      'A non-empty file path is required',
+    )
+  })
+
+  it('rejects an absolute folder list path', () => {
+    expect(() => assertFolderListInput({ folderId: 'folder-1', relativePath: '/etc' })).toThrow(
+      'A relative path is required',
+    )
+    expect(() =>
+      assertFolderListInput({ folderId: 'folder-1', relativePath: 'C:\\notes' }),
+    ).toThrow('A relative path is required')
+  })
+
+  it('rejects a folder list path that climbs with parent segments', () => {
+    expect(() =>
+      assertFolderListInput({ folderId: 'folder-1', relativePath: '../outside' }),
+    ).toThrow('A relative path is required')
+  })
+
+  it('accepts a document modification check payload', () => {
+    expect(assertDocumentCheckInput({ modifiedAt: 1717000000000, path: '/tmp/notes.md' })).toEqual({
+      modifiedAt: 1717000000000,
+      path: '/tmp/notes.md',
+    })
+  })
+
+  it('rejects a document modification check payload without a modification time', () => {
+    expect(() => assertDocumentCheckInput({ path: '/tmp/notes.md' })).toThrow(
+      'A document modification time is required.',
+    )
+  })
+
+  it('accepts a persisted Document Folder path list', () => {
+    expect(assertDocumentFolderPaths(['/tmp/notes', '/tmp/daily'])).toEqual([
+      '/tmp/notes',
+      '/tmp/daily',
+    ])
+    expect(assertDocumentFolderPaths([])).toEqual([])
+  })
+
+  it('rejects a persisted Document Folder list that is not an array', () => {
+    expect(() => assertDocumentFolderPaths('/tmp/notes')).toThrow(
+      'Document Folder list must be an array',
+    )
+  })
+
+  it('rejects a persisted Document Folder entry that is empty', () => {
+    expect(() => assertDocumentFolderPaths(['/tmp/notes', '  '])).toThrow(
+      'A non-empty file path is required',
+    )
   })
 
   it('normalizes workspace draft payloads', () => {

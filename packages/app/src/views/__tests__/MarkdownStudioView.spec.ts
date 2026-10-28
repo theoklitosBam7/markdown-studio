@@ -10,6 +10,34 @@ import { generateTableTemplate } from '@/features/markdown/utils/tableTemplate'
 
 import MarkdownStudioView from '../MarkdownStudioView.vue'
 
+function createDesktopApi(folderApi: Record<string, unknown>) {
+  return {
+    commands: { onAppCommand: () => () => undefined },
+    documents: {
+      clearLastOpened: async () => undefined,
+      clearWorkspaceDraft: async () => undefined,
+      open: async () => null,
+      restoreLastOpened: async () => null,
+      restoreWorkspaceDraft: async () => null,
+      save: async () => null,
+      saveAs: async () => null,
+      saveWorkspaceDraft: async () => undefined,
+    },
+    editing: { insertText: async () => undefined },
+    exports: { exportHtml: async () => null, exportPdf: async () => null },
+    folders: {
+      add: async () => ({ ok: false, reason: 'cancelled' }),
+      list: async () => ({ entries: [], ok: true }),
+      remove: async () => undefined,
+      restore: async () => ({ folders: [], removedCount: 0 }),
+      ...folderApi,
+    },
+    install: { isHomebrew: async () => false },
+    isDesktop: true,
+    shell: { openExternal: async () => undefined },
+  }
+}
+
 function dispatchWindowKeydown(key: string, overrides: Partial<KeyboardEventInit> = {}): void {
   window.dispatchEvent(
     new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key, ...overrides }),
@@ -47,6 +75,56 @@ async function mountMarkdownStudioView() {
 
   return { router, wrapper }
 }
+
+describe('MarkdownStudioView Document Folders', () => {
+  const appWindow = window as AppWindow
+  const originalDesktop = appWindow.desktop
+  const originalCss = window.CSS
+
+  beforeEach(() => {
+    resetBrowserDocumentSessionForTests()
+    resetPwaStateForTests()
+    appWindow.desktop = undefined
+    window.CSS = { ...originalCss, escape: originalCss?.escape ?? ((value: string) => value) }
+    window.localStorage.clear()
+    HTMLElement.prototype.scrollIntoView ??= vi.fn()
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+    resetBrowserDocumentSessionForTests()
+    resetPwaStateForTests()
+    appWindow.desktop = originalDesktop
+    window.CSS = originalCss
+    vi.restoreAllMocks()
+  })
+
+  it('shows the Folders tab first when a Document Folder is restored', async () => {
+    appWindow.desktop = createDesktopApi({
+      restore: async () => ({
+        folders: [{ id: 'folder-1', name: 'notes', path: '/tmp/notes' }],
+        removedCount: 0,
+      }),
+    }) as unknown as AppWindow['desktop']
+
+    const { wrapper } = await mountMarkdownStudioView()
+
+    expect(wrapper.find('.folder-sidebar').exists()).toBe(true)
+    expect(wrapper.find('.sidebar-tabs__tab--active').text()).toBe('Folders')
+
+    wrapper.unmount()
+  })
+
+  it('does not open the Document Folder panel when no folder is open', async () => {
+    appWindow.desktop = createDesktopApi({}) as unknown as AppWindow['desktop']
+
+    const { wrapper } = await mountMarkdownStudioView()
+
+    expect(wrapper.find('.folder-sidebar').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+})
 
 describe('MarkdownStudioView', () => {
   const appWindow = window as AppWindow

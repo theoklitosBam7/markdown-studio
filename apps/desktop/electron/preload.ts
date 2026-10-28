@@ -2,9 +2,11 @@ import type { DesktopApi } from '@markdown-studio/desktop-contract/types'
 
 import {
   APP_COMMAND_CHANNEL,
+  DOCUMENTS_CHECK_MODIFICATION_CHANNEL,
   DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL,
   DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
+  DOCUMENTS_OPEN_PATH_CHANNEL,
   DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL,
   DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
@@ -13,6 +15,10 @@ import {
   EDITING_INSERT_TEXT_CHANNEL,
   EXPORTS_HTML_CHANNEL,
   EXPORTS_PDF_CHANNEL,
+  FOLDERS_ADD_CHANNEL,
+  FOLDERS_LIST_CHANNEL,
+  FOLDERS_REMOVE_CHANNEL,
+  FOLDERS_RESTORE_CHANNEL,
   IMAGES_SAVE_CHANNEL,
   INSTALL_IS_HOMEBREW_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
@@ -38,9 +44,11 @@ function createDesktopApi(): DesktopApi {
       },
     },
     documents: {
+      checkModification: (input) => ipcRenderer.invoke(DOCUMENTS_CHECK_MODIFICATION_CHANNEL, input),
       clearLastOpened: () => ipcRenderer.invoke(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL),
       clearWorkspaceDraft: () => ipcRenderer.invoke(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL),
       open: () => ipcRenderer.invoke(DOCUMENTS_OPEN_CHANNEL),
+      openPath: (input) => ipcRenderer.invoke(DOCUMENTS_OPEN_PATH_CHANNEL, input),
       restoreLastOpened: () => ipcRenderer.invoke(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL),
       restoreWorkspaceDraft: () => ipcRenderer.invoke(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL),
       save: (input) => ipcRenderer.invoke(DOCUMENTS_SAVE_CHANNEL, input),
@@ -54,6 +62,12 @@ function createDesktopApi(): DesktopApi {
     exports: {
       exportHtml: (input) => ipcRenderer.invoke(EXPORTS_HTML_CHANNEL, input),
       exportPdf: (input) => ipcRenderer.invoke(EXPORTS_PDF_CHANNEL, input),
+    },
+    folders: {
+      add: () => ipcRenderer.invoke(FOLDERS_ADD_CHANNEL),
+      list: (input) => ipcRenderer.invoke(FOLDERS_LIST_CHANNEL, input),
+      remove: (folderId) => ipcRenderer.invoke(FOLDERS_REMOVE_CHANNEL, folderId),
+      restore: () => ipcRenderer.invoke(FOLDERS_RESTORE_CHANNEL),
     },
     images: {
       save: (input) => ipcRenderer.invoke(IMAGES_SAVE_CHANNEL, input),

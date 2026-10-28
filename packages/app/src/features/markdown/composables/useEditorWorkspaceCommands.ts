@@ -15,6 +15,7 @@ export function useEditorWorkspaceCommands(
     const availableModes = state.availableModes.value
     const viewMode = state.viewMode.value
     const theme = state.theme.value
+    const isFolderBrowserAvailable = state.isFolderBrowserAvailable.value
 
     const commands: EditorWorkspaceCommand[] = [
       {
@@ -33,6 +34,27 @@ export function useEditorWorkspaceCommands(
         run: workspace.document.open,
         shortcut: ['Mod', 'O'],
         title: 'Open Document...',
+      },
+      {
+        disabledReason: isFolderBrowserAvailable
+          ? null
+          : 'Document Folders are available in the desktop app.',
+        group: 'Document',
+        id: 'workspace:folders:add',
+        keywords: ['folder', 'directory', 'browse'],
+        run: workspace.folders.add,
+        shortcut: ['Mod', 'Shift', 'O'],
+        title: 'Add Folder...',
+      },
+      {
+        disabledReason: isFolderBrowserAvailable
+          ? null
+          : 'Document Folders are available in the desktop app.',
+        group: 'Document',
+        id: 'workspace:folders:refresh',
+        keywords: ['folder', 'reload', 'refresh'],
+        run: workspace.folders.refresh,
+        title: 'Refresh Folders',
       },
       {
         disabledReason: canSaveDocuments ? null : 'Save is available in the desktop app.',
@@ -69,6 +91,25 @@ export function useEditorWorkspaceCommands(
         keywords: ['download', 'pdf', 'print'],
         run: workspace.export.pdf,
         title: 'Export PDF...',
+      },
+      {
+        disabledReason: isFolderBrowserAvailable
+          ? null
+          : 'Document Folders are available in the desktop app.',
+        group: 'View',
+        id: 'workspace:view:folders',
+        keywords: ['sidebar', 'browse', 'panel'],
+        run: () => workspace.folders.changeTab('folders'),
+        shortcut: ['Mod', 'Shift', 'E'],
+        title: 'Show Folders',
+      },
+      {
+        disabledReason: null,
+        group: 'View',
+        id: 'workspace:view:outline',
+        keywords: ['sidebar', 'headings', 'panel'],
+        run: () => workspace.folders.changeTab('outline'),
+        title: 'Show Outline',
       },
       {
         disabledReason: null,

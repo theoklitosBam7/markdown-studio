@@ -1,4 +1,4 @@
-import type { AppCommand } from '@markdown-studio/desktop-contract/types'
+import type { AppCommand, DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
 
 import {
   computed,
@@ -20,6 +20,7 @@ interface UseDocumentSessionOptions {
 interface UseDocumentSessionReturn {
   canOpenDocuments: ComputedRef<boolean>
   canSaveDocuments: ComputedRef<boolean>
+  checkForDiskChanges: () => Promise<void>
   currentPath: DeepReadonly<ShallowRef<null | string>>
   displayName: ComputedRef<string>
   handleAppCommand: (command: AppCommand) => Promise<void>
@@ -27,6 +28,7 @@ interface UseDocumentSessionReturn {
   isDirty: ComputedRef<boolean>
   loadExampleDocument: (input: { content: string; title: string }) => Promise<void>
   openDocument: () => Promise<void>
+  openDocumentHandle: (loadHandle: () => Promise<DesktopDocumentHandle | null>) => Promise<void>
   restoreDraft: (input: { content: string; label: string }) => Promise<void>
   restoreLastOpenedDocument: () => Promise<void>
   restoreWorkspaceDraft: (input: {
@@ -45,6 +47,7 @@ interface UseDocumentSessionReturn {
 export function useDocumentSession(options: UseDocumentSessionOptions): UseDocumentSessionReturn {
   const documents = useDocumentActions()
   const currentPath = shallowRef<null | string>(null)
+  const currentModifiedAt = shallowRef(0)
   const draftLabel = shallowRef<null | string>(null)
   const lastAction = shallowRef('Ready')
   const savedContent = shallowRef(options.content.value)
@@ -76,18 +79,110 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     return window.confirm('Discard unsaved changes?')
   }
 
+  function applyDocument(handle: DesktopDocumentHandle): void {
+    options.replaceContent(handle.content)
+    currentPath.value = handle.path
+    currentModifiedAt.value = handle.modifiedAt
+    draftLabel.value = null
+    savedContent.value = handle.content
+    lastAction.value = `Opened ${getFileName(handle.path)}`
+    syncDocumentTitle()
+  }
+
   async function openDocument(): Promise<void> {
     if (!(await confirmDiscardChanges())) return
 
     const opened = await documents.open()
     if (!opened) return
 
-    options.replaceContent(opened.content)
-    currentPath.value = opened.path
-    draftLabel.value = null
-    savedContent.value = opened.content
-    lastAction.value = `Opened ${getFileName(opened.path)}`
-    syncDocumentTitle()
+    applyDocument(opened)
+  }
+
+  async function openDocumentHandle(
+    loadHandle: () => Promise<DesktopDocumentHandle | null>,
+  ): Promise<void> {
+    if (!(await confirmDiscardChanges())) return
+
+    const handle = await loadHandle()
+    if (!handle) return
+
+    applyDocument(handle)
+  }
+
+  async function checkForDiskChanges(): Promise<void> {
+    if (!currentPath.value) return
+
+    const check = await documents.checkModification({
+      modifiedAt: currentModifiedAt.value,
+      path: currentPath.value,
+    })
+
+    if (check.status === 'unchanged') return
+
+    if (check.status === 'missing') {
+      lastAction.value = 'This file no longer exists on disk.'
+      return
+    }
+
+    if (isDirty.value) {
+      lastAction.value = 'This file changed on disk. Saving will overwrite it.'
+      return
+    }
+
+    options.replaceContent(check.document.content)
+    savedContent.value = check.document.content
+    currentModifiedAt.value = check.document.modifiedAt
+    lastAction.value = 'Reloaded from disk'
+  }
+
+  async function confirmSafeToSave(): Promise<boolean> {
+    if (!currentPath.value) return true
+
+    const check = await documents.checkModification({
+      modifiedAt: currentModifiedAt.value,
+      path: currentPath.value,
+    })
+
+    if (check.status === 'unchanged' || check.status === 'missing') {
+      if (check.status === 'missing') {
+        lastAction.value = 'This file no longer exists on disk.'
+      }
+      return true
+    }
+
+    if (check.document.content === savedContent.value) {
+      currentModifiedAt.value = check.document.modifiedAt
+      return true
+    }
+
+    if (!isDirty.value) {
+      options.replaceContent(check.document.content)
+      savedContent.value = check.document.content
+      currentModifiedAt.value = check.document.modifiedAt
+      lastAction.value = 'Reloaded from disk'
+      syncDocumentTitle()
+      return false
+    }
+
+    const warning = 'This file changed on disk. Saving will overwrite it.'
+    lastAction.value = warning
+    if (typeof window === 'undefined' || !window.confirm(warning)) return false
+
+    currentModifiedAt.value = check.document.modifiedAt
+    return true
+  }
+
+  async function rememberSavedModification(): Promise<void> {
+    if (!currentPath.value) return
+
+    const check = await documents.checkModification({
+      modifiedAt: currentModifiedAt.value,
+      path: currentPath.value,
+    })
+
+    if (check.status === 'changed') {
+      currentModifiedAt.value = check.document.modifiedAt
+    }
   }
 
   async function restoreDraft(input: { content: string; label: string }): Promise<void> {
@@ -111,6 +206,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
 
     options.replaceContent(input.content)
     currentPath.value = input.path
+    currentModifiedAt.value = 0
     draftLabel.value = input.path ? null : input.label || 'Untitled.md'
     savedContent.value = input.savedContent
     lastAction.value = 'Restored unsaved changes'
@@ -123,6 +219,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
 
     options.replaceContent(restored.content)
     currentPath.value = restored.path
+    currentModifiedAt.value = restored.modifiedAt
     draftLabel.value = null
     savedContent.value = restored.content
     lastAction.value = `Restored ${getFileName(restored.path)}`
@@ -140,6 +237,8 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   async function saveDocument(): Promise<void> {
+    if (!(await confirmSafeToSave())) return
+
     const saved = await documents.save({
       content: options.content.value,
       path: currentPath.value,
@@ -151,6 +250,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     draftLabel.value = null
     savedContent.value = options.content.value
     lastAction.value = `Saved ${getFileName(saved.path)}`
+    await rememberSavedModification()
     syncDocumentTitle()
   }
 
@@ -166,6 +266,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     draftLabel.value = null
     savedContent.value = options.content.value
     lastAction.value = `Saved ${getFileName(saved.path)}`
+    await rememberSavedModification()
     syncDocumentTitle()
   }
 
@@ -203,6 +304,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   return {
     canOpenDocuments,
     canSaveDocuments,
+    checkForDiskChanges,
     currentPath: readonly(currentPath),
     displayName,
     handleAppCommand,
@@ -210,6 +312,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     isDirty,
     loadExampleDocument,
     openDocument,
+    openDocumentHandle,
     restoreDraft,
     restoreLastOpenedDocument,
     restoreWorkspaceDraft,

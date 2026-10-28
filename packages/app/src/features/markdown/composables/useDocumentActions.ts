@@ -1,3 +1,7 @@
+import type {
+  DesktopDocumentCheck,
+  DesktopDocumentCheckInput,
+} from '@markdown-studio/desktop-contract/types'
 import { computed, type ComputedRef } from 'vue'
 
 import type { AppWindow } from '@/browser-window'
@@ -13,6 +17,7 @@ interface BrowserOpenResult {
 interface DocumentActions {
   canOpenDocuments: ComputedRef<boolean>
   canSaveDocuments: ComputedRef<boolean>
+  checkModification: (input: DesktopDocumentCheckInput) => Promise<DesktopDocumentCheck>
   clearCurrentDocumentReference: () => Promise<void>
   isDesktop: ComputedRef<boolean>
   open: () => Promise<DocumentHandle | null>
@@ -23,6 +28,7 @@ interface DocumentActions {
 
 interface DocumentHandle {
   content: string
+  modifiedAt: number
   path: string
 }
 
@@ -57,6 +63,8 @@ export function useDocumentActions(): DocumentActions {
 
       return {
         content,
+        // The browser Runtime cannot check the file on disk, so it never compares this value.
+        modifiedAt: 0,
         path: opened.file.name,
       }
     } catch (error) {
@@ -112,9 +120,20 @@ export function useDocumentActions(): DocumentActions {
     return desktop.value.documents.restoreLastOpened()
   }
 
+  async function checkModification(
+    input: DesktopDocumentCheckInput,
+  ): Promise<DesktopDocumentCheck> {
+    const check = desktop.value.documents.checkModification
+
+    if (!check) return { status: 'unchanged' }
+
+    return check(input)
+  }
+
   return {
     canOpenDocuments,
     canSaveDocuments,
+    checkModification,
     clearCurrentDocumentReference,
     isDesktop,
     open,
