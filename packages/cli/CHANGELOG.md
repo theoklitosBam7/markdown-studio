@@ -1,5 +1,14 @@
 # markdown-studio
 
+## 0.11.1
+
+### Patch Changes
+
+- 6b797fa: Make theme switching immediate in the desktop and web apps.
+  
+  - Remove the full-window theme reveal
+  - Prevent gradual color changes during theme switches
+
 ## 0.11.0
 
 ### Minor Changes
