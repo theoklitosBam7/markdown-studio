@@ -91,6 +91,44 @@ describe('Editor Workspace resizing', () => {
     }
   })
 
+  it('shows a failed width save without covering or shifting the controls', () => {
+    cy.window().then((win) => {
+      const setItem = win.Storage.prototype.setItem
+      cy.stub(win.Storage.prototype, 'setItem').callsFake((key: string, value: string) => {
+        if (key === 'markdown-studio:workspace-split-ratio') {
+          throw new win.DOMException('Storage is full', 'QuotaExceededError')
+        }
+        setItem.call(win.localStorage, key, value)
+      })
+    })
+    cy.get('button[aria-label="Pane widths"]').click()
+    cy.get('.workspace-width-control__panel').then(($panel) => {
+      const initialLeft = $panel[0]?.getBoundingClientRect().left
+      cy.get('.workspace-width-control__apply').click()
+      cy.contains('[role="status"]', 'Could not save the editor and Live Preview widths.')
+        .should('be.visible')
+        .should(($notice) => {
+          const notice = $notice[0]
+          if (!notice) throw new Error('Width-save error notice is missing')
+          const bounds = notice.getBoundingClientRect()
+          expect(
+            notice.ownerDocument.elementFromPoint(
+              bounds.left + bounds.width / 2,
+              bounds.top + bounds.height / 2,
+            ),
+          ).to.eq(notice)
+        })
+      cy.get('.workspace-width-control__panel').should(($currentPanel) => {
+        expect($currentPanel[0]?.getBoundingClientRect().left).to.eq(initialLeft)
+      })
+    })
+    cy.get('button[aria-label="Close width controls"]').click()
+    cy.contains('[role="status"]', 'Could not save the editor and Live Preview widths.').should(
+      'be.visible',
+    )
+    cy.get('button[aria-label="Pane widths"]').should('be.focused')
+  })
+
   it('preserves independent preferences through constraints, local resets, and reload', () => {
     cy.viewport(1352, 900)
     cy.get('button[aria-label="Show document outline"]').click()

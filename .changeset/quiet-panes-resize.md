@@ -10,3 +10,4 @@ Resize and remember the editor split and sidebar widths.
 - Adjust widths with keyboard controls or compact percentage and pixel panels without dragging.
 - Dismiss width panels with an outside click, Escape, or a close button without applying unfinished values.
 - Explain dragging, reset, and keyboard resizing when hovering over a divider.
+- Keep layout save-error notices visible beside the width controls.

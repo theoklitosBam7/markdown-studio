@@ -91,60 +91,62 @@ watch(
         />
       </svg>
     </button>
-    <form
-      v-if="isOpen"
-      :id="panelId"
-      class="workspace-width-control__panel"
-      :aria-label="label"
-      novalidate
-      @submit.prevent="apply"
-    >
-      <div class="workspace-width-control__header">
-        <span class="workspace-width-control__title">{{ label }}</span>
-        <button
-          class="workspace-width-control__close"
-          type="button"
-          aria-label="Close width controls"
-          @click="close"
-        >
-          <X :size="14" aria-hidden="true" />
-        </button>
-      </div>
-      <div class="workspace-width-control__row">
-        <label class="workspace-width-control__label">
-          <span>{{ fieldLabel }}</span>
-          <span class="workspace-width-control__value">
-            <input
-              ref="input"
-              v-model="inputValue"
-              :aria-label="inputLabel"
-              :aria-describedby="explanation ? `${panelId}-help` : undefined"
-              name="width"
-              autocomplete="off"
-              type="number"
-              :min="min"
-              :max="max"
-              :step="step"
-              :disabled="disabled"
-            />
-            <span class="workspace-width-control__unit" aria-hidden="true">{{ unit }}</span>
-          </span>
-        </label>
-        <button class="workspace-width-control__apply" type="submit" :disabled="disabled">
-          Apply
-        </button>
-      </div>
-      <p v-if="explanation" :id="`${panelId}-help`" class="workspace-width-control__explanation">
-        {{ explanation }}
-      </p>
-      <div class="workspace-width-control__footer">
-        <button class="workspace-width-control__reset" type="button" @click="emit('reset')">
-          <RotateCcw :size="13" aria-hidden="true" />
-          {{ resetLabel }}
-        </button>
-      </div>
-    </form>
-    <p v-if="notice" class="workspace-width-control__notice" role="status">{{ notice }}</p>
+    <div v-if="isOpen || notice" class="workspace-width-control__popover">
+      <form
+        v-if="isOpen"
+        :id="panelId"
+        class="workspace-width-control__panel"
+        :aria-label="label"
+        novalidate
+        @submit.prevent="apply"
+      >
+        <div class="workspace-width-control__header">
+          <span class="workspace-width-control__title">{{ label }}</span>
+          <button
+            class="workspace-width-control__close"
+            type="button"
+            aria-label="Close width controls"
+            @click="close"
+          >
+            <X :size="14" aria-hidden="true" />
+          </button>
+        </div>
+        <div class="workspace-width-control__row">
+          <label class="workspace-width-control__label">
+            <span>{{ fieldLabel }}</span>
+            <span class="workspace-width-control__value">
+              <input
+                ref="input"
+                v-model="inputValue"
+                :aria-label="inputLabel"
+                :aria-describedby="explanation ? `${panelId}-help` : undefined"
+                name="width"
+                autocomplete="off"
+                type="number"
+                :min="min"
+                :max="max"
+                :step="step"
+                :disabled="disabled"
+              />
+              <span class="workspace-width-control__unit" aria-hidden="true">{{ unit }}</span>
+            </span>
+          </label>
+          <button class="workspace-width-control__apply" type="submit" :disabled="disabled">
+            Apply
+          </button>
+        </div>
+        <p v-if="explanation" :id="`${panelId}-help`" class="workspace-width-control__explanation">
+          {{ explanation }}
+        </p>
+        <div class="workspace-width-control__footer">
+          <button class="workspace-width-control__reset" type="button" @click="emit('reset')">
+            <RotateCcw :size="13" aria-hidden="true" />
+            {{ resetLabel }}
+          </button>
+        </div>
+      </form>
+      <p v-if="notice" class="workspace-width-control__notice" role="status">{{ notice }}</p>
+    </div>
   </div>
 </template>
 
@@ -176,8 +178,7 @@ watch(
   background: var(--accent-light);
 }
 
-.workspace-width-control__panel,
-.workspace-width-control__notice {
+.workspace-width-control__popover {
   position: absolute;
   top: 30px;
   right: 0;
@@ -310,10 +311,10 @@ watch(
   line-height: 1.5;
 }
 
-.workspace-width-control:has(.workspace-width-control__panel) .workspace-width-control__notice {
-  position: static;
-  width: 224px;
-  margin-top: 4px;
+.workspace-width-control__panel + .workspace-width-control__notice {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
 .workspace-width-control button:focus-visible,
