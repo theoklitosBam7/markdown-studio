@@ -209,6 +209,18 @@ Click the view toggle buttons to switch between:
 
 The editor automatically adapts to your preferred layout.
 
+### Resizing the editor and sidebar
+
+In Split mode, drag the divider between the Markdown editor and Live Preview to change their widths. Select **Pane widths** to enter an editor percentage. Double-click the divider or choose **Reset to equal widths** to save a 50/50 split. With the divider focused, Left and Right Arrow change the editor share by one percentage point. Hold Shift to change it by five points. Home and End select the available minimum and maximum. Escape cancels an active drag.
+
+When the sidebar is open on a desktop-width layout, drag its divider to change its width. Select **Sidebar width** to enter a width in pixels. Double-click its divider or choose **Reset sidebar width** to save the default 248 px width. The sidebar divider uses 10 px arrow steps, or 50 px with Shift. Home and End select its current minimum and maximum. The outline and the desktop-only Document Folder browser share one width and one reset. Resizing controls are not shown on mobile; mobile sizing remains unchanged.
+
+Select **Apply** or press Enter to apply a value in either width panel. Click outside, select its close button, or press Escape to dismiss it without applying an unfinished value. Escape returns focus to the panel's trigger. Opening one width panel closes the other.
+
+Window and sidebar limits can temporarily reduce the displayed widths. Markdown Studio keeps your saved choices and restores them when space returns. Each reset changes only its own preference.
+
+Markdown Studio remembers the editor percentage and sidebar width separately in the current browser origin or desktop app profile. Browser storage does not move between profiles, hosts, protocols, or ports. For the npm launcher, use the same host and an explicit port each time to restore these preferences. Without `--port`, the launcher continues to select a random available port.
+
 ### Creating Diagrams
 
 Use Mermaid syntax within fenced code blocks:

@@ -15,6 +15,8 @@ import StatusBar from '@/features/markdown/components/StatusBar.vue'
 import TableDimensionPicker from '@/features/markdown/components/TableDimensionPicker.vue'
 import Toolbar from '@/features/markdown/components/Toolbar.vue'
 import UpdateBanner from '@/features/markdown/components/UpdateBanner.vue'
+import WorkspaceSidebarLayout from '@/features/markdown/components/WorkspaceSidebarLayout.vue'
+import WorkspaceSplitLayout from '@/features/markdown/components/WorkspaceSplitLayout.vue'
 import WorkspaceRail from '@/components/base/WorkspaceRail.vue'
 import { useCommandPalette } from '@/features/markdown/composables/useCommandPalette'
 import { useEditorWorkspaceCommands } from '@/features/markdown/composables/useEditorWorkspaceCommands'
@@ -120,6 +122,9 @@ const {
   updateInfo,
   viewMode,
 } = workspace.state
+const visibleSidebarKind = computed(() =>
+  isFolderBrowserAvailable.value && sidebarTab.value === 'folders' ? 'folders' : 'outline',
+)
 const editorPaneRef = useTemplateRef<InstanceType<typeof EditorPane>>('editorPane')
 const previewPaneRef = useTemplateRef<InstanceType<typeof PreviewPane>>('previewPane')
 
@@ -331,58 +336,66 @@ function handleTableInsertionConfirm(): void {
         />
       </Transition>
 
-      <main
-        id="workspace-main"
-        tabindex="-1"
-        class="main-content"
-        :class="{ 'main-content--mobile-outline': isMobile && isOutlineOpen }"
-      >
-        <Transition name="outline-slide">
-          <FolderSidebar
-            v-if="isOutlineOpen && isFolderBrowserAvailable && sidebarTab === 'folders'"
-            key="folders"
-            :active-path="currentPath"
-            :message="folderMessage"
-            :nodes="folderNodes"
-            tab="folders"
-            @add="workspace.folders.add"
-            @change-tab="workspace.folders.changeTab"
-            @open="workspace.folders.open"
-            @remove="workspace.folders.remove"
-            @toggle="workspace.folders.toggle"
-          />
-          <OutlineSidebar
-            v-else-if="isOutlineOpen"
-            key="outline"
-            :active-heading-id="activeOutlineHeadingId"
-            :folder-tab-available="isFolderBrowserAvailable"
-            :headings="outlineHeadings"
-            tab="outline"
-            @change-tab="workspace.folders.changeTab"
-            @navigate="workspace.outline.navigate"
-          />
-        </Transition>
-        <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
-        <EditorPane
-          ref="editorPane"
-          :content="content"
-          :document-path="currentPath"
-          :find-state="workspace.find.state.value"
-          @find-action="handleFindAction"
-          @scroll="handleEditorScroll"
-          @update:content="workspace.editor.updateContent"
-        />
-        <PreviewPane
-          ref="previewPane"
-          :document-path="currentPath"
-          :html="renderedHtml"
-          :source-map="sourceMap"
-          :theme="theme"
-          :word-count="stats.words"
-          @jump-to-offset="workspace.preview.jumpToOffset"
-          @render-diagrams="workspace.preview.renderDiagrams"
-          @replace-source-range="handleReplaceSourceRange"
-        />
+      <main id="workspace-main" tabindex="-1" class="main-content">
+        <WorkspaceSidebarLayout
+          :visible="isOutlineOpen"
+          :is-mobile="isMobile"
+          :view-mode="viewMode"
+          :kind="visibleSidebarKind"
+        >
+          <template #sidebar>
+            <FolderSidebar
+              v-if="visibleSidebarKind === 'folders'"
+              key="folders"
+              :active-path="currentPath"
+              :message="folderMessage"
+              :nodes="folderNodes"
+              tab="folders"
+              @add="workspace.folders.add"
+              @change-tab="workspace.folders.changeTab"
+              @open="workspace.folders.open"
+              @remove="workspace.folders.remove"
+              @toggle="workspace.folders.toggle"
+            />
+            <OutlineSidebar
+              v-else
+              key="outline"
+              :active-heading-id="activeOutlineHeadingId"
+              :folder-tab-available="isFolderBrowserAvailable"
+              :headings="outlineHeadings"
+              tab="outline"
+              @change-tab="workspace.folders.changeTab"
+              @navigate="workspace.outline.navigate"
+            />
+          </template>
+          <WorkspaceSplitLayout :view-mode="viewMode">
+            <template #editor>
+              <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
+              <EditorPane
+                ref="editorPane"
+                :content="content"
+                :document-path="currentPath"
+                :find-state="workspace.find.state.value"
+                @find-action="handleFindAction"
+                @scroll="handleEditorScroll"
+                @update:content="workspace.editor.updateContent"
+              />
+            </template>
+            <template #preview>
+              <PreviewPane
+                ref="previewPane"
+                :document-path="currentPath"
+                :html="renderedHtml"
+                :source-map="sourceMap"
+                :theme="theme"
+                :word-count="stats.words"
+                @jump-to-offset="workspace.preview.jumpToOffset"
+                @render-diagrams="workspace.preview.renderDiagrams"
+                @replace-source-range="handleReplaceSourceRange"
+              />
+            </template>
+          </WorkspaceSplitLayout>
+        </WorkspaceSidebarLayout>
       </main>
 
       <StatusBar
@@ -497,45 +510,6 @@ function handleTableInsertionConfirm(): void {
   background: var(--preview-bg);
 }
 
-/* View mode styles */
-.markdown-studio.view-editor :deep(.preview-pane) {
-  display: none;
-}
-
-.markdown-studio.view-editor :deep(.editor-pane) {
-  border-right: none;
-}
-
-.markdown-studio.view-preview :deep(.editor-pane) {
-  display: none;
-}
-
-.markdown-studio.view-preview :deep(.preview-pane) {
-  border-right: none;
-}
-
-.outline-slide-enter-active,
-.outline-slide-leave-active {
-  transition:
-    max-width 0.22s ease,
-    opacity 0.18s ease,
-    transform 0.22s ease;
-}
-
-.outline-slide-enter-from,
-.outline-slide-leave-to {
-  max-width: 0;
-  opacity: 0;
-  transform: translateX(-16px);
-}
-
-.outline-slide-enter-to,
-.outline-slide-leave-from {
-  max-width: 248px;
-  opacity: 1;
-  transform: translateX(0);
-}
-
 @media (max-width: 700px) {
   .markdown-studio {
     flex-direction: column;
@@ -543,20 +517,6 @@ function handleTableInsertionConfirm(): void {
 
   .main-content {
     flex-direction: column;
-  }
-
-  .main-content--mobile-outline :deep(.editor-pane),
-  .main-content--mobile-outline :deep(.preview-pane) {
-    display: none;
-  }
-
-  .main-content--mobile-outline :deep(.outline-sidebar) {
-    height: 100%;
-  }
-
-  .outline-slide-enter-to,
-  .outline-slide-leave-from {
-    max-width: 100%;
   }
 
   .markdown-studio :deep(.editor-pane),

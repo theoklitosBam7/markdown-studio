@@ -7,7 +7,7 @@ description: Drive the real Markdown Studio web app (Editor Workspace) in a brow
 
 Drive the running app the way a user does: launch it, interact through the browser, and capture evidence. Markdown Studio is a Vue 3 + Electron Markdown editor. This skill targets the web app in `apps/web` (the Editor Workspace). The desktop app wraps the same renderer, so web proof covers most editor behavior; Electron shell behavior itself is out of scope here. The landing page (`apps/landing-page`) and the npm launcher (`packages/cli`) are separate surfaces.
 
-Read `features/README.md` before driving, then use the matching feature file as the recipe. The map is the maintained list of what to verify; a proof that hits one easy entry point is not complete when the map lists others.
+Read `features/README.md` before driving, then use the matching feature file as the recipe. The map is the maintained list of what to verify; a proof that hits one easy entry point is not complete when the map lists others. Use `agent-browser` for interactive browser drives. Keep desktop shell checks separate from web proof.
 
 ## Launch
 
@@ -65,16 +65,11 @@ If the PID differs, someone else owns the port. Do not drive that instance and d
 
 ## Drive
 
-Two paths. Prefer Path A for interactive verification; use Path B for repeatable scripted proof and for anything needing browser-API stubs.
+Two paths. Use Path A for interactive verification; use Path B for repeatable scripted proof and for anything needing browser-API stubs.
 
-### Path A: Playwright browser MCP
+### Path A: agent-browser
 
-If the session provides the playwright MCP server, use it. Discover the exact tool names first if needed, then:
-
-1. `browser_navigate` to `http://localhost:4175/`.
-2. `browser_snapshot` to get the accessibility tree with element refs.
-3. `browser_click`, `browser_type`, `browser_press_key` on refs. For keyboard flows, the app listens for real key events, for example Ctrl+K opens the Command Palette.
-4. `browser_take_screenshot` for visual evidence; `browser_evaluate` to read app state such as localStorage or `document.querySelector` results. The screenshot lands relative to the MCP server's working directory, not yours. Pass the absolute evidence path if the tool accepts it; otherwise find the file (`fd <name> /tmp`) and move it into `/tmp/markdown-studio-verify/<RUN_ID>/`.
+Load the `agent-browser` core guide before using the CLI. Open `http://localhost:4175/`, inspect the accessibility snapshot, and use its element references to click, type, and send real key events. Capture screenshots and read visible DOM state or localStorage for evidence. Save evidence under `/tmp/markdown-studio-verify/<RUN_ID>/`.
 
 Never click `Open` or `Save` in this path. They open native file dialogs or trigger real downloads, and an agent cannot control either. Verify those flows with Path B.
 
@@ -128,6 +123,8 @@ Real selectors from the app, in order of preference (ARIA and data attributes be
 | `markdown-studio:web-draft`            | Workspace Draft; restores into the editor automatically on load |
 | `markdown-studio-theme`                | Theme choice                                                    |
 | `markdown-studio:print-export:<jobId>` | PDF export payload for the `/export/print?job=<id>` route       |
+| `markdown-studio:workspace-split-ratio` | Editor share of the editor and Live Preview widths, default `0.5` |
+| `markdown-studio:workspace-sidebar-width` | Sidebar width in CSS pixels, default `248` |
 
 Clear `markdown-studio:web-draft` for a clean slate, or the editor may start with content from an earlier session.
 

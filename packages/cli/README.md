@@ -73,7 +73,17 @@ This package serves the production Markdown Studio web app over localhost and op
 
 - **Chromium browsers** can use the File System Access API on `localhost`
 - **Other browsers** fall back to the existing picker and download flows
-- The server is **local-only** by default because it binds to `127.0.0.1`
+- The server is **local-only** by default because it binds to `127.0.0.1`.
+
+### Remembering layout widths
+
+The editor split and sidebar width are stored in browser storage for the current origin. To restore them in a later npm launcher session, use the same host and an explicit port each time. For example:
+
+```sh
+npx markdown-studio@latest --host 127.0.0.1 --port 4173
+```
+
+The default launcher still selects a random available port. A different port, host, protocol, or browser profile uses separate storage.
 
 ## Development
 

@@ -202,6 +202,32 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('composes independently controlled split and sidebar regions without replacing the editor', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    const textarea = wrapper.get('textarea').element
+    expect(wrapper.find('.workspace-split').exists()).toBe(true)
+    expect(wrapper.findAll('[role="separator"]')).toHaveLength(1)
+
+    await wrapper.get('button[aria-label="Show document outline"]').trigger('click')
+    await flushPromises()
+
+    const separators = wrapper.findAll('[role="separator"]')
+    expect(separators.map((separator) => separator.attributes('aria-label'))).toEqual([
+      'Outline width',
+      'Markdown editor width',
+    ])
+    const controlledIds = separators.map((separator) => separator.attributes('aria-controls'))
+    expect(new Set(controlledIds).size).toBe(2)
+    expect(wrapper.get(`#${controlledIds[0]}`).find('.outline-sidebar').exists()).toBe(true)
+    expect(wrapper.get(`#${controlledIds[1]}`).find('textarea').element).toBe(textarea)
+
+    await wrapper.get('button[aria-label="Hide document outline"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('[role="separator"]')).toHaveLength(1)
+    expect(wrapper.get('textarea').element).toBe(textarea)
+    wrapper.unmount()
+  })
+
   it('opens Find from the workspace rail', async () => {
     const { wrapper } = await mountMarkdownStudioView()
 
