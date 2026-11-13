@@ -6,7 +6,7 @@ This directory is the maintained source for verifying user-facing behavior of Ma
 
 | ID                   | File                                                               | Covers                                                                              |
 | -------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| editing-live-preview | [editing-and-live-preview.md](editing-and-live-preview.md)         | View modes, typing renders, Source Navigation, scroll sync, Mermaid diagrams        |
+| editing-live-preview | [editing-and-live-preview.md](editing-and-live-preview.md)         | View modes, typing renders, Source Navigation, scroll sync, Mermaid diagrams, editor and outline-sidebar resizing |
 | open-save            | [open-save-documents.md](open-save-documents.md)                   | Open with pickers and fallbacks, Save with handles and downloads, Document Identity |
 | command-palette-find | [command-palette-and-find.md](command-palette-and-find.md)         | Command Palette, Find and Replace                                                   |
 | export               | [export.md](export.md)                                             | HTML export, PDF export print route, menu behavior                                  |
@@ -17,7 +17,7 @@ This directory is the maintained source for verifying user-facing behavior of Ma
 - Start the server per SKILL.md Launch with `VITE_DISABLE_PWA=true` and a port you confirmed free. Record the PID.
 - Run the doctor checks and require the title `Markdown Studio` and a PID that matches the launch record.
 - Set `RUN_ID` and create `/tmp/markdown-studio-verify/$RUN_ID/` for evidence.
-- Start each feature from a clean state: clear `markdown-studio:web-draft` and `markdown-studio-theme` in the browser profile, then reload.
+- Start each feature from a clean state: clear `markdown-studio:web-draft`, `markdown-studio-theme`, `markdown-studio:workspace-split-ratio`, and `markdown-studio:workspace-sidebar-width` in the browser profile, then reload.
 - Use a desktop viewport (1280x900) unless the recipe tests the mobile layout.
 - Never drive an instance this run did not start.
 
@@ -26,7 +26,7 @@ This directory is the maintained source for verifying user-facing behavior of Ma
 - Start every recipe from the baseline state unless its preconditions say otherwise.
 - Prefer ARIA labels and data attributes from the SKILL.md handle table over classes and positions.
 - Treat selectors and key sequences as literal.
-- Interactive drives go through the Playwright browser MCP; stubbed browser-API flows go through Cypress.
+- Interactive web drives use `agent-browser`; stubbed browser-API flows go through Cypress. Desktop-only checks use a separate real desktop smoke test, not the web recipe.
 - After a mutation that changes persisted state, clear the relevant localStorage key before the next recipe.
 
 ## Proof and skip reporting

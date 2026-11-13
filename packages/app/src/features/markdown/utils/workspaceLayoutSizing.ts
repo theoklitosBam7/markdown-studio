@@ -1,0 +1,2 @@
+export const WORKSPACE_GUTTER_WIDTH = 24
+export const WORKSPACE_PANE_MIN_WIDTH = 280
