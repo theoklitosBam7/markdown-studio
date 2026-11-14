@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/types'
 
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
+import EditorDisplaySettings from '@/features/markdown/components/EditorDisplaySettings.vue'
 import ExamplesModal from '@/features/markdown/components/ExamplesModal.vue'
 import FolderSidebar from '@/features/markdown/components/FolderSidebar.vue'
 import OutlineSidebar from '@/features/markdown/components/OutlineSidebar.vue'
@@ -24,9 +25,27 @@ import { useEditorWorkspaceController } from '@/features/markdown/composables/us
 import { useShortcuts } from '@/features/markdown/composables/useShortcuts'
 
 const workspace = useEditorWorkspaceController()
-const commands = useEditorWorkspaceCommands(workspace)
+const isEditorDisplayOpen = shallowRef(false)
+const displayReturnFocus = shallowRef<HTMLElement | null>(null)
+let paletteInitiator: HTMLElement | null = null
+const commands = useEditorWorkspaceCommands(workspace, { openEditorDisplay })
 const commandPalette = useCommandPalette({ commands })
 const isShortcutsHelpOpen = shallowRef(false)
+
+watch(commandPalette.isOpen, (open) => {
+  if (open && document.activeElement instanceof HTMLElement) {
+    paletteInitiator = document.activeElement
+  }
+})
+
+async function openEditorDisplay(): Promise<void> {
+  const active = document.activeElement
+  displayReturnFocus.value =
+    active instanceof HTMLElement && !active.closest('.command-palette') ? active : paletteInitiator
+  commandPalette.close()
+  await nextTick()
+  isEditorDisplayOpen.value = true
+}
 
 const bindings = computed<ShortcutBinding[]>(() => [
   ...commands.value
@@ -79,6 +98,7 @@ const isOverlayOpen = () =>
   isExamplesModalOpen.value ||
   isShortcutsHelpOpen.value ||
   commandPalette.isOpen.value ||
+  isEditorDisplayOpen.value ||
   workspace.state.isTableDimensionPickerOpen.value
 
 const { shortcuts } = useShortcuts({
@@ -305,6 +325,7 @@ function handleTableInsertionConfirm(): void {
         @update:theme="workspace.editor.setTheme"
         @open-examples="workspace.examples.open"
         @open-shortcuts="isShortcutsHelpOpen = true"
+        @open-editor-display="openEditorDisplay"
         @clear="handleStartNewDocument"
         @copy="workspace.toolbar.copy"
         @insert-table="handleInsertTable"
@@ -375,6 +396,7 @@ function handleTableInsertionConfirm(): void {
                 ref="editorPane"
                 :content="content"
                 :document-path="currentPath"
+                :display-preferences="workspace.display.preferences.value"
                 :find-state="workspace.find.state.value"
                 @find-action="handleFindAction"
                 @scroll="handleEditorScroll"
@@ -411,6 +433,18 @@ function handleTableInsertionConfirm(): void {
       :is-open="isExamplesModalOpen"
       @close="workspace.examples.close"
       @select="workspace.document.loadExample"
+    />
+
+    <EditorDisplaySettings
+      :is-open="isEditorDisplayOpen"
+      :is-mobile="isMobile"
+      :preferences="workspace.display.preferences.value"
+      :persistence-error="workspace.display.persistenceError.value"
+      :return-focus="displayReturnFocus"
+      @close="isEditorDisplayOpen = false"
+      @update="workspace.display.update"
+      @reset="workspace.display.reset"
+      @retry="workspace.display.retryPersistence"
     />
 
     <CommandPalette

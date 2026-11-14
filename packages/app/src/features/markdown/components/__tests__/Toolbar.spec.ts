@@ -52,6 +52,12 @@ describe('Toolbar', () => {
     expect(wrapper.find('.toolbar__actions').exists()).toBe(false)
   })
 
+  it('opens editor display settings from a labelled desktop control', async () => {
+    const wrapper = mountToolbar()
+    await wrapper.get('button[aria-label="Editor display"]').trigger('click')
+    expect(wrapper.emitted('openEditorDisplay')).toHaveLength(1)
+  })
+
   it('uses a Lucide icon for the keyboard shortcuts control', () => {
     const wrapper = mountToolbar()
 

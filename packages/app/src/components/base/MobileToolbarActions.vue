@@ -15,6 +15,7 @@ import {
   PanelLeft,
   Save,
   Search,
+  SlidersHorizontal,
   Sun,
   Table2,
   Trash2,
@@ -77,6 +78,7 @@ const emit = defineEmits<{
   insertTable: []
   install: []
   openDocument: []
+  openEditorDisplay: []
   openExamples: []
   openFind: []
   openShortcuts: []
@@ -87,6 +89,7 @@ const emit = defineEmits<{
 }>()
 
 const isActionSheetOpen = shallowRef(false)
+let openDisplayAfterDismissal = false
 const outlineLabel = computed(() =>
   props.isOutlineOpen ? 'Hide document outline' : 'Show document outline',
 )
@@ -158,6 +161,13 @@ const actionGroups = computed<SheetGroup[]>(() => {
   groups.push({
     items: [
       {
+        action: () => {
+          openDisplayAfterDismissal = true
+        },
+        icon: SlidersHorizontal,
+        label: 'Editor display',
+      },
+      {
         action: () => emit('update:theme', { theme: nextTheme.value }),
         icon: props.theme === 'light' ? Moon : Sun,
         label: `Switch to ${nextTheme.value} mode`,
@@ -190,6 +200,10 @@ const actionGroups = computed<SheetGroup[]>(() => {
 
 function closeActionSheet(): void {
   isActionSheetOpen.value = false
+  if (openDisplayAfterDismissal) {
+    openDisplayAfterDismissal = false
+    emit('openEditorDisplay')
+  }
 }
 
 function handleViewModeChange(mode: ViewMode): void {

@@ -11,13 +11,14 @@ This directory is the maintained source for verifying user-facing behavior of Ma
 | command-palette-find | [command-palette-and-find.md](command-palette-and-find.md)         | Command Palette, Find and Replace                                                   |
 | export               | [export.md](export.md)                                             | HTML export, PDF export print route, menu behavior                                  |
 | workspace-state      | [examples-and-workspace-state.md](examples-and-workspace-state.md) | Example Documents, themes, Workspace Draft, Clear Document, mobile action sheet     |
+| editor-display       | [editor-display-preferences.md](editor-display-preferences.md)       | Settings entry points, live source layout, native caret alignment, local persistence and reset |
 
 ## Baseline preconditions
 
 - Start the server per SKILL.md Launch with `VITE_DISABLE_PWA=true` and a port you confirmed free. Record the PID.
 - Run the doctor checks and require the title `Markdown Studio` and a PID that matches the launch record.
 - Set `RUN_ID` and create `/tmp/markdown-studio-verify/$RUN_ID/` for evidence.
-- Start each feature from a clean state: clear `markdown-studio:web-draft`, `markdown-studio-theme`, `markdown-studio:workspace-split-ratio`, and `markdown-studio:workspace-sidebar-width` in the browser profile, then reload.
+- Start each feature from a clean state: clear `markdown-studio:web-draft`, `markdown-studio-theme`, `markdown-studio:workspace-split-ratio`, `markdown-studio:workspace-sidebar-width`, and `markdown-studio:editor-display-preferences` in the browser profile, then reload.
 - Use a desktop viewport (1280x900) unless the recipe tests the mobile layout.
 - Never drive an instance this run did not start.
 
@@ -27,7 +28,7 @@ This directory is the maintained source for verifying user-facing behavior of Ma
 - Prefer ARIA labels and data attributes from the SKILL.md handle table over classes and positions.
 - Treat selectors and key sequences as literal.
 - Interactive web drives use `agent-browser`; stubbed browser-API flows go through Cypress. Desktop-only checks use a separate real desktop smoke test, not the web recipe.
-- After a mutation that changes persisted state, clear the relevant localStorage key before the next recipe.
+- After a mutation that changes persisted state, clear the relevant localStorage key before the next recipe. Editor display preferences use `markdown-studio:editor-display-preferences`; they persist only within the current origin or desktop profile, without web/desktop sharing or cross-tab synchronization.
 
 ## Proof and skip reporting
 

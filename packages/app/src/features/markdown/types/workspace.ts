@@ -4,6 +4,7 @@ import type { ComputedRef, Ref, ShallowRef } from 'vue'
 import type { Theme, ViewMode } from '@/types/editor'
 
 import type { DocumentFolderNode, SidebarTab } from './folders'
+import type { EditorDisplayPreferenceState } from '../composables/useEditorDisplayPreferences'
 
 import type {
   EditorStats,
@@ -32,17 +33,11 @@ export interface EditorPaneAdapter {
 }
 
 /**
- * Shared scroll payload used by the editor pane and workspace controller.
- *
- * The initial controller boundary keeps this shape intentionally close to the
- * existing pane contract so follow-up refactors can move behavior without
- * changing runtime semantics.
+ * The editor owns text geometry. Consumers receive the logical source position
+ * at the top of its viewport, including when a source line wraps over many rows.
  */
 export interface EditorScrollPayload {
-  clientHeight: number
-  contentLength: number
-  lineHeight: number
-  scrollHeight: number
+  firstVisibleSourceOffset: number
   scrollTop: number
 }
 
@@ -51,6 +46,7 @@ export interface EditorWorkspaceController {
     editor(adapter: EditorPaneAdapter | null): void
     preview(adapter: null | PreviewPaneAdapter): void
   }
+  display: EditorDisplayPreferenceState
   document: {
     handleAppCommand(command: AppCommand): Promise<void>
     loadExample(exampleId: Example['id']): Promise<void>

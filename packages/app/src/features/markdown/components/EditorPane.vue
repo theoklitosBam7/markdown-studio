@@ -5,6 +5,12 @@ import type { AppWindow } from '@/browser-window'
 
 import { insertTextAtSelection } from '@/utils/insertTextAtSelection'
 
+import { useEditorTextLayout } from '../composables/useEditorTextLayout'
+import {
+  DEFAULT_EDITOR_DISPLAY_PREFERENCES,
+  type EditorDisplayPreferences,
+} from '../types/editorDisplayPreferences'
+
 import type { EditorFormattingCommand } from './EditorFormattingToolbar.vue'
 import type { EditorScrollPayload, EditorWorkspaceFindState } from '../types'
 
@@ -26,11 +32,13 @@ import MatchOverlay from './MatchOverlay.vue'
 
 interface Props {
   content: string
+  displayPreferences?: Readonly<EditorDisplayPreferences>
   documentPath?: null | string
   findState?: EditorWorkspaceFindState
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  displayPreferences: () => DEFAULT_EDITOR_DISPLAY_PREFERENCES,
   documentPath: null,
   findState: () => ({
     activeMatchIndex: -1,
@@ -52,12 +60,40 @@ const emit = defineEmits<{
 
 const editorRef = useTemplateRef<HTMLTextAreaElement>('editor')
 const findReplaceBarRef = useTemplateRef<InstanceType<typeof FindReplaceBar>>('findReplaceBar')
-const activeLineHeight = shallowRef(0)
-const activeLineTop = shallowRef(0)
+const matchOverlayRef = useTemplateRef<InstanceType<typeof MatchOverlay>>('matchOverlay')
+const {
+  getFirstVisibleSourceOffset,
+  getLineAtOffset,
+  getOffsetBounds,
+  lines: sourceLines,
+  refresh: refreshTextLayout,
+  rememberViewport,
+} = useEditorTextLayout({
+  content: () => props.content,
+  editor: editorRef,
+  layout: () => props.displayPreferences,
+  mirror: () => matchOverlayRef.value?.contentElement ?? null,
+})
+const activeLine = computed(() => {
+  const line = getLineAtOffset(activeOffset.value)
+  return { height: `${line?.height ?? 0}px`, top: `${(line?.top ?? 0) - scrollTop.value}px` }
+})
+const activeOffset = shallowRef(0)
+const textLayoutStyle = computed(() => ({
+  '--editor-column-width':
+    props.displayPreferences.writingColumn.kind === 'characters'
+      ? `calc(${props.displayPreferences.writingColumn.characters}ch + var(--editor-padding-left) + var(--editor-padding-right))`
+      : 'none',
+  '--editor-font-size': `${props.displayPreferences.fontSizePx}px`,
+  '--editor-line-height-ratio': props.displayPreferences.lineHeight,
+  '--editor-tab-width': props.displayPreferences.tabWidth,
+  '--editor-white-space': props.displayPreferences.wordWrap ? 'pre-wrap' : 'pre',
+}))
 const isEditorFocused = shallowRef(false)
 const isImageDragging = shallowRef(false)
 const scrollbarWidth = shallowRef(0)
 const scrollTop = shallowRef(0)
+const scrollLeft = shallowRef(0)
 const rememberedSelection = shallowRef({ end: 0, start: 0 })
 let resizeObserver: null | ResizeObserver = null
 
@@ -67,9 +103,6 @@ const localContent = computed({
   set: (value: string) => emit('update:content', value),
 })
 const documentLineCount = computed(() => Math.max(1, props.content.split('\n').length))
-const lineNumbers = computed(() =>
-  Array.from({ length: documentLineCount.value }, (_, index) => index + 1),
-)
 
 async function applyFormattingCommand(command: EditorFormattingCommand): Promise<void> {
   const editor = editorRef.value
@@ -106,6 +139,8 @@ function emitScroll(): void {
   syncActiveLine()
   syncEditorMetrics()
   scrollTop.value = scrollState.scrollTop
+  scrollLeft.value = editorRef.value?.scrollLeft ?? 0
+  rememberViewport()
   emit('scroll', scrollState)
 }
 
@@ -240,35 +275,13 @@ async function formatInlineStyle(
   await replaceEditorRange(editor, start, end, replacement, selectionStart, selectionEnd)
 }
 
-function getLineHeight(editor: HTMLTextAreaElement): number {
-  const computedStyle = window.getComputedStyle(editor)
-  const parsedLineHeight = Number.parseFloat(computedStyle.lineHeight)
-
-  return Number.isFinite(parsedLineHeight) ? parsedLineHeight : 22
-}
-
-function getLineIndexForOffset(offset: number): number {
-  const clampedOffset = Math.max(0, Math.min(offset, props.content.length))
-  let lineIndex = 0
-
-  for (let index = 0; index < clampedOffset; index += 1) {
-    if (props.content[index] === '\n') {
-      lineIndex += 1
-    }
-  }
-
-  return lineIndex
-}
-
 function getScrollState(): EditorScrollPayload | null {
   const editor = editorRef.value
   if (!editor) return null
 
+  refreshTextLayout()
   return {
-    clientHeight: editor.clientHeight,
-    contentLength: props.content.length,
-    lineHeight: getLineHeight(editor),
-    scrollHeight: editor.scrollHeight,
+    firstVisibleSourceOffset: getFirstVisibleSourceOffset(editor.scrollTop),
     scrollTop: editor.scrollTop,
   }
 }
@@ -332,19 +345,9 @@ function handleKeydown(event: KeyboardEvent): void {
     return
   }
 
-  if (event.key === 'Tab') {
+  if (event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
-    const editor = editorRef.value
-    if (!editor) return
-
-    const start = editor.selectionStart
-    const end = editor.selectionEnd
-    const newValue = editor.value.slice(0, start) + '  ' + editor.value.slice(end)
-    localContent.value = newValue
-    // Set cursor position after update
-    setTimeout(() => {
-      editor.selectionStart = editor.selectionEnd = start + 2
-    }, 0)
+    void insertText(' '.repeat(props.displayPreferences.tabWidth))
   }
 }
 
@@ -458,8 +461,6 @@ async function setSelectionRange(start: number, end: number, shouldFocus = false
 
   const clampedStart = Math.max(0, Math.min(start, props.content.length))
   const clampedEnd = Math.max(clampedStart, Math.min(end, props.content.length))
-  const lineIndex = getLineIndexForOffset(clampedStart)
-  const lineHeight = getLineHeight(editor)
 
   if (shouldFocus) {
     editor.focus()
@@ -467,7 +468,11 @@ async function setSelectionRange(start: number, end: number, shouldFocus = false
 
   await nextTick()
   editor.setSelectionRange(clampedStart, clampedEnd)
-  editor.scrollTop = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 2)
+  refreshTextLayout()
+  const bounds = getOffsetBounds(clampedStart)
+  editor.scrollTop = Math.max(0, bounds.top - editor.clientHeight / 2)
+  editor.scrollLeft = Math.max(0, bounds.left - editor.clientWidth / 2)
+  scrollLeft.value = editor.scrollLeft
   syncActiveLine()
 }
 
@@ -475,15 +480,9 @@ function syncActiveLine(): void {
   const editor = editorRef.value
   if (!editor) return
 
-  const computedStyle = window.getComputedStyle(editor)
-  const lineHeight = getLineHeight(editor)
-  const paddingTop = Number.parseFloat(computedStyle.paddingTop) || 0
-  const caretOffset =
+  activeOffset.value =
     editor.selectionDirection === 'backward' ? editor.selectionStart : editor.selectionEnd
-  const lineIndex = getLineIndexForOffset(caretOffset)
-
-  activeLineHeight.value = lineHeight
-  activeLineTop.value = paddingTop + lineIndex * lineHeight - editor.scrollTop
+  scrollTop.value = editor.scrollTop
 }
 
 function syncEditorMetrics(): void {
@@ -576,48 +575,52 @@ watch(
       @update:replace-text="emit('find-action', { type: 'set-replace-text', value: $event })"
     />
 
-    <div class="editor-body">
+    <div class="editor-body" :style="textLayoutStyle">
       <div v-show="isImageDragging" class="image-drop-overlay" aria-hidden="true">
         <div class="image-drop-message">
           <span class="image-drop-label">Drop image to add it</span>
           <span class="image-drop-hint">PNG, JPG, GIF, WebP, or SVG</span>
         </div>
       </div>
-      <div
-        class="active-line-highlight"
-        :class="{ 'active-line-highlight--focused': isEditorFocused }"
-        :style="{ height: `${activeLineHeight}px`, top: `${activeLineTop}px` }"
-        aria-hidden="true"
-      ></div>
-      <ol
-        class="editor-line-numbers"
-        aria-hidden="true"
-        :style="{
-          '--editor-line-count': lineNumbers.length,
-          transform: `translateY(${-scrollTop}px)`,
-        }"
-      >
-        <li v-for="lineNumber in lineNumbers" :key="lineNumber">{{ lineNumber }}</li>
-      </ol>
-      <MatchOverlay
-        :active-match-index="findState.activeMatchIndex"
-        :content="content"
-        :matches="findState.isOpen ? findState.matches : []"
-        :scrollbar-width="scrollbarWidth"
-        :scroll-top="scrollTop"
-      />
-      <textarea
-        ref="editor"
-        v-model="localContent"
-        class="editor"
-        spellcheck="false"
-        placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
-        @blur="handleEditorBlur"
-        @focus="isEditorFocused = true"
-        @keydown="handleKeydown"
-        @scroll="emitScroll"
-        @select="handleEditorSelection"
-      ></textarea>
+      <div class="editor-column">
+        <div
+          class="active-line-highlight"
+          :class="{ 'active-line-highlight--focused': isEditorFocused }"
+          :style="activeLine"
+          aria-hidden="true"
+        ></div>
+        <ol class="editor-line-numbers" aria-hidden="true">
+          <li
+            v-for="(line, index) in sourceLines"
+            :key="index"
+            :style="{ height: `${line.height}px`, top: `${line.top - scrollTop}px` }"
+          >
+            {{ index + 1 }}
+          </li>
+        </ol>
+        <MatchOverlay
+          ref="matchOverlay"
+          :active-match-index="findState.activeMatchIndex"
+          :content="content"
+          :matches="findState.isOpen ? findState.matches : []"
+          :scrollbar-width="scrollbarWidth"
+          :scroll-left="scrollLeft"
+          :scroll-top="scrollTop"
+        />
+        <textarea
+          ref="editor"
+          v-model="localContent"
+          class="editor"
+          spellcheck="false"
+          :wrap="displayPreferences.wordWrap ? 'soft' : 'off'"
+          placeholder="Write your markdown here...&#10;&#10;```mermaid&#10;graph LR&#10;  A --> B&#10;```"
+          @blur="handleEditorBlur"
+          @focus="isEditorFocused = true"
+          @keydown="handleKeydown"
+          @scroll="emitScroll"
+          @select="handleEditorSelection"
+        ></textarea>
+      </div>
     </div>
   </div>
 </template>
@@ -632,11 +635,26 @@ watch(
 }
 
 .editor-body {
+  --editor-effective-font-size: var(--editor-font-size);
+  --editor-line-height: calc(var(--editor-effective-font-size) * var(--editor-line-height-ratio));
+  --editor-padding-left: 64px;
+  --editor-padding-right: 24px;
+
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
   background: var(--surface);
+}
+
+.editor-column {
+  position: relative;
+  width: 100%;
+  max-width: var(--editor-column-width);
+  height: 100%;
+  margin-inline: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: var(--editor-effective-font-size);
 }
 
 .active-line-highlight {
@@ -652,19 +670,14 @@ watch(
 }
 
 .editor-line-numbers {
-  --editor-line-height: 22.95px;
-  --editor-gutter-vertical-padding: 48px;
-
   position: absolute;
   z-index: 2;
   top: 0;
   left: 0;
   width: 48px;
-  height: calc(
-    var(--editor-line-height) * var(--editor-line-count) + var(--editor-gutter-vertical-padding)
-  );
+  height: 100%;
   margin: 0;
-  padding: 24px 10px 24px 0;
+  padding: 0;
   border-right: 1px solid var(--border);
   background: var(--panel);
   color: var(--text-faint);
@@ -678,7 +691,8 @@ watch(
 }
 
 .editor-line-numbers li {
-  min-height: var(--editor-line-height);
+  position: absolute;
+  right: 10px;
 }
 
 .image-drop-overlay {
@@ -746,6 +760,18 @@ watch(
   color: var(--text-faint);
 }
 
+.editor,
+:deep(.match-overlay__content) {
+  padding: 24px var(--editor-padding-right) 24px var(--editor-padding-left);
+  font-family: 'DM Mono', monospace;
+  font-size: var(--editor-effective-font-size);
+  line-height: var(--editor-line-height);
+  letter-spacing: normal;
+  tab-size: var(--editor-tab-width);
+  white-space: var(--editor-white-space);
+  overflow-wrap: break-word;
+}
+
 .editor {
   flex: 1;
   width: 100%;
@@ -757,11 +783,6 @@ watch(
   border: none;
   outline: none;
   resize: none;
-  padding: 24px 24px 24px 64px;
-  font-family: 'DM Mono', monospace;
-  font-size: 13.5px;
-  line-height: 22.95px;
-  tab-size: 2;
   caret-color: var(--text);
   text-shadow: 0 0 0 var(--text);
 }
@@ -784,32 +805,26 @@ watch(
     display: none;
   }
 
-  .editor {
-    padding: 16px var(--app-gutter) 24px 52px;
+  .editor-body {
+    --editor-padding-left: 52px;
+    --editor-padding-right: var(--app-gutter);
+  }
+
+  .editor,
+  :deep(.match-overlay__content) {
+    padding-top: 16px;
   }
 
   .editor-line-numbers {
-    --editor-gutter-vertical-padding: 40px;
-
     width: 40px;
-    padding-top: 16px;
     font-size: 10px;
-  }
-
-  .editor-line-numbers li {
-    min-height: var(--editor-line-height);
   }
 }
 
 /* 16px keeps iOS Safari from zooming the page when the editor takes focus. */
 @media (max-width: 700px), (pointer: coarse), (max-width: 1000px) and (max-height: 500px) {
-  .editor {
-    font-size: 16px;
-    line-height: 25.6px;
-  }
-
-  .editor-line-numbers {
-    --editor-line-height: 25.6px;
+  .editor-body {
+    --editor-effective-font-size: max(16px, var(--editor-font-size));
   }
 }
 </style>

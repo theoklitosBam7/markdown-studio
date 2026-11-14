@@ -1,12 +1,14 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+
+enableAutoUnmount(afterEach)
 
 import type { AppWindow } from '@/browser-window'
 
 import EditorPane from '../EditorPane.vue'
 
 function mountEditorPane(overrides: Record<string, unknown> = {}) {
-  return mount(EditorPane, {
+  const wrapper = mount(EditorPane, {
     attachTo: document.body,
     props: {
       content: 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6',
@@ -20,9 +22,13 @@ function mountEditorPane(overrides: Record<string, unknown> = {}) {
         replaceText: '',
         showReplace: false,
       },
+      'onUpdate:content': (content: string) => {
+        void wrapper.setProps({ content })
+      },
       ...overrides,
     },
   })
+  return wrapper
 }
 
 describe('EditorPane', () => {
@@ -30,25 +36,139 @@ describe('EditorPane', () => {
   const originalGetComputedStyle = window.getComputedStyle
   const originalDesktop = appWindow.desktop
 
+  beforeEach(() => {
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: function (this: Range) {
+        return (
+          this.startContainer.parentElement
+            ?.closest('.match-overlay__line')
+            ?.getBoundingClientRect() ?? new DOMRect()
+        )
+      },
+    })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (!this.classList.contains('match-overlay__line')) return new DOMRect()
+      const index = Array.from(this.parentElement?.children ?? []).indexOf(this)
+      return new DOMRect(0, 24 + index * 20, 400, 20)
+    })
+  })
+
   afterEach(() => {
     window.getComputedStyle = originalGetComputedStyle
     appWindow.desktop = originalDesktop
     vi.restoreAllMocks()
   })
 
-  it('shows line numbers for the active Markdown Document', () => {
+  it('applies display preferences without replacing the editor or changing its selection or content', async () => {
+    const wrapper = mountEditorPane()
+    const editor = wrapper.get('textarea').element
+    editor.setSelectionRange(2, 9, 'backward')
+    await wrapper.setProps({
+      displayPreferences: {
+        fontSizePx: 20,
+        lineHeight: 2,
+        tabWidth: 4,
+        wordWrap: false,
+        writingColumn: { characters: 60, kind: 'characters' },
+      },
+    })
+
+    expect(wrapper.get('textarea').element).toBe(editor)
+    expect(wrapper.get('textarea').attributes('wrap')).toBe('off')
+    expect(editor.selectionStart).toBe(2)
+    expect(editor.selectionEnd).toBe(9)
+    expect(editor.selectionDirection).toBe('backward')
+    expect(wrapper.emitted('update:content')).toBeUndefined()
+  })
+
+  it('keeps the visible source line instead of jumping to an offscreen caret after reflow', async () => {
+    let rowHeight = 20
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (!this.classList.contains('match-overlay__line')) return new DOMRect()
+      const index = Array.from(this.parentElement?.children ?? []).indexOf(this)
+      return new DOMRect(0, 24 + index * rowHeight, 400, rowHeight)
+    })
+    const wrapper = mountEditorPane()
+    await wrapper.vm.$nextTick()
+    const editor = wrapper.get('textarea').element
+    editor.setSelectionRange(41, 41)
+    editor.scrollTop = 65
+    await wrapper.get('textarea').trigger('scroll')
+
+    rowHeight = 40
+    await wrapper.setProps({
+      displayPreferences: {
+        fontSizePx: 20,
+        lineHeight: 2,
+        tabWidth: 2,
+        wordWrap: true,
+        writingColumn: { characters: 80, kind: 'characters' },
+      },
+    })
+    await vi.waitFor(() => expect(editor.scrollTop).toBe(105))
+    expect(wrapper.vm.getScrollState()?.firstVisibleSourceOffset).toBe(14)
+    expect(editor.selectionStart).toBe(41)
+    expect(editor.selectionEnd).toBe(41)
+  })
+
+  it('preserves the current viewport when layout changes before the native scroll event', async () => {
+    let rowHeight = 20
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (!this.classList.contains('match-overlay__line')) return new DOMRect()
+      const index = Array.from(this.parentElement?.children ?? []).indexOf(this)
+      return new DOMRect(0, 24 + index * rowHeight, 400, rowHeight)
+    })
+    const wrapper = mountEditorPane()
+    await wrapper.vm.$nextTick()
+    const editor = wrapper.get('textarea').element
+    editor.scrollTop = 65
+
+    await wrapper.setProps({
+      displayPreferences: {
+        fontSizePx: 20,
+        lineHeight: 2,
+        tabWidth: 2,
+        wordWrap: true,
+        writingColumn: { characters: 80, kind: 'characters' },
+      },
+    })
+    rowHeight = 40
+    await vi.waitFor(() => expect(editor.scrollTop).toBe(105))
+    expect(wrapper.vm.getScrollState()?.firstVisibleSourceOffset).toBe(14)
+  })
+
+  it('reports the current document source position before the next scheduled measurement frame', async () => {
+    const wrapper = mountEditorPane()
+    await wrapper.vm.$nextTick()
+    const editor = wrapper.get('textarea').element
+    editor.scrollTop = 44
+    await wrapper.get('textarea').trigger('scroll')
+    await wrapper.setProps({ content: 'abcdefghij\n2\n3' })
+    expect(wrapper.vm.getScrollState()?.firstVisibleSourceOffset).toBe(11)
+  })
+
+  it('shows line numbers for the active Markdown Document', async () => {
     const wrapper = mountEditorPane({
       content: 'Heading\n\nParagraph',
     })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.get('.editor-line-numbers').text()).toBe('123')
 
     wrapper.unmount()
   })
 
-  it('numbers every source line in a long Markdown Document', () => {
+  it('numbers every source line in a long Markdown Document', async () => {
     const content = Array.from({ length: 61 }, (_, index) => `Line ${index + 1}`).join('\n')
     const wrapper = mountEditorPane({ content })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.findAll('.editor-line-numbers li')).toHaveLength(61)
     expect(wrapper.get('.line-count').text()).toBe('61 lines')
@@ -176,6 +296,21 @@ describe('EditorPane', () => {
     wrapper.unmount()
   })
 
+  it('scrolls the Find mirror in both axes while keeping the gutter fixed horizontally', async () => {
+    const wrapper = mountEditorPane()
+    const textarea = wrapper.get('textarea').element
+    textarea.scrollLeft = 120
+    textarea.scrollTop = 30
+    await wrapper.get('textarea').trigger('scroll')
+
+    expect(wrapper.get('.match-overlay__content').attributes('style')).toContain(
+      'translate(-120px, -30px)',
+    )
+    expect(wrapper.get('.editor-line-numbers').attributes('style') ?? '').not.toContain(
+      'translateX',
+    )
+  })
+
   it('updates the active-line highlight after programmatic selection', async () => {
     window.getComputedStyle = vi.fn(
       () => ({ lineHeight: '20px', paddingTop: '24px' }) as CSSStyleDeclaration,
@@ -191,7 +326,7 @@ describe('EditorPane', () => {
       }
     ).setSelectionRange(21, 21)
 
-    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 64px')
+    expect(wrapper.get('.active-line-highlight').attributes('style')).toContain('top: 40px')
 
     wrapper.unmount()
   })
@@ -221,20 +356,61 @@ describe('EditorPane', () => {
     expect(document.activeElement).toBe(textarea)
     expect(textarea.selectionStart).toBe(21)
     expect(textarea.selectionEnd).toBe(21)
-    expect(textarea.scrollTop).toBe(20)
+    expect(textarea.scrollTop).toBe(44)
     expect(wrapper.emitted('scroll')).toEqual([
       [
         {
-          clientHeight: 80,
-          contentLength: 41,
-          lineHeight: 20,
-          scrollHeight: 300,
-          scrollTop: 20,
+          firstVisibleSourceOffset: 7,
+          scrollTop: 44,
         },
       ],
     ])
 
     wrapper.unmount()
+  })
+
+  it('inserts the chosen number of spaces through the native edit path on Tab', async () => {
+    const wrapper = mountEditorPane({
+      content: 'beforeSELECTafter',
+      displayPreferences: {
+        fontSizePx: 16,
+        lineHeight: 1.7,
+        tabWidth: 4,
+        wordWrap: true,
+        writingColumn: { kind: 'full-width' },
+      },
+    })
+    const editor = wrapper.get('textarea').element
+    editor.focus()
+    editor.setSelectionRange(6, 12)
+    const insert = vi.fn((_command: string, _showUi: boolean, text: string) => {
+      editor.setRangeText(text, editor.selectionStart, editor.selectionEnd, 'end')
+      editor.dispatchEvent(new Event('input', { bubbles: true }))
+      return true
+    })
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: insert })
+    await wrapper.get('textarea').trigger('keydown', { key: 'Tab' })
+    await flushPromises()
+    expect(insert).toHaveBeenCalledWith('insertText', false, '    ')
+    expect(editor.value).toBe('before    after')
+    expect(editor.selectionStart).toBe(10)
+    expect(editor.selectionEnd).toBe(10)
+  })
+
+  it('leaves modified Tab keys to normal browser focus and platform behavior', () => {
+    const wrapper = mountEditorPane()
+    const editor = wrapper.get('textarea').element
+    for (const modifier of ['shiftKey', 'altKey', 'ctrlKey', 'metaKey']) {
+      const event = new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key: 'Tab',
+        [modifier]: true,
+      })
+      editor.dispatchEvent(event)
+      expect(event.defaultPrevented).toBe(false)
+    }
+    expect(wrapper.emitted('update:content')).toBeUndefined()
   })
 
   it('emits find and replace shortcut requests from the editor textarea', async () => {

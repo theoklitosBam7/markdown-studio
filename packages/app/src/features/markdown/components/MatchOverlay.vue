@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import type { FindMatch } from '../types'
 
@@ -14,19 +14,20 @@ interface Props {
   content: string
   matches: FindMatch[]
   scrollbarWidth?: number
+  scrollLeft?: number
   scrollTop?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   scrollbarWidth: 0,
+  scrollLeft: 0,
   scrollTop: 0,
 })
 
-const segments = computed<MatchSegment[]>(() => {
-  if (props.matches.length === 0) {
-    return []
-  }
+const contentElement = useTemplateRef<HTMLElement>('content')
+defineExpose({ contentElement })
 
+const lines = computed(() => {
   const nextSegments: MatchSegment[] = []
   let cursor = 0
 
@@ -55,22 +56,34 @@ const segments = computed<MatchSegment[]>(() => {
     })
   }
 
-  return nextSegments
+  const sourceLines: MatchSegment[][] = [[]]
+  for (const segment of nextSegments) {
+    for (const [index, text] of segment.text.split('\n').entries()) {
+      if (index > 0) sourceLines.push([])
+      sourceLines[sourceLines.length - 1]?.push({ ...segment, text })
+    }
+  }
+  return sourceLines
 })
 </script>
 
 <template>
   <div class="match-overlay" :style="{ right: `${scrollbarWidth}px` }" aria-hidden="true">
-    <div class="match-overlay__content" :style="{ transform: `translateY(${-scrollTop}px)` }">
-      <template v-for="(segment, index) in segments" :key="index">
-        <mark
-          v-if="segment.highlighted"
-          :class="['match-overlay__mark', { 'match-overlay__mark--active': segment.active }]"
-        >
-          {{ segment.text }}
-        </mark>
-        <span v-else class="match-overlay__text">{{ segment.text }}</span>
-      </template>
+    <div
+      ref="content"
+      class="match-overlay__content"
+      :style="{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }"
+    >
+      <span v-for="(segments, lineIndex) in lines" :key="lineIndex" class="match-overlay__line">
+        <template v-for="(segment, index) in segments" :key="index">
+          <mark
+            v-if="segment.highlighted"
+            :class="['match-overlay__mark', { 'match-overlay__mark--active': segment.active }]"
+            >{{ segment.text }}</mark
+          >
+          <span v-else class="match-overlay__text">{{ segment.text }}</span>
+        </template>
+      </span>
     </div>
   </div>
 </template>
@@ -85,14 +98,12 @@ const segments = computed<MatchSegment[]>(() => {
 
 .match-overlay__content {
   min-height: 100%;
-  padding: 24px 24px 24px 64px;
-  font-family: 'DM Mono', monospace;
-  font-size: 13.5px;
-  line-height: 1.7;
-  overflow-wrap: break-word;
-  white-space: pre-wrap;
   color: transparent;
-  tab-size: 2;
+}
+
+.match-overlay__line {
+  display: block;
+  min-height: var(--editor-line-height);
 }
 
 .match-overlay__text {
@@ -107,13 +118,5 @@ const segments = computed<MatchSegment[]>(() => {
 
 .match-overlay__mark--active {
   background: var(--find-match-active-bg);
-}
-
-@media (max-width: 700px) {
-  .match-overlay__content {
-    padding: 16px var(--app-gutter) 24px 52px;
-    font-size: 13px;
-    line-height: 1.6;
-  }
 }
 </style>

@@ -1,4 +1,4 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -9,6 +9,8 @@ import { resetBrowserDocumentSessionForTests } from '@/features/markdown/composa
 import { generateTableTemplate } from '@/features/markdown/utils/tableTemplate'
 
 import MarkdownStudioView from '../MarkdownStudioView.vue'
+
+enableAutoUnmount(afterEach)
 
 function createDesktopApi(folderApi: Record<string, unknown>) {
   return {
@@ -51,6 +53,12 @@ function getButtonByText(text: string): HTMLButtonElement | undefined {
 }
 
 async function mountMarkdownStudioView() {
+  const createRange = document.createRange.bind(document)
+  vi.spyOn(document, 'createRange').mockImplementation(() => {
+    const range = createRange()
+    range.getBoundingClientRect = () => new DOMRect()
+    return range
+  })
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -250,7 +258,7 @@ describe('MarkdownStudioView', () => {
 
     expect(textarea.value).toBe('make **strong**')
     expect(wrapper.get('.rendered-md strong').text()).toBe('strong')
-    expect(wrapper.get('.editor-line-numbers').text()).toBe('1')
+    await vi.waitFor(() => expect(wrapper.get('.editor-line-numbers').text()).toBe('1'))
 
     wrapper.unmount()
   })
