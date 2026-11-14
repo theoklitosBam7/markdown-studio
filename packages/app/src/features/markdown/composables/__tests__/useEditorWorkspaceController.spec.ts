@@ -127,10 +127,7 @@ describe('useEditorWorkspaceController', () => {
     workspace.editor.updateContent('one\ntwo\nthree\nfour')
     workspace.editor.setViewMode('split')
     workspace.editor.syncPreviewToEditorPosition({
-      clientHeight: 200,
-      contentLength: workspace.state.content.value.length,
-      lineHeight: 20,
-      scrollHeight: 400,
+      firstVisibleSourceOffset: 8,
       scrollTop: 40,
     })
 
@@ -139,10 +136,7 @@ describe('useEditorWorkspaceController', () => {
     vi.mocked(preview.scrollToSourceOffset).mockClear()
     workspace.editor.setViewMode('preview')
     workspace.editor.syncPreviewToEditorPosition({
-      clientHeight: 200,
-      contentLength: workspace.state.content.value.length,
-      lineHeight: 20,
-      scrollHeight: 400,
+      firstVisibleSourceOffset: 8,
       scrollTop: 40,
     })
 
@@ -158,10 +152,7 @@ describe('useEditorWorkspaceController', () => {
     workspace.editor.updateContent(content)
     workspace.outline.toggle()
     workspace.editor.syncPreviewToEditorPosition({
-      clientHeight: 200,
-      contentLength: content.length,
-      lineHeight: 20,
-      scrollHeight: 400,
+      firstVisibleSourceOffset: 20,
       scrollTop: 40,
     })
 

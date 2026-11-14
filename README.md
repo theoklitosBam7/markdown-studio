@@ -219,7 +219,17 @@ Select **Apply** or press Enter to apply a value in either width panel. Click ou
 
 Window and sidebar limits can temporarily reduce the displayed widths. Markdown Studio keeps your saved choices and restores them when space returns. Each reset changes only its own preference.
 
-Markdown Studio remembers the editor percentage and sidebar width separately in the current browser origin or desktop app profile. Browser storage does not move between profiles, hosts, protocols, or ports. For the npm launcher, use the same host and an explicit port each time to restore these preferences. Without `--port`, the launcher continues to select a random available port.
+### Changing editor display
+
+Choose **Editor display** beside the desktop view and theme controls, from the mobile menu's Appearance group, or with **Editor display settings...** in the Command Palette. Changes apply as you edit. Use **Reset editor display** to restore all display defaults.
+
+The defaults are 16 px text, a 1.7 line-height ratio, word wrap on, two spaces for Tab, and an 80-character writing column. The writing column is approximate: wide characters and tabs can use more than one character cell. Tab width changes how existing tab characters look and how many spaces future Tab presses insert. It does not rewrite existing text.
+
+These preferences affect source editing only, not Live Preview or exported documents. On small or touch screens, the displayed font stays at least 16 px to prevent focus zoom. A smaller saved choice remains unchanged and applies again on a screen without that limit.
+
+Composition input in a numeric display setting can clear pending source Redo without erasing current document text. Ordinary numeric keyboard entry preserves pending source Redo.
+
+Editor display preferences save in the current browser origin or desktop app profile. They do not sync between web and desktop, browser profiles, or open tabs. Resetting editor display changes only these preferences. Browser storage does not move between profiles, hosts, protocols, or ports. For the npm launcher, use the same host and an explicit port each time to restore saved preferences. Without `--port`, the launcher continues to select a random available port.
 
 ### Creating Diagrams
 

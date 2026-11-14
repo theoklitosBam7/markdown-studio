@@ -25,6 +25,7 @@ import { useDocumentExport } from './useDocumentExport'
 import { useDocumentFolders } from './useDocumentFolders'
 import { useDocumentSession } from './useDocumentSession'
 import { useFindReplace } from './useFindReplace'
+import { useEditorDisplayPreferences } from './useEditorDisplayPreferences'
 import { useMarkdownEditor } from './useMarkdownEditor'
 import { useTableInsertion } from './useTableInsertion'
 import { useWebDraftPersistence } from './useWebDraftPersistence'
@@ -42,6 +43,7 @@ const LANDSCAPE_PHONE_MAX_WIDTH = 1000
  * controller further without re-introducing view-level coordination.
  */
 export function useEditorWorkspaceController(): EditorWorkspaceController {
+  const displayPreferences = useEditorDisplayPreferences()
   const editorPane = shallowRef<EditorPaneAdapter | null>(null)
   const previewPane = shallowRef<null | PreviewPaneAdapter>(null)
   const activeEditorOffset = shallowRef(0)
@@ -263,23 +265,6 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     })
   }
 
-  function getOffsetForLine(contentValue: string, lineNumber: number): number {
-    if (lineNumber <= 0) return 0
-
-    let currentLine = 0
-
-    for (let index = 0; index < contentValue.length; index += 1) {
-      if (contentValue[index] === '\n') {
-        currentLine += 1
-        if (currentLine === lineNumber) {
-          return index + 1
-        }
-      }
-    }
-
-    return contentValue.length
-  }
-
   async function openDocumentFromFolder(
     loadHandle: () => Promise<DesktopDocumentHandle | null>,
   ): Promise<void> {
@@ -376,11 +361,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     const effectiveScrollState = scrollState ?? editorPane.value?.getScrollState()
     if (!effectiveScrollState) return
 
-    const topLine = Math.max(
-      0,
-      Math.floor(effectiveScrollState.scrollTop / effectiveScrollState.lineHeight),
-    )
-    const sourceOffset = getOffsetForLine(content.value, topLine)
+    const sourceOffset = effectiveScrollState.firstVisibleSourceOffset
     activeEditorOffset.value = sourceOffset
 
     if (isMobile.value || viewMode.value !== 'split') return
@@ -635,6 +616,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       editor: attachEditor,
       preview: attachPreview,
     },
+    display: displayPreferences,
     document: {
       async handleAppCommand(command: AppCommand): Promise<void> {
         await handleDesktopCommand(command)

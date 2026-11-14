@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, Keyboard } from '@lucide/vue'
+import { FileText, Keyboard, SlidersHorizontal } from '@lucide/vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
 
@@ -48,6 +48,7 @@ const emit = defineEmits<{
   insertTable: []
   install: []
   openDocument: []
+  openEditorDisplay: []
   openExamples: []
   openFind: []
   openShortcuts: []
@@ -137,6 +138,7 @@ function toggleOutline(): void {
       @insert-table="insertTable"
       @install="install"
       @open-document="openDocument"
+      @open-editor-display="emit('openEditorDisplay')"
       @open-find="openFind"
       @open-examples="openExamples"
       @open-shortcuts="openShortcuts"
@@ -190,6 +192,14 @@ function toggleOutline(): void {
             @click="openShortcuts"
           >
             <Keyboard :size="18" :stroke-width="1.8" aria-hidden="true" />
+          </ToolbarButton>
+          <ToolbarButton
+            aria-label="Editor display"
+            title="Editor display"
+            @click="emit('openEditorDisplay')"
+          >
+            <SlidersHorizontal :size="18" :stroke-width="1.8" aria-hidden="true" />
+            <span>Editor display</span>
           </ToolbarButton>
           <ThemeToggle :theme="props.theme" @toggle="handleThemeChange" />
         </div>

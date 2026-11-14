@@ -125,6 +125,7 @@ Real selectors from the app, in order of preference (ARIA and data attributes be
 | `markdown-studio:print-export:<jobId>` | PDF export payload for the `/export/print?job=<id>` route       |
 | `markdown-studio:workspace-split-ratio` | Editor share of the editor and Live Preview widths, default `0.5` |
 | `markdown-studio:workspace-sidebar-width` | Sidebar width in CSS pixels, default `248` |
+| `markdown-studio:editor-display-preferences` | Source editor display preferences, local to this browser origin |
 
 Clear `markdown-studio:web-draft` for a clean slate, or the editor may start with content from an earlier session.
 

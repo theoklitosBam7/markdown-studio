@@ -118,6 +118,21 @@ describe('MobileToolbarActions', () => {
     expect(emitted?.[0]?.[0]).toMatchObject({ theme: 'dark' })
   })
 
+  it('opens editor display only after the mobile menu closes', async () => {
+    const wrapper = mountToolbar()
+    await openSheet()
+    const displayAction = findSheetAction('Editor display')
+    expect(displayAction).toBeDefined()
+    await displayAction?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(wrapper.emitted('openEditorDisplay')).toBeUndefined()
+    document
+      .querySelector('.mobile-action-sheet-backdrop')
+      ?.dispatchEvent(new Event('animationend'))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('openEditorDisplay')).toHaveLength(1)
+    expect(getMenuButton()?.getAttribute('aria-expanded')).toBe('false')
+  })
+
   it('labels the theme action with the next theme', async () => {
     mountToolbar({ theme: 'dark' })
 

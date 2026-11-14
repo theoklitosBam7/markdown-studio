@@ -5,6 +5,7 @@ import type { EditorWorkspaceController } from '../types/workspace'
 
 export function useEditorWorkspaceCommands(
   workspace: EditorWorkspaceController,
+  options: { openEditorDisplay: () => void },
 ): ComputedRef<EditorWorkspaceCommand[]> {
   return computed(() => {
     const state = workspace.state
@@ -18,6 +19,14 @@ export function useEditorWorkspaceCommands(
     const isFolderBrowserAvailable = state.isFolderBrowserAvailable.value
 
     const commands: EditorWorkspaceCommand[] = [
+      {
+        disabledReason: null,
+        group: 'View',
+        id: 'workspace:editor:display',
+        keywords: ['font', 'size', 'line height', 'wrap', 'tabs', 'column width'],
+        run: options.openEditorDisplay,
+        title: 'Editor display settings...',
+      },
       {
         disabledReason: null,
         group: 'Document',
