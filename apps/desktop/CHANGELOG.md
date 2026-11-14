@@ -1,5 +1,24 @@
 # @markdown-studio/desktop
 
+## 0.15.0
+
+### Minor Changes
+
+- 063a269: Add source editor display preferences with writing-focused defaults
+  
+  - Let writers adjust source font size, line height, word wrap, Tab width, and writing column width
+  - Start new and existing installations with 16 px text, 1.7 line height, word wrap on, two-space tabs, and an 80-character writing column
+  - Keep saved display preferences local to the current browser origin or desktop profile
+  - Note that trusted, noncancelable composition input in a numeric setting can clear pending source Redo without erasing current document text
+- 49dcf7d: Resize and remember the editor split and sidebar widths.
+  
+  - Resize the editor and Live Preview independently from the outline or Document Folder sidebar.
+  - Remember each width separately and reset each one without changing the other.
+  - Adjust widths with keyboard controls or compact percentage and pixel panels without dragging.
+  - Dismiss width panels with an outside click, Escape, or a close button without applying unfinished values.
+  - Explain dragging, reset, and keyboard resizing when hovering over a divider.
+  - Keep layout save-error notices visible beside the width controls.
+
 ## 0.14.1
 
 ### Patch Changes
