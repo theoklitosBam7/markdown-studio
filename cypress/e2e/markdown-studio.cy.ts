@@ -216,12 +216,11 @@ describe('Markdown Studio responsive shell', () => {
     })
     cy.get('.modal-overlay.open button[aria-label="Close dialog"]').click()
 
-    // Clear document from action sheet
-    cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(true)
-    })
+    // Clear document from action sheet requires confirmation
     cy.get('button[aria-label="Menu"]').click()
     cy.get('.mobile-action-sheet__action').contains('Clear Document').click()
+    cy.get('.modal-overlay.open').should('contain', 'Clear this document?')
+    cy.get('button[aria-label="Confirm clear"]').click()
     cy.get('textarea').should('have.value', '')
   })
 
