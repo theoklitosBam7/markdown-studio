@@ -3,6 +3,7 @@ import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/types'
 
+import ClearDocumentDialog from '@/features/markdown/components/ClearDocumentDialog.vue'
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import EditorDisplaySettings from '@/features/markdown/components/EditorDisplaySettings.vue'
@@ -31,6 +32,7 @@ let paletteInitiator: HTMLElement | null = null
 const commands = useEditorWorkspaceCommands(workspace, { openEditorDisplay })
 const commandPalette = useCommandPalette({ commands })
 const isShortcutsHelpOpen = shallowRef(false)
+const isClearConfirmOpen = shallowRef(false)
 
 watch(commandPalette.isOpen, (open) => {
   if (open && document.activeElement instanceof HTMLElement) {
@@ -97,6 +99,7 @@ const bindings = computed<ShortcutBinding[]>(() => [
 const isOverlayOpen = () =>
   isExamplesModalOpen.value ||
   isShortcutsHelpOpen.value ||
+  isClearConfirmOpen.value ||
   commandPalette.isOpen.value ||
   isEditorDisplayOpen.value ||
   workspace.state.isTableDimensionPickerOpen.value
@@ -189,6 +192,17 @@ function closeShortcutsHelp(): void {
   isShortcutsHelpOpen.value = false
 }
 
+function confirmClearDocument(): void {
+  isClearConfirmOpen.value = false
+  void workspace.document.startNew().catch((error: unknown) => {
+    console.error('Failed to start new document:', error)
+  })
+}
+
+function handleClearRequest(): void {
+  isClearConfirmOpen.value = true
+}
+
 function handleEditorScroll(scrollState: EditorScrollPayload): void {
   workspace.editor.syncPreviewToEditorPosition(scrollState)
 }
@@ -256,12 +270,6 @@ function handleReplaceSourceRange(start: number, end: number, replacement: strin
   void editorPaneRef.value?.replaceRange(start, end, replacement)
 }
 
-function handleStartNewDocument(): void {
-  void workspace.document.startNew().catch((error: unknown) => {
-    console.error('Failed to start new document:', error)
-  })
-}
-
 function handleTableDimensionsUpdate(dimensions: { columns: number; rows: number }): void {
   workspace.editor.setTableDimensions(dimensions)
 }
@@ -286,7 +294,7 @@ function handleTableInsertionConfirm(): void {
       :can-install="canInstall"
       :is-copied="isCopied"
       :is-outline-open="isOutlineOpen"
-      @clear="handleStartNewDocument"
+      @clear="handleClearRequest"
       @copy="workspace.toolbar.copy"
       @find="workspace.find.open"
       @insert-table="handleInsertTable"
@@ -318,7 +326,7 @@ function handleTableInsertionConfirm(): void {
         @open-examples="workspace.examples.open"
         @open-shortcuts="isShortcutsHelpOpen = true"
         @open-editor-display="openEditorDisplay"
-        @clear="handleStartNewDocument"
+        @clear="handleClearRequest"
         @copy="workspace.toolbar.copy"
         @insert-table="handleInsertTable"
         @export-html="handleExportHtml"
@@ -419,6 +427,12 @@ function handleTableInsertionConfirm(): void {
         :words="stats.words"
       />
     </div>
+
+    <ClearDocumentDialog
+      :is-open="isClearConfirmOpen"
+      @cancel="isClearConfirmOpen = false"
+      @confirm="confirmClearDocument"
+    />
 
     <ExamplesModal
       :is-open="isExamplesModalOpen"

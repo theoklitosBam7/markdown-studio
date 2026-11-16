@@ -279,6 +279,47 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('asks for confirmation before clearing from the rail and keeps the document on cancel', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('textarea').setValue('# keep me')
+
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
+    await wrapper.get('button[aria-label="Clear document"]').trigger('click')
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(true)
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('# keep me')
+
+    await wrapper.get('button[aria-label="Cancel clear"]').trigger('click')
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(false)
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('# keep me')
+    wrapper.unmount()
+  })
+
+  it('clears the document only after confirmation', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('textarea').setValue('# discard me')
+
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
+    await wrapper.get('button[aria-label="Clear document"]').trigger('click')
+    await wrapper.get('button[aria-label="Confirm clear"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(false)
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).not.toBe('# discard me')
+    wrapper.unmount()
+  })
+
+  it('asks for confirmation when the toolbar requests a clear', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+
+    wrapper.findComponent({ name: 'Toolbar' }).vm.$emit('clear')
+    await flushPromises()
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('provides a skip link to the Editor Workspace', async () => {
     const { wrapper } = await mountMarkdownStudioView()
 
