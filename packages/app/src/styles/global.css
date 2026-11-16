@@ -51,8 +51,6 @@
   --status-h-compact: 22px;
   --app-gutter: 16px;
   --app-gutter-compact: 12px;
-  --pane-header-h: 36px;
-  --pane-header-h-compact: 32px;
   --sidebar-w: 300px;
 }
 
@@ -157,6 +155,5 @@ textarea {
     --toolbar-h: var(--toolbar-h-compact);
     --status-h: var(--status-h-compact);
     --app-gutter: var(--app-gutter-compact);
-    --pane-header-h: var(--pane-header-h-compact);
   }
 }

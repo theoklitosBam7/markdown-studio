@@ -102,8 +102,6 @@ const localContent = computed({
   get: () => props.content,
   set: (value: string) => emit('update:content', value),
 })
-const documentLineCount = computed(() => Math.max(1, props.content.split('\n').length))
-
 function getEnclosingCodeFenceRange(text: string, offset: number) {
   const openers = [...text.slice(0, offset).matchAll(/^```[^\n]*$/gm)]
   const opener = openers.at(-1)
@@ -688,13 +686,6 @@ watch(
     @dragover.prevent="handleDragOver"
     @drop.prevent="handleDrop"
   >
-    <div class="pane-header">
-      <span class="pane-label">Markdown</span>
-      <span class="line-count">
-        {{ documentLineCount }} line{{ documentLineCount !== 1 ? 's' : '' }}
-      </span>
-    </div>
-
     <EditorFormattingToolbar
       :active-styles="activeStyles"
       :heading-level="headingLevel"
@@ -879,32 +870,6 @@ watch(
   font-size: 11px;
 }
 
-.pane-header {
-  height: var(--pane-header-h);
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--app-gutter);
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.pane-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.line-count {
-  margin-left: auto;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
 .editor,
 :deep(.match-overlay__content) {
   padding: 24px var(--editor-padding-right) 24px var(--editor-padding-left);
@@ -944,10 +909,6 @@ watch(
 @media (max-width: 700px) {
   .active-line-highlight {
     opacity: 0.72;
-  }
-
-  .line-count {
-    display: none;
   }
 
   .editor-body {

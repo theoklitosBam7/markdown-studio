@@ -268,6 +268,7 @@ describe('MarkdownStudioView', () => {
     await wrapper.get('textarea').setValue('# Title\n\nTwo words here')
     await flushPromises()
 
+    expect(wrapper.findAll('.pane-header')).toHaveLength(0)
     const statusText = wrapper.get('.status-bar').text()
     expect(statusText).toContain('5 words')
     expect(statusText).toContain('23 chars')

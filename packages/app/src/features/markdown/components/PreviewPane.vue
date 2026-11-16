@@ -15,7 +15,6 @@ interface Props {
   html: string
   sourceMap: MarkdownSourceMapEntry[]
   theme: Theme
-  wordCount: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -258,11 +257,7 @@ defineExpose({ scrollToSourceOffset })
 
 <template>
   <div class="preview-pane">
-    <div class="pane-header">
-      <span class="pane-label">Preview</span>
-      <span class="pane-hint">Double-click to jump to source</span>
-      <span class="line-count">{{ wordCount }} word{{ wordCount !== 1 ? 's' : '' }}</span>
-    </div>
+    <span class="pane-hint">Double-click to jump to source</span>
     <div ref="previewScroll" class="preview-scroll">
       <!-- eslint-disable vue/no-v-html -->
       <div
@@ -283,41 +278,25 @@ defineExpose({ scrollToSourceOffset })
 
 <style scoped>
 .preview-pane {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.pane-header {
-  height: var(--pane-header-h);
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--app-gutter);
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.pane-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
 .pane-hint {
-  margin-left: auto;
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 14px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
   color: var(--text-muted);
   font-size: 11px;
-}
-
-.line-count {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--text-faint);
+  pointer-events: none;
 }
 
 .rendered-md :deep(.preview-source-target) {
@@ -354,7 +333,6 @@ defineExpose({ scrollToSourceOffset })
 }
 
 @media (max-width: 700px) {
-  .line-count,
   .pane-hint {
     display: none;
   }

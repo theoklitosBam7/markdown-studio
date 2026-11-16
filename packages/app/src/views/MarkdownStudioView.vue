@@ -402,7 +402,6 @@ function handleTableInsertionConfirm(): void {
                 :html="renderedHtml"
                 :source-map="sourceMap"
                 :theme="theme"
-                :word-count="stats.words"
                 @jump-to-offset="workspace.preview.jumpToOffset"
                 @render-diagrams="workspace.preview.renderDiagrams"
                 @replace-source-range="handleReplaceSourceRange"

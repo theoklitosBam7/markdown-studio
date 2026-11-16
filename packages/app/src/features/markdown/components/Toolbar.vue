@@ -293,7 +293,7 @@ function toggleOutline(): void {
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 10px 18px;
+  padding: 6px 18px;
   flex-shrink: 0;
   z-index: 10;
 }

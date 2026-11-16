@@ -58,7 +58,7 @@ describe('PreviewPane', () => {
     expect(wrapper.get('[data-source-id="block-1"]').classes()).toContain('preview-source-target')
   })
 
-  it('shows a Source Navigation hint in the pane header', () => {
+  it('shows a floating Source Navigation hint without a pane header', () => {
     const wrapper = mount(PreviewPane, {
       props: {
         html: '<p>Hello</p>',
@@ -68,7 +68,9 @@ describe('PreviewPane', () => {
       },
     })
 
-    expect(wrapper.get('.pane-header').text()).toContain('Double-click to jump to source')
+    expect(wrapper.find('.pane-header').exists()).toBe(false)
+    expect(wrapper.get('.pane-hint').text()).toBe('Double-click to jump to source')
+    expect(wrapper.find('.line-count').exists()).toBe(false)
   })
 
   it('emits the matching source offset when preview content is double clicked', async () => {

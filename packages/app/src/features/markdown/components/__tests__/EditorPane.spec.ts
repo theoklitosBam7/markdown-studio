@@ -171,7 +171,6 @@ describe('EditorPane', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.findAll('.editor-line-numbers li')).toHaveLength(61)
-    expect(wrapper.get('.line-count').text()).toBe('61 lines')
 
     wrapper.unmount()
   })
@@ -268,6 +267,14 @@ describe('EditorPane', () => {
     await flushPromises()
 
     expect(editor.value).toBe('first item\n- second item')
+    wrapper.unmount()
+  })
+
+  it('does not render a duplicate editor pane header', () => {
+    const wrapper = mountEditorPane()
+
+    expect(wrapper.find('.pane-header').exists()).toBe(false)
+    expect(wrapper.find('.line-count').exists()).toBe(false)
     wrapper.unmount()
   })
 
