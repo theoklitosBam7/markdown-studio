@@ -68,7 +68,7 @@ function headingStyle(depth: number): Record<string, string> {
   gap: 8px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 650;
   letter-spacing: -0.01em;
 }
@@ -94,7 +94,7 @@ function headingStyle(depth: number): Record<string, string> {
   background: transparent;
   color: var(--text-muted);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   line-height: 1.4;
   text-align: left;
   text-overflow: ellipsis;
@@ -122,7 +122,7 @@ function headingStyle(depth: number): Record<string, string> {
   margin: 0;
   padding: 12px 8px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
 }
 
 @media (max-width: 700px) {

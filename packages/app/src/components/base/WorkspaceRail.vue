@@ -280,7 +280,7 @@ onUnmounted(() => {
 .workspace-rail__actions-title {
   margin: 2px 8px 8px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;

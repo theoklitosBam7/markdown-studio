@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
 }
 
 .status-item {
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   color: var(--text-muted);
   font-weight: 400;
   display: flex;

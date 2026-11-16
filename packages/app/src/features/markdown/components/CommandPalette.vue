@@ -269,7 +269,7 @@ onUnmounted(() => {
 .command-palette__group {
   padding: 10px 10px 5px;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;

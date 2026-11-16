@@ -180,7 +180,7 @@ defineExpose({ focusQueryInput })
 .find-replace-bar__status {
   min-width: 52px;
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   color: var(--text-muted);
   text-align: center;
 }

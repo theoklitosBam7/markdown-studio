@@ -313,7 +313,7 @@ function openActionSheet(): void {
   align-items: center;
   gap: 5px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
 }
 
 .mobile-toolbar-actions__document-dot {

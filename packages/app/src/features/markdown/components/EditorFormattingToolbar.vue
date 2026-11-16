@@ -379,7 +379,7 @@ function handleHeadingChange(event: Event): void {
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   cursor: pointer;
 }
 
@@ -420,7 +420,7 @@ function handleHeadingChange(event: Event): void {
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   text-align: left;
   cursor: pointer;
 }

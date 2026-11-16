@@ -72,7 +72,7 @@ const shortcutLabel = computed(() =>
   padding: 2px 5px;
   color: var(--text-muted);
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: var(--font-size-ui-caption);
   line-height: 1.3;
 }
 
@@ -85,7 +85,7 @@ const shortcutLabel = computed(() =>
 .command-palette-item__reason {
   grid-column: 1 / -1;
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   line-height: 1.35;
 }
 </style>

@@ -818,7 +818,7 @@ watch(
   background: var(--panel);
   color: var(--text-faint);
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   line-height: var(--editor-line-height);
   list-style: none;
   pointer-events: none;
@@ -867,7 +867,7 @@ watch(
 .image-drop-hint {
   color: var(--text-muted);
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
 }
 
 .editor,
@@ -923,7 +923,7 @@ watch(
 
   .editor-line-numbers {
     width: 40px;
-    font-size: 10px;
+    font-size: var(--font-size-ui-caption);
   }
 }
 

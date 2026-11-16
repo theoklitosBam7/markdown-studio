@@ -319,7 +319,7 @@ function toggleOutline(): void {
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -331,7 +331,7 @@ function toggleOutline(): void {
   align-items: center;
   gap: 5px;
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--font-size-ui-caption);
 }
 
 .toolbar__document-dot {
@@ -381,7 +381,7 @@ function toggleOutline(): void {
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   text-align: left;
   cursor: pointer;
 }
@@ -398,7 +398,7 @@ function toggleOutline(): void {
 .toolbar__export-hint {
   margin: 6px 10px 4px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   line-height: 1.4;
 }
 

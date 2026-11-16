@@ -189,7 +189,7 @@ watch(
   background: var(--raised-bg);
   color: var(--text);
   box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
 }
 
 .workspace-width-control__header,

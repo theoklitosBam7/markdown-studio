@@ -58,7 +58,7 @@ function handleKeyDown(event: KeyboardEvent): void {
 }
 
 .example-card p {
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   color: var(--text-muted);
   line-height: 1.4;
   margin: 0;

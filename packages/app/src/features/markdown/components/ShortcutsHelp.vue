@@ -63,7 +63,7 @@ function handleClose(): void {
 
 .shortcuts-group__title {
   font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -97,7 +97,7 @@ function handleClose(): void {
   padding: 2px 7px;
   color: var(--text-muted);
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   line-height: 1.3;
 }
 </style>
