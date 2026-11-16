@@ -2,31 +2,28 @@
 interface Props {
   chars: number
   diagrams: number
-  documentName?: string
-  isDirty?: boolean
+  lines: number
   status?: string
+  words: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  documentName: 'Untitled.md',
-  isDirty: false,
   status: 'Ready',
 })
 </script>
 
 <template>
   <div class="status-bar">
-    <div class="status-item">
-      <span class="status-dot"></span>
-      {{ props.status }}
+    <div class="status-item">{{ props.status }}</div>
+    <div class="status-item status-item--stats">
+      <span>{{ props.words.toLocaleString() }} words</span>
+      <span class="status-item__separator" aria-hidden="true">·</span>
+      <span>{{ props.chars.toLocaleString() }} chars</span>
+      <span class="status-item__separator" aria-hidden="true">·</span>
+      <span>{{ props.lines.toLocaleString() }} lines</span>
+      <span class="status-item__separator" aria-hidden="true">·</span>
+      <span>{{ props.diagrams }} diagram{{ props.diagrams !== 1 ? 's' : '' }}</span>
     </div>
-    <div class="status-item status-item--document">
-      {{ props.documentName }}<span v-if="props.isDirty"> • Unsaved</span>
-    </div>
-    <div class="status-item status-item--diagrams">
-      Mermaid: {{ props.diagrams }} diagram{{ props.diagrams !== 1 ? 's' : '' }}
-    </div>
-    <div class="status-item status-item--chars">{{ props.chars.toLocaleString() }} chars</div>
   </div>
 </template>
 
@@ -52,11 +49,16 @@ const props = withDefaults(defineProps<Props>(), {
   gap: 4px;
 }
 
-.status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent-mid);
+.status-item--stats {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status-item__separator {
+  padding: 0 4px;
+  color: var(--text-faint);
 }
 
 @media (max-width: 700px) {
@@ -64,15 +66,6 @@ const props = withDefaults(defineProps<Props>(), {
     gap: 10px;
     padding: 0 max(var(--app-gutter), env(safe-area-inset-right)) env(safe-area-inset-bottom)
       max(var(--app-gutter), env(safe-area-inset-left));
-  }
-
-  .status-item--document,
-  .status-item--diagrams {
-    display: none;
-  }
-
-  .status-item--chars {
-    margin-left: auto;
   }
 }
 </style>

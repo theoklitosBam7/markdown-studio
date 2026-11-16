@@ -52,6 +52,53 @@ describe('Toolbar', () => {
     expect(wrapper.find('.toolbar__actions').exists()).toBe(false)
   })
 
+  it('offers labelled Open and Save controls on desktop', async () => {
+    const wrapper = mountToolbar({ canOpenDocuments: true, canSaveDocuments: true })
+
+    const openButton = wrapper.get('button[aria-label="Open document"]')
+    const saveButton = wrapper.get('button[aria-label="Save document"]')
+
+    expect(openButton.text()).toContain('Open')
+    expect(saveButton.text()).toContain('Save')
+    expect(saveButton.classes()).toContain('toolbar-btn--primary')
+
+    await openButton.trigger('click')
+    await saveButton.trigger('click')
+
+    expect(wrapper.emitted('openDocument')).toHaveLength(1)
+    expect(wrapper.emitted('saveDocument')).toHaveLength(1)
+  })
+
+  it('offers an Export menu with HTML and PDF actions on desktop', async () => {
+    const wrapper = mountToolbar({ canExportPdf: true })
+
+    const trigger = wrapper.get('button[aria-label="Export document"]')
+    expect(trigger.text()).toContain('Export')
+
+    await trigger.trigger('click')
+    await wrapper.get('button[aria-label="Export HTML"]').trigger('click')
+
+    await trigger.trigger('click')
+    await wrapper.get('button[aria-label="Export PDF"]').trigger('click')
+
+    expect(wrapper.emitted('exportHtml')).toHaveLength(1)
+    expect(wrapper.emitted('exportPdf')).toHaveLength(1)
+  })
+
+  it('disables PDF export in the toolbar with its reason', async () => {
+    const wrapper = mountToolbar({
+      canExportPdf: false,
+      pdfExportUnavailableReason: 'PDF export is unavailable in this browser.',
+    })
+
+    await wrapper.get('button[aria-label="Export document"]').trigger('click')
+
+    expect(wrapper.get('button[aria-label="Export PDF"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('.toolbar__export-menu').text()).toContain(
+      'PDF export is unavailable in this browser.',
+    )
+  })
+
   it('opens editor display settings from a labelled desktop control', async () => {
     const wrapper = mountToolbar()
     await wrapper.get('button[aria-label="Editor display"]').trigger('click')
@@ -74,15 +121,10 @@ describe('Toolbar', () => {
     expect(wrapper.get('.toolbar__document-status').text()).toBe('Unsaved changes')
   })
 
-  it('renders GitHub link on desktop', () => {
+  it('does not use toolbar space for the GitHub link on desktop', () => {
     const wrapper = mountToolbar()
 
-    const githubLink = wrapper.find('a.github-link')
-    expect(githubLink.exists()).toBe(true)
-    expect(githubLink.attributes('href')).toBe('https://github.com/theoklitosBam7/markdown-studio')
-    expect(githubLink.attributes('target')).toBe('_blank')
-    expect(githubLink.attributes('rel')).toBe('noopener noreferrer')
-    expect(githubLink.text()).toContain('GitHub')
+    expect(wrapper.find('a.github-link').exists()).toBe(false)
   })
 
   it('renders keyboard shortcuts as an accessible icon control', async () => {

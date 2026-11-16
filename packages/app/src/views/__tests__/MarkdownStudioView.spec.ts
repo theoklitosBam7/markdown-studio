@@ -263,6 +263,21 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('passes consolidated document statistics to the status bar', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('textarea').setValue('# Title\n\nTwo words here')
+    await flushPromises()
+
+    const statusText = wrapper.get('.status-bar').text()
+    expect(statusText).toContain('5 words')
+    expect(statusText).toContain('23 chars')
+    expect(statusText).toContain('3 lines')
+    expect(statusText).toContain('0 diagrams')
+    expect(statusText).not.toContain('Unsaved')
+
+    wrapper.unmount()
+  })
+
   it('provides a skip link to the Editor Workspace', async () => {
     const { wrapper } = await mountMarkdownStudioView()
 

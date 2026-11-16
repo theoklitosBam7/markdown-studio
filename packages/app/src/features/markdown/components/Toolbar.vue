@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { FileText, Keyboard, SlidersHorizontal } from '@lucide/vue'
+import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import {
+  ChevronDown,
+  FileDown,
+  FileText,
+  FolderOpen,
+  Keyboard,
+  Save,
+  SlidersHorizontal,
+} from '@lucide/vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
 
@@ -7,7 +16,6 @@ import MobileToolbarActions from '@/components/base/MobileToolbarActions.vue'
 import ThemeToggle from '@/components/base/ThemeToggle.vue'
 import ToolbarButton from '@/components/base/ToolbarButton.vue'
 import ViewToggle from '@/components/base/ViewToggle.vue'
-import { GITHUB_REPO_URL } from '@/utils/constants'
 
 import type { ThemeChangeRequest } from '../types'
 
@@ -58,6 +66,32 @@ const emit = defineEmits<{
   'update:viewMode': [mode: ViewMode]
 }>()
 
+const isExportMenuOpen = shallowRef(false)
+const exportMenuRef = useTemplateRef<HTMLElement>('exportMenu')
+
+function closeExportMenu(): void {
+  isExportMenuOpen.value = false
+}
+
+function handleDocumentPointerDown(event: PointerEvent): void {
+  if (
+    isExportMenuOpen.value &&
+    exportMenuRef.value &&
+    event.target instanceof Node &&
+    !exportMenuRef.value.contains(event.target)
+  ) {
+    closeExportMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+})
+
 function clear(): void {
   emit('clear')
 }
@@ -67,10 +101,12 @@ function copy(): void {
 }
 
 function exportHtml(): void {
+  closeExportMenu()
   emit('exportHtml')
 }
 
 function exportPdf(): void {
+  closeExportMenu()
   emit('exportPdf')
 }
 
@@ -162,21 +198,63 @@ function toggleOutline(): void {
           </span>
         </div>
 
-        <a
-          :href="GITHUB_REPO_URL"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="toolbar-btn github-link"
-          aria-label="View on GitHub"
-          title="View on GitHub"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path
-              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-            />
-          </svg>
-          <span class="github-link__text">GitHub</span>
-        </a>
+        <div class="toolbar__primary">
+          <ToolbarButton
+            v-if="props.canOpenDocuments"
+            aria-label="Open document"
+            title="Open document"
+            @click="openDocument"
+          >
+            <FolderOpen :size="15" :stroke-width="1.8" aria-hidden="true" />
+            <span>Open</span>
+          </ToolbarButton>
+          <ToolbarButton
+            v-if="props.canSaveDocuments"
+            variant="primary"
+            aria-label="Save document"
+            title="Save document"
+            @click="saveDocument"
+          >
+            <Save :size="15" :stroke-width="1.8" aria-hidden="true" />
+            <span>Save</span>
+          </ToolbarButton>
+        </div>
+
+        <div ref="exportMenu" class="toolbar__export" @keydown.esc.stop.prevent="closeExportMenu">
+          <ToolbarButton
+            aria-label="Export document"
+            title="Export document"
+            :aria-expanded="isExportMenuOpen"
+            aria-haspopup="menu"
+            @click="isExportMenuOpen = !isExportMenuOpen"
+          >
+            <FileDown :size="15" :stroke-width="1.8" aria-hidden="true" />
+            <span>Export</span>
+            <ChevronDown :size="13" :stroke-width="1.8" aria-hidden="true" />
+          </ToolbarButton>
+          <div v-if="isExportMenuOpen" class="toolbar__export-menu">
+            <div role="menu">
+              <button type="button" role="menuitem" aria-label="Export HTML" @click="exportHtml">
+                Export HTML
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                aria-label="Export PDF"
+                :disabled="!props.canExportPdf"
+                @click="exportPdf"
+              >
+                Export PDF
+              </button>
+            </div>
+            <p
+              v-if="!props.canExportPdf && props.pdfExportUnavailableReason"
+              class="toolbar__export-hint"
+            >
+              {{ props.pdfExportUnavailableReason }}
+            </p>
+          </div>
+        </div>
 
         <div class="toolbar__desktop-controls">
           <ViewToggle
@@ -194,6 +272,7 @@ function toggleOutline(): void {
             <Keyboard :size="18" :stroke-width="1.8" aria-hidden="true" />
           </ToolbarButton>
           <ToolbarButton
+            class="editor-display-button"
             aria-label="Editor display"
             title="Editor display"
             @click="emit('openEditorDisplay')"
@@ -266,6 +345,63 @@ function toggleOutline(): void {
   background: var(--brass);
 }
 
+.toolbar__primary {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar__export {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.toolbar__export-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 220px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--raised-bg);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 14%);
+}
+
+.toolbar__export-menu button {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toolbar__export-menu button:hover:not(:disabled) {
+  background: var(--panel);
+}
+
+.toolbar__export-menu button:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.toolbar__export-hint {
+  margin: 6px 10px 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .toolbar__desktop-controls {
   display: flex;
   align-items: center;
@@ -283,49 +419,25 @@ function toggleOutline(): void {
   height: 18px;
 }
 
-.github-link {
-  height: 38px;
-  min-width: 38px;
-  padding: 0 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s;
-  text-decoration: none;
-}
-
-.github-link:hover {
-  background: var(--panel);
-  color: var(--text);
-  border-color: var(--border-dark);
-}
-
-.github-link svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-/* Medium screens - hide GitHub text to save space */
-@media (max-width: 1100px) {
-  .github-link {
-    padding: 0 8px;
+@media (max-width: 1000px) {
+  .toolbar {
+    gap: 8px;
+    padding-inline: 10px;
   }
 
-  .github-link__text {
+  .toolbar__primary,
+  .toolbar__desktop-controls {
+    gap: 6px;
+  }
+
+  .toolbar__desktop-controls :deep(.view-toggle button span),
+  .toolbar__desktop-controls .editor-display-button :deep(span) {
     display: none;
+  }
+
+  .toolbar__desktop-controls :deep(.view-toggle button) {
+    min-width: 38px;
+    padding: 0 9px;
   }
 }
 

@@ -4,12 +4,9 @@ import {
   Check,
   Copy,
   Download,
-  FileDown,
-  FolderOpen,
   LayoutGrid,
   MoreHorizontal,
   PanelLeft,
-  Save,
   Search,
   Table2,
   Trash2,
@@ -25,47 +22,26 @@ interface DocumentAction {
   variant?: 'danger'
 }
 
-type DocumentActionName =
-  | 'clear'
-  | 'copy'
-  | 'exportHtml'
-  | 'exportPdf'
-  | 'insertTable'
-  | 'install'
-  | 'openDocument'
-  | 'openExamples'
-  | 'saveDocument'
+type DocumentActionName = 'clear' | 'copy' | 'insertTable' | 'install' | 'openExamples'
 
 interface Props {
-  canExportPdf?: boolean
   canInstall?: boolean
-  canOpenDocuments?: boolean
-  canSaveDocuments?: boolean
   isCopied?: boolean
   isOutlineOpen: boolean
-  pdfExportUnavailableReason?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  canExportPdf: true,
   canInstall: false,
-  canOpenDocuments: false,
-  canSaveDocuments: false,
   isCopied: false,
-  pdfExportUnavailableReason: '',
 })
 
 const emit = defineEmits<{
   clear: []
   copy: []
-  exportHtml: []
-  exportPdf: []
   find: []
   insertTable: []
   install: []
-  openDocument: []
   openExamples: []
-  saveDocument: []
   toggleOutline: []
 }>()
 
@@ -75,24 +51,6 @@ const actionsPanel = useTemplateRef<HTMLElement>('actionsPanel')
 
 const documentActions = computed<DocumentAction[]>(() => {
   const actions: DocumentAction[] = []
-
-  if (props.canOpenDocuments) {
-    actions.push({
-      ariaLabel: 'Open document',
-      icon: FolderOpen,
-      label: 'Open',
-      name: 'openDocument',
-    })
-  }
-
-  if (props.canSaveDocuments) {
-    actions.push({
-      ariaLabel: 'Save document',
-      icon: Save,
-      label: 'Save',
-      name: 'saveDocument',
-    })
-  }
 
   if (props.canInstall) {
     actions.push({
@@ -113,8 +71,6 @@ const documentActions = computed<DocumentAction[]>(() => {
       name: 'copy',
     },
     { ariaLabel: 'Clear document', icon: Trash2, label: 'Clear', name: 'clear', variant: 'danger' },
-    { ariaLabel: 'Export HTML', icon: FileDown, label: 'Export HTML', name: 'exportHtml' },
-    { ariaLabel: 'Export PDF', icon: FileDown, label: 'Export PDF', name: 'exportPdf' },
   )
 
   return actions
@@ -123,13 +79,9 @@ const documentActions = computed<DocumentAction[]>(() => {
 const actionHandlers: Record<DocumentActionName, () => void> = {
   clear: () => emit('clear'),
   copy: () => emit('copy'),
-  exportHtml: () => emit('exportHtml'),
-  exportPdf: () => emit('exportPdf'),
   insertTable: () => emit('insertTable'),
   install: () => emit('install'),
-  openDocument: () => emit('openDocument'),
   openExamples: () => emit('openExamples'),
-  saveDocument: () => emit('saveDocument'),
 }
 
 function closeActionsMenu(restoreFocus = false): void {
@@ -227,12 +179,6 @@ onUnmounted(() => {
             class="workspace-rail__action"
             :class="{ 'workspace-rail__action--danger': action.variant === 'danger' }"
             :aria-label="action.ariaLabel"
-            :disabled="action.name === 'exportPdf' && !props.canExportPdf"
-            :aria-describedby="
-              action.name === 'exportPdf' && !props.canExportPdf
-                ? 'workspace-pdf-export-hint'
-                : undefined
-            "
             type="button"
             @click="performAction(action.name)"
           >
@@ -240,13 +186,6 @@ onUnmounted(() => {
             <span>{{ action.label }}</span>
           </button>
         </div>
-        <p
-          v-if="!props.canExportPdf && props.pdfExportUnavailableReason"
-          id="workspace-pdf-export-hint"
-          class="workspace-rail__actions-hint"
-        >
-          {{ props.pdfExportUnavailableReason }}
-        </p>
       </section>
     </div>
   </aside>
@@ -372,20 +311,8 @@ onUnmounted(() => {
   background: var(--panel);
 }
 
-.workspace-rail__action:disabled {
-  color: var(--text-faint);
-  cursor: not-allowed;
-}
-
 .workspace-rail__action--danger {
   color: var(--danger, #a94e46);
-}
-
-.workspace-rail__actions-hint {
-  margin: 8px 8px 2px;
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.45;
 }
 
 @media (max-width: 700px) {
