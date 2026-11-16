@@ -523,7 +523,7 @@ describe('EditorPane', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('2 of 3')
+    expect(wrapper.get('.find-replace-bar__count').attributes('aria-label')).toBe('2 of 3 matches')
 
     const [queryInput, replaceInput] = wrapper.findAll('input')
 
@@ -557,7 +557,9 @@ describe('EditorPane', () => {
 
     const replaceButtons = wrapper
       .findAll('button')
-      .filter((button) => ['Replace', 'Replace All'].includes(button.text()))
+      .filter((button) =>
+        ['Replace all', 'Replace current'].includes(button.attributes('aria-label') ?? ''),
+      )
 
     expect(replaceButtons).toHaveLength(2)
     expect(replaceButtons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)

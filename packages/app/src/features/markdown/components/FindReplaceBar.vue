@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { ChevronDown, ChevronUp, Replace, ReplaceAll, X } from '@lucide/vue'
+import { useTemplateRef } from 'vue'
 
 interface Props {
   activeMatchNumber: number
@@ -24,7 +25,6 @@ const emit = defineEmits<{
 }>()
 
 const queryInputRef = useTemplateRef<HTMLInputElement>('queryInput')
-const statusText = computed(() => `${props.activeMatchNumber} of ${props.matchCount}`)
 
 function focusQueryInput(): void {
   queryInputRef.value?.focus()
@@ -74,9 +74,17 @@ defineExpose({ focusQueryInput })
         @input="emit('update:query', ($event.target as HTMLInputElement).value)"
       />
 
-      <span class="find-replace-bar__status" aria-live="polite">{{ statusText }}</span>
+      <span
+        class="find-replace-bar__count"
+        :aria-label="`${activeMatchNumber} of ${matchCount} matches`"
+        aria-live="polite"
+      >
+        {{ activeMatchNumber }}/{{ matchCount }}
+      </span>
 
       <button
+        aria-label="Match case"
+        title="Match case"
         :aria-pressed="matchCase"
         class="find-replace-bar__toggle"
         type="button"
@@ -87,30 +95,36 @@ defineExpose({ focusQueryInput })
       </button>
 
       <button
-        :disabled="matchCount === 0"
-        class="find-replace-bar__button"
+        aria-label="Find previous"
+        title="Find previous (Shift+Enter)"
+        class="find-replace-bar__icon-button"
         type="button"
+        :disabled="matchCount === 0"
         @mousedown="preserveFocusOnMouseDown"
         @click="emit('previous')"
       >
-        Prev
+        <ChevronUp :size="16" :stroke-width="1.8" aria-hidden="true" />
       </button>
       <button
-        :disabled="matchCount === 0"
-        class="find-replace-bar__button"
+        aria-label="Find next"
+        title="Find next (Enter)"
+        class="find-replace-bar__icon-button"
         type="button"
+        :disabled="matchCount === 0"
         @mousedown="preserveFocusOnMouseDown"
         @click="emit('next')"
       >
-        Next
+        <ChevronDown :size="16" :stroke-width="1.8" aria-hidden="true" />
       </button>
       <button
-        class="find-replace-bar__button"
+        aria-label="Close find"
+        title="Close (Escape)"
+        class="find-replace-bar__icon-button"
         type="button"
         @mousedown="preserveFocusOnMouseDown"
         @click="emit('close')"
       >
-        Close
+        <X :size="16" :stroke-width="1.8" aria-hidden="true" />
       </button>
     </div>
 
@@ -123,22 +137,26 @@ defineExpose({ focusQueryInput })
         @input="emit('update:replace-text', ($event.target as HTMLInputElement).value)"
       />
       <button
-        :disabled="matchCount === 0"
-        class="find-replace-bar__button"
+        aria-label="Replace current"
+        title="Replace current"
+        class="find-replace-bar__icon-button"
         type="button"
+        :disabled="matchCount === 0"
         @mousedown="preserveFocusOnMouseDown"
         @click="emit('replaceCurrent')"
       >
-        Replace
+        <Replace :size="16" :stroke-width="1.8" aria-hidden="true" />
       </button>
       <button
-        :disabled="matchCount === 0"
-        class="find-replace-bar__button"
+        aria-label="Replace all"
+        title="Replace all"
+        class="find-replace-bar__icon-button"
         type="button"
+        :disabled="matchCount === 0"
         @mousedown="preserveFocusOnMouseDown"
         @click="emit('replaceAll')"
       >
-        Replace All
+        <ReplaceAll :size="16" :stroke-width="1.8" aria-hidden="true" />
       </button>
     </div>
   </div>
@@ -148,8 +166,8 @@ defineExpose({ focusQueryInput })
 .find-replace-bar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px var(--app-gutter);
+  gap: 4px;
+  padding: 6px var(--app-gutter);
   background: color-mix(in srgb, var(--surface) 90%, var(--panel));
   border-bottom: 1px solid var(--border);
 }
@@ -157,19 +175,21 @@ defineExpose({ focusQueryInput })
 .find-replace-bar__row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
 }
 
 .find-replace-bar__input {
   min-width: 0;
   flex: 1;
+  height: 30px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 0 8px;
+  border-radius: 6px;
   outline: none;
+  font-size: var(--font-size-ui-caption);
 }
 
 .find-replace-bar__input:focus {
@@ -177,31 +197,40 @@ defineExpose({ focusQueryInput })
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-light) 70%, transparent);
 }
 
-.find-replace-bar__status {
-  min-width: 52px;
+.find-replace-bar__count {
+  min-width: 42px;
   font-family: 'DM Mono', monospace;
   font-size: var(--font-size-ui-caption);
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   text-align: center;
 }
 
 .find-replace-bar__toggle,
-.find-replace-bar__button {
+.find-replace-bar__icon-button {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 8px 10px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: var(--font-size-ui-caption);
+  cursor: pointer;
 }
 
 .find-replace-bar__toggle[aria-pressed='true'],
-.find-replace-bar__button:hover:not(:disabled),
-.find-replace-bar__toggle:hover {
+.find-replace-bar__toggle:hover,
+.find-replace-bar__icon-button:hover:not(:disabled) {
   background: var(--panel);
   border-color: var(--border-dark);
+  color: var(--text);
 }
 
-.find-replace-bar__button:disabled {
+.find-replace-bar__icon-button:disabled {
   color: var(--text-faint);
   cursor: not-allowed;
 }
@@ -211,9 +240,8 @@ defineExpose({ focusQueryInput })
     flex-wrap: wrap;
   }
 
-  .find-replace-bar__status {
+  .find-replace-bar__count {
     order: 10;
-    min-width: auto;
     margin-left: auto;
   }
 }
