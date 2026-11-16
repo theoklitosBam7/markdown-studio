@@ -278,6 +278,7 @@ function openActionSheet(): void {
   display: flex;
   width: 100%;
   flex-direction: column;
+  padding: 8px 12px;
   padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px
     max(12px, env(safe-area-inset-left));
   background: var(--surface);

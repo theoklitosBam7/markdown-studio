@@ -353,6 +353,7 @@ onUnmounted(() => {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  padding: 0 16px;
   padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
 }
 
@@ -462,6 +463,7 @@ onUnmounted(() => {
 
 .mobile-action-sheet__footer {
   flex-shrink: 0;
+  padding: 12px 16px 16px;
   padding: 12px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
 }

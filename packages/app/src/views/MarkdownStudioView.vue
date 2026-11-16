@@ -518,6 +518,7 @@ function handleTableInsertionConfirm(): void {
   display: flex;
   flex-direction: row;
   min-width: 0;
+  height: 100vh;
   height: 100dvh;
   overflow: hidden;
   background: var(--workspace-bg);

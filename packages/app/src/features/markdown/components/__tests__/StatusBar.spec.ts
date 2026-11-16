@@ -52,6 +52,16 @@ describe('StatusBar', () => {
     expect(wrapper.text()).not.toContain('•')
   })
 
+  it('labels each statistic so narrow layouts can choose what to show', () => {
+    const wrapper = mountStatusBar()
+
+    expect(wrapper.get('.status-item__stat--words').text()).toBe('1,284 words')
+    expect(wrapper.get('.status-item__stat--chars').text()).toBe('7,932 chars')
+    expect(wrapper.get('.status-item__stat--lines').text()).toBe('148 lines')
+    expect(wrapper.get('.status-item__stat--diagrams').text()).toBe('2 diagrams')
+    wrapper.unmount()
+  })
+
   it('uses the singular form for a single diagram', () => {
     const wrapper = mountStatusBar({ diagrams: 1 })
 

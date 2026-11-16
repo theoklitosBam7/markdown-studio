@@ -16,13 +16,17 @@ const props = withDefaults(defineProps<Props>(), {
   <div class="status-bar">
     <div class="status-item">{{ props.status }}</div>
     <div class="status-item status-item--stats">
-      <span>{{ props.words.toLocaleString() }} words</span>
-      <span class="status-item__separator" aria-hidden="true">·</span>
-      <span>{{ props.chars.toLocaleString() }} chars</span>
-      <span class="status-item__separator" aria-hidden="true">·</span>
-      <span>{{ props.lines.toLocaleString() }} lines</span>
-      <span class="status-item__separator" aria-hidden="true">·</span>
-      <span>{{ props.diagrams }} diagram{{ props.diagrams !== 1 ? 's' : '' }}</span>
+      <span class="status-item__stat--words">{{ props.words.toLocaleString() }} words</span>
+      <span class="status-item__separator status-item__separator--chars" aria-hidden="true">·</span>
+      <span class="status-item__stat--chars">{{ props.chars.toLocaleString() }} chars</span>
+      <span class="status-item__separator status-item__separator--lines" aria-hidden="true">·</span>
+      <span class="status-item__stat--lines">{{ props.lines.toLocaleString() }} lines</span>
+      <span class="status-item__separator status-item__separator--diagrams" aria-hidden="true">
+        ·
+      </span>
+      <span class="status-item__stat--diagrams">
+        {{ props.diagrams }} diagram{{ props.diagrams !== 1 ? 's' : '' }}
+      </span>
     </div>
   </div>
 </template>
@@ -34,6 +38,12 @@ const props = withDefaults(defineProps<Props>(), {
   display: flex;
   align-items: center;
   padding: 0 var(--app-gutter);
+  padding-left: var(--app-gutter);
+  padding-left: max(var(--app-gutter), env(safe-area-inset-left));
+  padding-right: var(--app-gutter);
+  padding-right: max(var(--app-gutter), env(safe-area-inset-right));
+  padding-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
   gap: 16px;
   flex-shrink: 0;
   overflow-x: auto;
@@ -63,9 +73,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 @media (max-width: 700px) {
   .status-bar {
-    gap: 10px;
-    padding: 0 max(var(--app-gutter), env(safe-area-inset-right)) env(safe-area-inset-bottom)
-      max(var(--app-gutter), env(safe-area-inset-left));
+    gap: 8px;
+  }
+
+  .status-item--stats {
+    padding-left: 8px;
+    border-left: 1px solid var(--border);
+  }
+
+  .status-item__stat--chars,
+  .status-item__stat--lines,
+  .status-item__separator--chars,
+  .status-item__separator--lines {
+    display: none;
   }
 }
 </style>
