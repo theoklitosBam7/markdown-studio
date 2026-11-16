@@ -146,6 +146,7 @@ function hydrateSourceAnchors(): void {
     element.dataset.sourceId = entry.id
     element.dataset.sourceStart = String(entry.start)
     element.id = `markdown-source-${entry.id}`
+    element.classList.add('preview-source-target')
   }
 }
 
@@ -259,6 +260,7 @@ defineExpose({ scrollToSourceOffset })
   <div class="preview-pane">
     <div class="pane-header">
       <span class="pane-label">Preview</span>
+      <span class="pane-hint">Double-click to jump to source</span>
       <span class="line-count">{{ wordCount }} word{{ wordCount !== 1 ? 's' : '' }}</span>
     </div>
     <div ref="previewScroll" class="preview-scroll">
@@ -306,11 +308,26 @@ defineExpose({ scrollToSourceOffset })
   color: var(--text-faint);
 }
 
-.line-count {
+.pane-hint {
   margin-left: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.line-count {
   font-family: 'DM Mono', monospace;
   font-size: 11px;
   color: var(--text-faint);
+}
+
+.rendered-md :deep(.preview-source-target) {
+  cursor: pointer;
+}
+
+.rendered-md :deep(.preview-source-target:hover) {
+  outline: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  outline-offset: 3px;
+  border-radius: 3px;
 }
 
 .preview-scroll {
@@ -337,7 +354,8 @@ defineExpose({ scrollToSourceOffset })
 }
 
 @media (max-width: 700px) {
-  .line-count {
+  .line-count,
+  .pane-hint {
     display: none;
   }
 

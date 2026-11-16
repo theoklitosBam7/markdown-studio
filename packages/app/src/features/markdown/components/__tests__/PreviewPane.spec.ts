@@ -43,6 +43,34 @@ describe('PreviewPane', () => {
     expect(wrapper.find('.mermaid').exists()).toBe(true)
   })
 
+  it('marks source-backed preview elements as jump targets', async () => {
+    const wrapper = mount(PreviewPane, {
+      props: {
+        html: '<p data-source-id="block-1" data-source-start="12" data-source-end="24">Hello</p>',
+        sourceMap: [{ end: 24, id: 'block-1', start: 12, type: 'paragraph' }],
+        theme: 'light',
+        wordCount: 1,
+      },
+    })
+
+    await nextTick()
+
+    expect(wrapper.get('[data-source-id="block-1"]').classes()).toContain('preview-source-target')
+  })
+
+  it('shows a Source Navigation hint in the pane header', () => {
+    const wrapper = mount(PreviewPane, {
+      props: {
+        html: '<p>Hello</p>',
+        sourceMap: [],
+        theme: 'light',
+        wordCount: 1,
+      },
+    })
+
+    expect(wrapper.get('.pane-header').text()).toContain('Double-click to jump to source')
+  })
+
   it('emits the matching source offset when preview content is double clicked', async () => {
     const wrapper = mount(PreviewPane, {
       props: {
