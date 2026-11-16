@@ -21,6 +21,40 @@ describe('EditorFormattingToolbar', () => {
     wrapper.unmount()
   })
 
+  it('reflects active formatting and the current heading level', async () => {
+    const wrapper = mount(EditorFormattingToolbar, {
+      props: {
+        activeStyles: ['bold', 'bullet-list'],
+        headingLevel: 2,
+      },
+    })
+
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('button[aria-label="Italic"]').attributes('aria-pressed')).toBe('false')
+    expect(wrapper.get('button[aria-label="Bulleted list"]').attributes('aria-pressed')).toBe(
+      'true',
+    )
+    expect(
+      (wrapper.get('select[aria-label="Set heading level"]').element as HTMLSelectElement).value,
+    ).toBe('2')
+
+    wrapper.unmount()
+  })
+
+  it('reflects active formatting in the More formatting menu', async () => {
+    const wrapper = mount(EditorFormattingToolbar, {
+      props: { activeStyles: ['blockquote'] },
+    })
+
+    await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+
+    const menuButtons = wrapper.findAll('.editor-formatting-toolbar__menu button')
+    const blockquote = menuButtons.find((button) => button.text() === 'Blockquote')
+    expect(blockquote?.attributes('aria-pressed')).toBe('true')
+
+    wrapper.unmount()
+  })
+
   it('emits formatting commands from toolbar controls', async () => {
     const wrapper = mount(EditorFormattingToolbar)
 

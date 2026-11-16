@@ -24,9 +24,34 @@ export type EditorFormattingCommand =
     }
   | { style: 'bold' | 'inline-code' | 'italic' | 'link'; type: 'style' }
 
+export type EditorFormattingStyle =
+  | 'blockquote'
+  | 'bold'
+  | 'bullet-list'
+  | 'code-block'
+  | 'horizontal-rule'
+  | 'inline-code'
+  | 'italic'
+  | 'link'
+  | 'numbered-list'
+
+interface Props {
+  activeStyles?: readonly EditorFormattingStyle[]
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6 | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  activeStyles: () => [],
+  headingLevel: null,
+})
+
 const emit = defineEmits<{
   format: [command: EditorFormattingCommand]
 }>()
+
+function isActive(style: EditorFormattingStyle): boolean {
+  return props.activeStyles.includes(style)
+}
 
 const isMoreMenuOpen = shallowRef(false)
 const moreButtonContainer = useTemplateRef<HTMLElement>('moreButtonContainer')
@@ -73,10 +98,12 @@ function handleHeadingChange(event: Event): void {
     '6': 6,
   }
   const level = levels[target.value]
-  if (!level) return
+  if (!level) {
+    target.value = props.headingLevel === null ? '' : String(props.headingLevel)
+    return
+  }
 
   emit('format', { level, type: 'heading' })
-  target.value = ''
 }
 </script>
 
@@ -114,6 +141,7 @@ function handleHeadingChange(event: Event): void {
           <select
             aria-label="Set heading level"
             title="Set heading level"
+            :value="props.headingLevel ?? ''"
             @change="handleHeadingChange"
           >
             <option value="">Text</option>
@@ -125,6 +153,7 @@ function handleHeadingChange(event: Event): void {
           <button
             class="editor-formatting-toolbar__button"
             aria-label="Bold"
+            :aria-pressed="isActive('bold')"
             title="Bold"
             type="button"
             @mousedown.prevent
@@ -135,6 +164,7 @@ function handleHeadingChange(event: Event): void {
           <button
             class="editor-formatting-toolbar__button"
             aria-label="Italic"
+            :aria-pressed="isActive('italic')"
             title="Italic"
             type="button"
             @mousedown.prevent
@@ -145,6 +175,7 @@ function handleHeadingChange(event: Event): void {
           <button
             class="editor-formatting-toolbar__button"
             aria-label="Insert link"
+            :aria-pressed="isActive('link')"
             title="Insert link"
             type="button"
             @mousedown.prevent
@@ -155,6 +186,7 @@ function handleHeadingChange(event: Event): void {
           <button
             class="editor-formatting-toolbar__button"
             aria-label="Inline code"
+            :aria-pressed="isActive('inline-code')"
             title="Inline code"
             type="button"
             @mousedown.prevent
@@ -165,6 +197,7 @@ function handleHeadingChange(event: Event): void {
           <button
             class="editor-formatting-toolbar__button"
             aria-label="Bulleted list"
+            :aria-pressed="isActive('bullet-list')"
             title="Bulleted list"
             type="button"
             @mousedown.prevent
@@ -197,19 +230,39 @@ function handleHeadingChange(event: Event): void {
           role="group"
           aria-label="More formatting options"
         >
-          <button type="button" @mousedown.prevent @click="emitBlock('numbered-list')">
+          <button
+            type="button"
+            :aria-pressed="isActive('numbered-list')"
+            @mousedown.prevent
+            @click="emitBlock('numbered-list')"
+          >
             <ListOrdered :size="17" aria-hidden="true" />
             <span>Numbered list</span>
           </button>
-          <button type="button" @mousedown.prevent @click="emitBlock('blockquote')">
+          <button
+            type="button"
+            :aria-pressed="isActive('blockquote')"
+            @mousedown.prevent
+            @click="emitBlock('blockquote')"
+          >
             <Quote :size="17" aria-hidden="true" />
             <span>Blockquote</span>
           </button>
-          <button type="button" @mousedown.prevent @click="emitBlock('code-block')">
+          <button
+            type="button"
+            :aria-pressed="isActive('code-block')"
+            @mousedown.prevent
+            @click="emitBlock('code-block')"
+          >
             <Code2 :size="17" aria-hidden="true" />
             <span>Code block</span>
           </button>
-          <button type="button" @mousedown.prevent @click="emitBlock('horizontal-rule')">
+          <button
+            type="button"
+            :aria-pressed="isActive('horizontal-rule')"
+            @mousedown.prevent
+            @click="emitBlock('horizontal-rule')"
+          >
             <Minus :size="17" aria-hidden="true" />
             <span>Horizontal rule</span>
           </button>
@@ -280,6 +333,12 @@ function handleHeadingChange(event: Event): void {
   border-color: var(--border);
   background: var(--panel);
   color: var(--text);
+}
+
+.editor-formatting-toolbar__button[aria-pressed='true'] {
+  border-color: var(--accent-mid);
+  background: var(--accent-light);
+  color: var(--accent);
 }
 
 .editor-formatting-toolbar__button:focus-visible,
@@ -368,6 +427,11 @@ function handleHeadingChange(event: Event): void {
 
 .editor-formatting-toolbar__menu button:hover {
   background: var(--panel);
+}
+
+.editor-formatting-toolbar__menu button[aria-pressed='true'] {
+  background: var(--accent-light);
+  color: var(--accent);
 }
 
 @media (max-width: 700px) {

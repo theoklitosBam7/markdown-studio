@@ -11,7 +11,7 @@ import {
   type EditorDisplayPreferences,
 } from '../types/editorDisplayPreferences'
 
-import type { EditorFormattingCommand } from './EditorFormattingToolbar.vue'
+import type { EditorFormattingCommand, EditorFormattingStyle } from './EditorFormattingToolbar.vue'
 import type { EditorScrollPayload, EditorWorkspaceFindState } from '../types'
 
 type FindAction =
@@ -104,6 +104,98 @@ const localContent = computed({
 })
 const documentLineCount = computed(() => Math.max(1, props.content.split('\n').length))
 
+function getEnclosingCodeFenceRange(text: string, offset: number) {
+  const openers = [...text.slice(0, offset).matchAll(/^```[^\n]*$/gm)]
+  const opener = openers.at(-1)
+  if (!opener) return null
+
+  const closer = /^```[^\n]*$/m.exec(text.slice(offset))
+  if (!closer) return null
+
+  const openerStart = opener.index ?? 0
+  const closerStart = offset + (closer.index ?? 0)
+  return {
+    contentEnd: closerStart,
+    contentStart: openerStart + opener[0].length + 1,
+    end: closerStart + closer[0].length,
+    start: openerStart,
+  }
+}
+
+function getEnclosingLinkRange(text: string, start: number, end: number) {
+  for (const link of text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
+    const linkStart = link.index ?? 0
+    const linkEnd = linkStart + link[0].length
+    if (start >= linkStart && end <= linkEnd) {
+      return {
+        end: linkEnd,
+        labelEnd: linkStart + 1 + (link[1]?.length ?? 0),
+        labelStart: linkStart + 1,
+        start: linkStart,
+      }
+    }
+  }
+
+  return null
+}
+
+function getEnclosingTokenRange(text: string, start: number, end: number, token: string) {
+  if (!isWrappedInToken(text, start, end, token)) return null
+
+  const opening = text.lastIndexOf(token, start - token.length)
+  const closing = text.indexOf(token, Math.max(end, opening + token.length))
+  if (opening === -1 || closing === -1 || closing <= opening) return null
+
+  return { end: closing + token.length, start: opening }
+}
+
+function getLineTextAtOffset(text: string, offset: number): string {
+  const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
+  const nextBreak = text.indexOf('\n', offset)
+  return text.slice(lineStart, nextBreak === -1 ? text.length : nextBreak)
+}
+
+function isInsideCodeFence(text: string, offset: number): boolean {
+  return (text.slice(0, offset).match(/^\s*```/gm)?.length ?? 0) % 2 === 1
+}
+
+function isInsideLink(text: string, start: number, end: number): boolean {
+  const before = text.slice(0, start)
+  return before.split('[').length > before.split(']').length && text.slice(end).includes(']')
+}
+
+function isWrappedInToken(text: string, start: number, end: number, token: string): boolean {
+  const tokensBefore = text.slice(0, start).split(token).length - 1
+  const tokensAfter = text.slice(end).split(token).length - 1
+  return tokensBefore % 2 === 1 && tokensAfter % 2 === 1
+}
+
+const activeStyles = computed<EditorFormattingStyle[]>(() => {
+  const { end, start } = rememberedSelection.value
+  const content = props.content
+  const line = getLineTextAtOffset(content, activeOffset.value)
+  const isFenced = isInsideCodeFence(content, activeOffset.value)
+  const styles: EditorFormattingStyle[] = []
+
+  if (isWrappedInToken(content, start, end, '**')) styles.push('bold')
+  if (isWrappedInToken(content, start, end, '*')) styles.push('italic')
+  if (isInsideLink(content, start, end)) styles.push('link')
+  if (!isFenced && isWrappedInToken(content, start, end, '`')) styles.push('inline-code')
+
+  if (/^\s*-\s/.test(line)) styles.push('bullet-list')
+  if (/^\s*\d+\.\s/.test(line)) styles.push('numbered-list')
+  if (/^\s*>\s?/.test(line)) styles.push('blockquote')
+  if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) styles.push('horizontal-rule')
+  if (isFenced) styles.push('code-block')
+
+  return styles
+})
+
+const headingLevel = computed<1 | 2 | 3 | 4 | 5 | 6 | null>(() => {
+  const match = /^(#{1,6})\s/.exec(getLineTextAtOffset(props.content, activeOffset.value))
+  return match ? (match[1]!.length as 1 | 2 | 3 | 4 | 5 | 6) : null
+})
+
 async function applyFormattingCommand(command: EditorFormattingCommand): Promise<void> {
   const editor = editorRef.value
   if (!editor) return
@@ -172,6 +264,20 @@ async function formatBlock(
   }
 
   if (style === 'code-block') {
+    const enclosing = getEnclosingCodeFenceRange(editor.value, selectionStart)
+    if (enclosing) {
+      const inner = editor.value.slice(enclosing.contentStart, enclosing.contentEnd - 1)
+      await replaceEditorRange(
+        editor,
+        enclosing.start,
+        enclosing.end,
+        inner,
+        enclosing.start,
+        enclosing.start + inner.length,
+      )
+      return
+    }
+
     const selectedText = editor.value.slice(selectionStart, selectionEnd) || 'code'
     const replacement = `\`\`\`\n${selectedText}\n\`\`\``
     const contentStart = selectionStart + 4
@@ -196,9 +302,16 @@ async function formatBlock(
     'bullet-list': '- ',
     'numbered-list': '1. ',
   }[style]
-  const replacement = lines.map((line) => `${linePrefix}${line}`).join('\n')
+  const allPrefixed = lines.every((line) => line.startsWith(linePrefix))
+  const replacement = allPrefixed
+    ? lines.map((line) => line.slice(linePrefix.length)).join('\n')
+    : lines.map((line) => `${linePrefix}${line}`).join('\n')
   const selectedBlock = selectionEnd > selectionStart
-  const nextSelectionStart = selectedBlock ? firstLineStart : firstLineStart + linePrefix.length
+  const nextSelectionStart = selectedBlock
+    ? firstLineStart
+    : allPrefixed
+      ? Math.max(firstLineStart, selectionStart - linePrefix.length)
+      : firstLineStart + linePrefix.length
   const nextSelectionEnd = selectedBlock ? firstLineStart + replacement.length : nextSelectionStart
 
   await replaceEditorRange(
@@ -255,6 +368,20 @@ async function formatInlineStyle(
   let selectionEnd: number
 
   if (style === 'link') {
+    const link = getEnclosingLinkRange(editor.value, start, end)
+    if (link) {
+      const label = editor.value.slice(link.labelStart, link.labelEnd)
+      await replaceEditorRange(
+        editor,
+        link.start,
+        link.end,
+        label,
+        link.start,
+        link.start + label.length,
+      )
+      return
+    }
+
     const linkText = selectedText || 'link text'
     replacement = `[${linkText}](url)`
     selectionStart = start + linkText.length + 3
@@ -266,6 +393,20 @@ async function formatInlineStyle(
       italic: { placeholder: 'italic text', token: '*' },
     }
     const { placeholder, token } = styleTokens[style]
+    const enclosing = getEnclosingTokenRange(editor.value, start, end, token)
+    if (enclosing) {
+      const inner = editor.value.slice(enclosing.start + token.length, enclosing.end - token.length)
+      await replaceEditorRange(
+        editor,
+        enclosing.start,
+        enclosing.end,
+        inner,
+        enclosing.start,
+        enclosing.start + inner.length,
+      )
+      return
+    }
+
     const formattedText = selectedText || placeholder
     replacement = `${token}${formattedText}${token}`
     selectionStart = start + token.length
@@ -554,7 +695,11 @@ watch(
       </span>
     </div>
 
-    <EditorFormattingToolbar @format="applyFormattingCommand" />
+    <EditorFormattingToolbar
+      :active-styles="activeStyles"
+      :heading-level="headingLevel"
+      @format="applyFormattingCommand"
+    />
 
     <FindReplaceBar
       v-if="findState.isOpen"

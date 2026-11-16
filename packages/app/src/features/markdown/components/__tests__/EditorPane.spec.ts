@@ -176,6 +176,41 @@ describe('EditorPane', () => {
     wrapper.unmount()
   })
 
+  it('reflects active formatting and heading level at the caret', async () => {
+    const wrapper = mountEditorPane({ content: '## Heading\n\nSome **bold** text' })
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(20, 20)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('true')
+    expect(
+      (wrapper.get('select[aria-label="Set heading level"]').element as HTMLSelectElement).value,
+    ).toBe('')
+
+    textarea.setSelectionRange(3, 3)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(
+      (wrapper.get('select[aria-label="Set heading level"]').element as HTMLSelectElement).value,
+    ).toBe('2')
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it('reflects an active list style at the caret', async () => {
+    const wrapper = mountEditorPane({ content: '- first item\n- second item' })
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(4, 4)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Bulleted list"]').attributes('aria-pressed')).toBe(
+      'true',
+    )
+    wrapper.unmount()
+  })
+
   it('wraps selected source text in bold Markdown from the formatting toolbar', async () => {
     const wrapper = mountEditorPane({
       content: 'write this',
@@ -192,6 +227,47 @@ describe('EditorPane', () => {
     expect(editor.selectionEnd).toBe(12)
     expect(wrapper.emitted('update:content')).toEqual([['write **this**']])
 
+    wrapper.unmount()
+  })
+
+  it('removes bold Markdown when the selected text is already bold', async () => {
+    const wrapper = mountEditorPane({ content: 'write **this** now' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(8, 12)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('write this now')
+    expect(editor.selectionStart).toBe(6)
+    expect(editor.selectionEnd).toBe(10)
+    wrapper.unmount()
+  })
+
+  it('removes bold Markdown for a caret inside a bold span', async () => {
+    const wrapper = mountEditorPane({ content: 'write **this** now' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(10, 10)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('write this now')
+    wrapper.unmount()
+  })
+
+  it('removes a list prefix when the list button is pressed again', async () => {
+    const wrapper = mountEditorPane({ content: '- first item\n- second item' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(6, 6)
+
+    await wrapper.get('button[aria-label="Bulleted list"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('first item\n- second item')
     wrapper.unmount()
   })
 
