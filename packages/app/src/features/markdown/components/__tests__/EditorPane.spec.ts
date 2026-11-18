@@ -175,6 +175,44 @@ describe('EditorPane', () => {
     wrapper.unmount()
   })
 
+  it('keeps bold active when a later token is unpaired', async () => {
+    const wrapper = mountEditorPane({ content: '**one** and **two' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(3, 3)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('true')
+    wrapper.unmount()
+  })
+
+  it('does not report link active without a URL', async () => {
+    const wrapper = mountEditorPane({ content: '[label] and text' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(3, 3)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Insert link"]').attributes('aria-pressed')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it('does not report code-block active for an indented fence', async () => {
+    const wrapper = mountEditorPane({ content: '  ```\ncode\n  ```' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(7, 7)
+    await wrapper.get('textarea').trigger('select')
+    await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+
+    const codeBlock = wrapper
+      .findAll('.editor-formatting-toolbar__menu button')
+      .find((button) => button.text() === 'Code block')
+
+    expect(codeBlock?.attributes('aria-pressed')).toBe('false')
+    wrapper.unmount()
+  })
+
   it('reflects active formatting and heading level at the caret', async () => {
     const wrapper = mountEditorPane({ content: '## Heading\n\nSome **bold** text' })
     const textarea = wrapper.get('textarea').element as HTMLTextAreaElement

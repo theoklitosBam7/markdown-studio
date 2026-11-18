@@ -138,13 +138,25 @@ function getEnclosingLinkRange(text: string, start: number, end: number) {
 }
 
 function getEnclosingTokenRange(text: string, start: number, end: number, token: string) {
-  if (!isWrappedInToken(text, start, end, token)) return null
+  const occurrences: number[] = []
+  let searchFrom = 0
 
-  const opening = text.lastIndexOf(token, start - token.length)
-  const closing = text.indexOf(token, Math.max(end, opening + token.length))
-  if (opening === -1 || closing === -1 || closing <= opening) return null
+  while (true) {
+    const index = text.indexOf(token, searchFrom)
+    if (index === -1) break
+    occurrences.push(index)
+    searchFrom = index + token.length
+  }
 
-  return { end: closing + token.length, start: opening }
+  for (let index = 0; index + 1 < occurrences.length; index += 2) {
+    const opening = occurrences[index]!
+    const closing = occurrences[index + 1]!
+    if (start >= opening + token.length && end <= closing) {
+      return { end: closing + token.length, start: opening }
+    }
+  }
+
+  return null
 }
 
 function getLineTextAtOffset(text: string, offset: number): string {
@@ -153,32 +165,17 @@ function getLineTextAtOffset(text: string, offset: number): string {
   return text.slice(lineStart, nextBreak === -1 ? text.length : nextBreak)
 }
 
-function isInsideCodeFence(text: string, offset: number): boolean {
-  return (text.slice(0, offset).match(/^\s*```/gm)?.length ?? 0) % 2 === 1
-}
-
-function isInsideLink(text: string, start: number, end: number): boolean {
-  const before = text.slice(0, start)
-  return before.split('[').length > before.split(']').length && text.slice(end).includes(']')
-}
-
-function isWrappedInToken(text: string, start: number, end: number, token: string): boolean {
-  const tokensBefore = text.slice(0, start).split(token).length - 1
-  const tokensAfter = text.slice(end).split(token).length - 1
-  return tokensBefore % 2 === 1 && tokensAfter % 2 === 1
-}
-
 const activeStyles = computed<EditorFormattingStyle[]>(() => {
   const { end, start } = rememberedSelection.value
   const content = props.content
   const line = getLineTextAtOffset(content, activeOffset.value)
-  const isFenced = isInsideCodeFence(content, activeOffset.value)
+  const isFenced = getEnclosingCodeFenceRange(content, activeOffset.value) !== null
   const styles: EditorFormattingStyle[] = []
 
-  if (isWrappedInToken(content, start, end, '**')) styles.push('bold')
-  if (isWrappedInToken(content, start, end, '*')) styles.push('italic')
-  if (isInsideLink(content, start, end)) styles.push('link')
-  if (!isFenced && isWrappedInToken(content, start, end, '`')) styles.push('inline-code')
+  if (getEnclosingTokenRange(content, start, end, '**')) styles.push('bold')
+  if (getEnclosingTokenRange(content, start, end, '*')) styles.push('italic')
+  if (getEnclosingLinkRange(content, start, end)) styles.push('link')
+  if (!isFenced && getEnclosingTokenRange(content, start, end, '`')) styles.push('inline-code')
 
   if (/^\s*-\s/.test(line)) styles.push('bullet-list')
   if (/^\s*\d+\.\s/.test(line)) styles.push('numbered-list')
