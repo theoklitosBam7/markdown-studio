@@ -263,6 +263,76 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('passes consolidated document statistics to the status bar', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('textarea').setValue('# Title\n\nTwo words here')
+    await flushPromises()
+
+    expect(wrapper.findAll('.pane-header')).toHaveLength(0)
+    const statusText = wrapper.get('.status-bar').text()
+    expect(statusText).toContain('5 words')
+    expect(statusText).toContain('23 chars')
+    expect(statusText).toContain('3 lines')
+    expect(statusText).toContain('0 diagrams')
+    expect(statusText).not.toContain('Unsaved')
+
+    wrapper.unmount()
+  })
+
+  it('asks for confirmation before clearing from the rail and keeps the document on cancel', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('textarea').setValue('# keep me')
+
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
+    await wrapper.get('button[aria-label="Clear document"]').trigger('click')
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(true)
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('# keep me')
+
+    await wrapper.get('button[aria-label="Cancel clear"]').trigger('click')
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(false)
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('# keep me')
+    wrapper.unmount()
+  })
+
+  it('expands and collapses Replace from Find', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('button[aria-label="Find in document"]').trigger('click')
+    const toggle = wrapper.get('button[aria-label="Toggle Replace"]')
+
+    await toggle.trigger('click')
+    expect(wrapper.find('button[aria-label="Replace current"]').exists()).toBe(true)
+    await toggle.trigger('click')
+    expect(wrapper.find('button[aria-label="Replace current"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('clears the document only after confirmation', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('textarea').setValue('# discard me')
+
+    await wrapper.get('button[aria-label="Document actions"]').trigger('click')
+    await wrapper.get('button[aria-label="Clear document"]').trigger('click')
+    await wrapper.get('button[aria-label="Confirm clear"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(false)
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('')
+    expect(window.confirm).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('asks for confirmation when the toolbar requests a clear', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+
+    wrapper.findComponent({ name: 'Toolbar' }).vm.$emit('clear')
+    await flushPromises()
+
+    expect(wrapper.find('.modal-overlay.open').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('provides a skip link to the Editor Workspace', async () => {
     const { wrapper } = await mountMarkdownStudioView()
 

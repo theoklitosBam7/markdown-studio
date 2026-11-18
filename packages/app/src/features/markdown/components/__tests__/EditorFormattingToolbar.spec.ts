@@ -21,6 +21,48 @@ describe('EditorFormattingToolbar', () => {
     wrapper.unmount()
   })
 
+  it('reflects active formatting and the current heading level', async () => {
+    const wrapper = mount(EditorFormattingToolbar, {
+      props: {
+        activeStyles: ['bold', 'bullet-list'],
+        headingLevel: 2,
+      },
+    })
+
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('button[aria-label="Italic"]').attributes('aria-pressed')).toBe('false')
+    expect(wrapper.get('button[aria-label="Bulleted list"]').attributes('aria-pressed')).toBe(
+      'true',
+    )
+    expect(
+      (wrapper.get('select[aria-label="Set heading level"]').element as HTMLSelectElement).value,
+    ).toBe('2')
+
+    wrapper.unmount()
+  })
+
+  it('offers common block formatting inline', async () => {
+    const wrapper = mount(EditorFormattingToolbar)
+    await wrapper.get('button[title="Numbered list"]').trigger('click')
+
+    expect(wrapper.emitted('format')).toEqual([[{ style: 'numbered-list', type: 'block' }]])
+    wrapper.unmount()
+  })
+
+  it('reflects active formatting in the More formatting menu', async () => {
+    const wrapper = mount(EditorFormattingToolbar, {
+      props: { activeStyles: ['blockquote'] },
+    })
+
+    await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+
+    const menuButtons = wrapper.findAll('.editor-formatting-toolbar__menu button')
+    const blockquote = menuButtons.find((button) => button.text() === 'Blockquote')
+    expect(blockquote?.attributes('aria-pressed')).toBe('true')
+
+    wrapper.unmount()
+  })
+
   it('emits formatting commands from toolbar controls', async () => {
     const wrapper = mount(EditorFormattingToolbar)
 
@@ -55,6 +97,22 @@ describe('EditorFormattingToolbar', () => {
       [{ level: 2, type: 'heading' }],
       [{ style: 'numbered-list', type: 'block' }],
     ])
+
+    wrapper.unmount()
+  })
+
+  it('closes the More formatting menu on Escape and restores focus', async () => {
+    const wrapper = mount(EditorFormattingToolbar, { attachTo: document.body })
+    const trigger = wrapper.get('button[aria-label="More formatting"]')
+
+    await trigger.trigger('click')
+    expect(wrapper.find('.editor-formatting-toolbar__menu').exists()).toBe(true)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.editor-formatting-toolbar__menu').exists()).toBe(false)
+    expect(document.activeElement).toBe(trigger.element)
 
     wrapper.unmount()
   })

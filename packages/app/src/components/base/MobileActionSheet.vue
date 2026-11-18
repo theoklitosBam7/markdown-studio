@@ -353,6 +353,7 @@ onUnmounted(() => {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  padding: 0 16px;
   padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
 }
 
@@ -363,7 +364,7 @@ onUnmounted(() => {
 .mobile-action-sheet__group-label {
   margin: 0 4px 6px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -462,6 +463,7 @@ onUnmounted(() => {
 
 .mobile-action-sheet__footer {
   flex-shrink: 0;
+  padding: 12px 16px 16px;
   padding: 12px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
 }

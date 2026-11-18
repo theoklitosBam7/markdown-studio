@@ -171,8 +171,126 @@ describe('EditorPane', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.findAll('.editor-line-numbers li')).toHaveLength(61)
-    expect(wrapper.get('.line-count').text()).toBe('61 lines')
 
+    wrapper.unmount()
+  })
+
+  it('keeps bold active when a later token is unpaired', async () => {
+    const wrapper = mountEditorPane({ content: '**one** and **two' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(3, 3)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('true')
+    wrapper.unmount()
+  })
+
+  it('does not report link active without a URL', async () => {
+    const wrapper = mountEditorPane({ content: '[label] and text' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(3, 3)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Insert link"]').attributes('aria-pressed')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it.each(['  ```\ncode\n  ```', '~~~\ncode\n~~~'])(
+    'removes valid code fences from %s',
+    async (content) => {
+      const wrapper = mountEditorPane({ content })
+      const editor = wrapper.get('textarea')
+      const caret = content.indexOf('code') + 1
+      editor.element.focus()
+      editor.element.setSelectionRange(caret, caret)
+      await editor.trigger('select')
+
+      const codeBlock = wrapper.get('button[title="Code block"]')
+      expect(codeBlock.attributes('aria-pressed')).toBe('true')
+      await codeBlock.trigger('click')
+      await flushPromises()
+
+      expect(editor.element.value).toBe('code')
+    },
+  )
+
+  it.each([false, true])(
+    'keeps adjacent fences intact when inserting Code block (selection: %s)',
+    async (selectLine) => {
+      const content = '```\nfirst\n```\nbetween\n```\nsecond\n```'
+      const wrapper = mountEditorPane({ content })
+      const editor = wrapper.get('textarea')
+      const betweenStart = content.indexOf('between')
+      editor.element.focus()
+      editor.element.setSelectionRange(
+        betweenStart,
+        betweenStart + (selectLine ? 'between'.length : 0),
+      )
+      await editor.trigger('select')
+      await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+
+      const codeBlock = wrapper.get('button[title="Code block"]')
+      expect(codeBlock.attributes('aria-pressed')).toBe('false')
+      await codeBlock.trigger('click')
+      await flushPromises()
+
+      const inserted = selectLine ? '```\nbetween\n```' : '```\ncode\n```\nbetween'
+      expect(editor.element.value).toBe(
+        ['```', 'first', '```', inserted, '```', 'second', '```'].join('\n'),
+      )
+    },
+  )
+
+  it('removes the active numbered list marker when it starts at two', async () => {
+    const wrapper = mountEditorPane({ content: '2. Item' })
+    const editor = wrapper.get('textarea')
+    editor.element.focus()
+    editor.element.setSelectionRange(5, 5)
+    await editor.trigger('select')
+    await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+
+    const numberedList = wrapper.get('.editor-formatting-toolbar__menu button:first-child')
+    expect(numberedList.attributes('aria-pressed')).toBe('true')
+    await numberedList.trigger('click')
+    await flushPromises()
+
+    expect(editor.element.value).toBe('Item')
+  })
+
+  it('reflects active formatting and heading level at the caret', async () => {
+    const wrapper = mountEditorPane({ content: '## Heading\n\nSome **bold** text' })
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(20, 20)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('true')
+    expect(
+      (wrapper.get('select[aria-label="Set heading level"]').element as HTMLSelectElement).value,
+    ).toBe('')
+
+    textarea.setSelectionRange(3, 3)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(
+      (wrapper.get('select[aria-label="Set heading level"]').element as HTMLSelectElement).value,
+    ).toBe('2')
+    expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it('reflects an active list style at the caret', async () => {
+    const wrapper = mountEditorPane({ content: '- first item\n- second item' })
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+
+    textarea.setSelectionRange(4, 4)
+    await wrapper.get('textarea').trigger('select')
+
+    expect(wrapper.get('button[aria-label="Bulleted list"]').attributes('aria-pressed')).toBe(
+      'true',
+    )
     wrapper.unmount()
   })
 
@@ -192,6 +310,55 @@ describe('EditorPane', () => {
     expect(editor.selectionEnd).toBe(12)
     expect(wrapper.emitted('update:content')).toEqual([['write **this**']])
 
+    wrapper.unmount()
+  })
+
+  it('removes bold Markdown when the selected text is already bold', async () => {
+    const wrapper = mountEditorPane({ content: 'write **this** now' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(8, 12)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('write this now')
+    expect(editor.selectionStart).toBe(6)
+    expect(editor.selectionEnd).toBe(10)
+    wrapper.unmount()
+  })
+
+  it('removes bold Markdown for a caret inside a bold span', async () => {
+    const wrapper = mountEditorPane({ content: 'write **this** now' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(10, 10)
+
+    await wrapper.get('button[aria-label="Bold"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('write this now')
+    wrapper.unmount()
+  })
+
+  it('removes a list prefix when the list button is pressed again', async () => {
+    const wrapper = mountEditorPane({ content: '- first item\n- second item' })
+    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
+    editor.focus()
+    editor.setSelectionRange(6, 6)
+
+    await wrapper.get('button[aria-label="Bulleted list"]').trigger('click')
+    await flushPromises()
+
+    expect(editor.value).toBe('first item\n- second item')
+    wrapper.unmount()
+  })
+
+  it('does not render a duplicate editor pane header', () => {
+    const wrapper = mountEditorPane()
+
+    expect(wrapper.find('.pane-header').exists()).toBe(false)
+    expect(wrapper.find('.line-count').exists()).toBe(false)
     wrapper.unmount()
   })
 
@@ -422,6 +589,29 @@ describe('EditorPane', () => {
     expect(wrapper.emitted('find-action')).toEqual([[{ type: 'open' }], [{ type: 'open-replace' }]])
   })
 
+  it('returns focus to the editor when Find closes', async () => {
+    const openFindState = {
+      activeMatchIndex: -1,
+      isOpen: true,
+      matchCase: false,
+      matchCount: 0,
+      matches: [],
+      query: 'needle',
+      replaceText: '',
+      showReplace: false,
+    }
+    const wrapper = mountEditorPane({ findState: openFindState })
+
+    wrapper.get<HTMLInputElement>('.find-replace-bar__input').element.focus()
+    expect(document.activeElement).toBe(wrapper.get('.find-replace-bar__input').element)
+
+    await wrapper.setProps({ findState: { ...openFindState, isOpen: false } })
+    await flushPromises()
+
+    expect(document.activeElement).toBe(wrapper.get('textarea').element)
+    wrapper.unmount()
+  })
+
   it('renders the inline find UI and emits navigation and close actions', async () => {
     const wrapper = mountEditorPane({
       findState: {
@@ -440,7 +630,7 @@ describe('EditorPane', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('2 of 3')
+    expect(wrapper.get('.find-replace-bar__count').attributes('aria-label')).toBe('2 of 3 matches')
 
     const [queryInput, replaceInput] = wrapper.findAll('input')
 
@@ -474,7 +664,9 @@ describe('EditorPane', () => {
 
     const replaceButtons = wrapper
       .findAll('button')
-      .filter((button) => ['Replace', 'Replace All'].includes(button.text()))
+      .filter((button) =>
+        ['Replace all', 'Replace current'].includes(button.attributes('aria-label') ?? ''),
+      )
 
     expect(replaceButtons).toHaveLength(2)
     expect(replaceButtons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)

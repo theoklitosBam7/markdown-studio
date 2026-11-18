@@ -17,8 +17,8 @@
   --border: #d5dfd7;
   --border-dark: #b9c8bd;
   --text: #1f3128;
-  --text-muted: #627469;
-  --text-faint: #85938a;
+  --text-muted: #4f6257;
+  --text-faint: #667468;
   --accent: #3b6a4d;
   --accent-light: #e5eee7;
   --accent-mid: #5b8767;
@@ -51,8 +51,7 @@
   --status-h-compact: 22px;
   --app-gutter: 16px;
   --app-gutter-compact: 12px;
-  --pane-header-h: 36px;
-  --pane-header-h-compact: 32px;
+  --font-size-ui-caption: 12px;
   --sidebar-w: 300px;
 }
 
@@ -65,7 +64,7 @@
   --border-dark: #415449;
   --text: #e7ece6;
   --text-muted: #a0afa3;
-  --text-faint: #78887c;
+  --text-faint: #86968a;
   --accent: #83a989;
   --accent-light: #26382c;
   --accent-mid: #a0c0a0;
@@ -157,6 +156,5 @@ textarea {
     --toolbar-h: var(--toolbar-h-compact);
     --status-h: var(--status-h-compact);
     --app-gutter: var(--app-gutter-compact);
-    --pane-header-h: var(--pane-header-h-compact);
   }
 }

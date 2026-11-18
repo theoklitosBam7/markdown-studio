@@ -49,7 +49,7 @@ const tabs: { id: SidebarTab; label: string }[] = [
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 600;
   letter-spacing: -0.01em;
 }

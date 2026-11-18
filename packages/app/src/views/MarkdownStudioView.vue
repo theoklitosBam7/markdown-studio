@@ -3,6 +3,7 @@ import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/types'
 
+import ClearDocumentDialog from '@/features/markdown/components/ClearDocumentDialog.vue'
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
 import EditorDisplaySettings from '@/features/markdown/components/EditorDisplaySettings.vue'
@@ -31,6 +32,7 @@ let paletteInitiator: HTMLElement | null = null
 const commands = useEditorWorkspaceCommands(workspace, { openEditorDisplay })
 const commandPalette = useCommandPalette({ commands })
 const isShortcutsHelpOpen = shallowRef(false)
+const isClearConfirmOpen = shallowRef(false)
 
 watch(commandPalette.isOpen, (open) => {
   if (open && document.activeElement instanceof HTMLElement) {
@@ -97,6 +99,7 @@ const bindings = computed<ShortcutBinding[]>(() => [
 const isOverlayOpen = () =>
   isExamplesModalOpen.value ||
   isShortcutsHelpOpen.value ||
+  isClearConfirmOpen.value ||
   commandPalette.isOpen.value ||
   isEditorDisplayOpen.value ||
   workspace.state.isTableDimensionPickerOpen.value
@@ -189,6 +192,17 @@ function closeShortcutsHelp(): void {
   isShortcutsHelpOpen.value = false
 }
 
+function confirmClearDocument(): void {
+  isClearConfirmOpen.value = false
+  void workspace.document.startNew({ discardConfirmed: true }).catch((error: unknown) => {
+    console.error('Failed to start new document:', error)
+  })
+}
+
+function handleClearRequest(): void {
+  isClearConfirmOpen.value = true
+}
+
 function handleEditorScroll(scrollState: EditorScrollPayload): void {
   workspace.editor.syncPreviewToEditorPosition(scrollState)
 }
@@ -256,12 +270,6 @@ function handleReplaceSourceRange(start: number, end: number, replacement: strin
   void editorPaneRef.value?.replaceRange(start, end, replacement)
 }
 
-function handleStartNewDocument(): void {
-  void workspace.document.startNew().catch((error: unknown) => {
-    console.error('Failed to start new document:', error)
-  })
-}
-
 function handleTableDimensionsUpdate(dimensions: { columns: number; rows: number }): void {
   workspace.editor.setTableDimensions(dimensions)
 }
@@ -283,23 +291,15 @@ function handleTableInsertionConfirm(): void {
 
     <WorkspaceRail
       v-if="!isMobile"
-      :can-export-pdf="canExportPdf"
       :can-install="canInstall"
-      :can-open-documents="canOpenDocuments"
-      :can-save-documents="canSaveDocuments"
       :is-copied="isCopied"
       :is-outline-open="isOutlineOpen"
-      :pdf-export-unavailable-reason="pdfExportUnavailableReason"
-      @clear="handleStartNewDocument"
+      @clear="handleClearRequest"
       @copy="workspace.toolbar.copy"
-      @export-html="handleExportHtml"
-      @export-pdf="handleExportPdf"
       @find="workspace.find.open"
       @insert-table="handleInsertTable"
       @install="handleInstall"
-      @open-document="workspace.document.open"
       @open-examples="workspace.examples.open"
-      @save-document="workspace.document.save"
       @toggle-outline="workspace.outline.toggle"
     />
 
@@ -326,7 +326,7 @@ function handleTableInsertionConfirm(): void {
         @open-examples="workspace.examples.open"
         @open-shortcuts="isShortcutsHelpOpen = true"
         @open-editor-display="openEditorDisplay"
-        @clear="handleStartNewDocument"
+        @clear="handleClearRequest"
         @copy="workspace.toolbar.copy"
         @insert-table="handleInsertTable"
         @export-html="handleExportHtml"
@@ -409,8 +409,8 @@ function handleTableInsertionConfirm(): void {
                 :document-path="currentPath"
                 :html="renderedHtml"
                 :source-map="sourceMap"
+                :source-navigation-enabled="!isMobile && viewMode === 'split'"
                 :theme="theme"
-                :word-count="stats.words"
                 @jump-to-offset="workspace.preview.jumpToOffset"
                 @render-diagrams="workspace.preview.renderDiagrams"
                 @replace-source-range="handleReplaceSourceRange"
@@ -423,11 +423,17 @@ function handleTableInsertionConfirm(): void {
       <StatusBar
         :chars="stats.chars"
         :diagrams="stats.diagrams"
-        :document-name="displayName"
-        :is-dirty="isDirty"
+        :lines="stats.lines"
         :status="statusText"
+        :words="stats.words"
       />
     </div>
+
+    <ClearDocumentDialog
+      :is-open="isClearConfirmOpen"
+      @cancel="isClearConfirmOpen = false"
+      @confirm="confirmClearDocument"
+    />
 
     <ExamplesModal
       :is-open="isExamplesModalOpen"
@@ -513,6 +519,7 @@ function handleTableInsertionConfirm(): void {
   display: flex;
   flex-direction: row;
   min-width: 0;
+  height: 100vh;
   height: 100dvh;
   overflow: hidden;
   background: var(--workspace-bg);

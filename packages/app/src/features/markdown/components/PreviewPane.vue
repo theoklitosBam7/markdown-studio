@@ -14,12 +14,13 @@ interface Props {
   documentPath?: null | string
   html: string
   sourceMap: MarkdownSourceMapEntry[]
+  sourceNavigationEnabled?: boolean
   theme: Theme
-  wordCount: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   documentPath: null,
+  sourceNavigationEnabled: true,
 })
 const desktop = useDesktop()
 
@@ -80,6 +81,8 @@ function handleClick(event: MouseEvent): void {
 }
 
 function handleDoubleClick(event: MouseEvent): void {
+  if (!props.sourceNavigationEnabled) return
+
   const target = event.target
   const sourceElement =
     target instanceof Element
@@ -146,6 +149,7 @@ function hydrateSourceAnchors(): void {
     element.dataset.sourceId = entry.id
     element.dataset.sourceStart = String(entry.start)
     element.id = `markdown-source-${entry.id}`
+    element.classList.add('preview-source-target')
   }
 }
 
@@ -256,11 +260,8 @@ defineExpose({ scrollToSourceOffset })
 </script>
 
 <template>
-  <div class="preview-pane">
-    <div class="pane-header">
-      <span class="pane-label">Preview</span>
-      <span class="line-count">{{ wordCount }} word{{ wordCount !== 1 ? 's' : '' }}</span>
-    </div>
+  <div class="preview-pane" :class="{ 'source-navigation-enabled': sourceNavigationEnabled }">
+    <span v-if="sourceNavigationEnabled" class="pane-hint">Double-click to jump to source</span>
     <div ref="previewScroll" class="preview-scroll">
       <!-- eslint-disable vue/no-v-html -->
       <div
@@ -281,42 +282,42 @@ defineExpose({ scrollToSourceOffset })
 
 <style scoped>
 .preview-pane {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  container-type: inline-size;
 }
 
-.pane-header {
-  height: var(--pane-header-h);
+.pane-hint {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 14px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--app-gutter);
-  gap: 8px;
-  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-ui-caption);
+  pointer-events: none;
 }
 
-.pane-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+.source-navigation-enabled .rendered-md :deep(.preview-source-target) {
+  cursor: pointer;
 }
 
-.line-count {
-  margin-left: auto;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--text-faint);
+.source-navigation-enabled .rendered-md :deep(.preview-source-target:hover) {
+  outline: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  outline-offset: 3px;
+  border-radius: 3px;
 }
 
 .preview-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 36px 48px;
+  padding: clamp(20px, 4cqi, 36px) clamp(16px, 5cqi, 48px);
   background: var(--surface);
 }
 
@@ -337,7 +338,7 @@ defineExpose({ scrollToSourceOffset })
 }
 
 @media (max-width: 700px) {
-  .line-count {
+  .pane-hint {
     display: none;
   }
 

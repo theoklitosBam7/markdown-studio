@@ -83,7 +83,7 @@ function setMode(mode: ViewMode): void {
   background: transparent;
   color: var(--text-muted);
   font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   cursor: pointer;
   transition:

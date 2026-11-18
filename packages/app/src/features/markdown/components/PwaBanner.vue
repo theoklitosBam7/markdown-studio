@@ -92,7 +92,7 @@ const emit = defineEmits<{
 }
 
 .pwa-banner__text {
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   color: var(--accent);
 }
@@ -104,7 +104,7 @@ const emit = defineEmits<{
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--accent-contrast);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   cursor: pointer;
 }

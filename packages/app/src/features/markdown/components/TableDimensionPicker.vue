@@ -125,7 +125,7 @@ function handleSubmit(): void {
 }
 
 .table-dimension-form__field span {
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   color: var(--text-muted);
 }

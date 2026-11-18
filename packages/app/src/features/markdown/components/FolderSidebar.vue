@@ -172,7 +172,7 @@ function setNodeElement(element: unknown, index: number): void {
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 600;
 }
 
@@ -184,7 +184,7 @@ function setNodeElement(element: unknown, index: number): void {
 .folder-sidebar__empty {
   margin: 0;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   line-height: 1.5;
 }
 
@@ -209,7 +209,7 @@ function setNodeElement(element: unknown, index: number): void {
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;

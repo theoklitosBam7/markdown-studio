@@ -463,7 +463,7 @@ onBeforeUnmount(() => {
 .editor-display-settings__range,
 .editor-display-settings__error {
   flex-basis: 100%;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
 }
 
 .editor-display-settings__error,

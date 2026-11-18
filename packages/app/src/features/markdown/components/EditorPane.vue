@@ -11,7 +11,7 @@ import {
   type EditorDisplayPreferences,
 } from '../types/editorDisplayPreferences'
 
-import type { EditorFormattingCommand } from './EditorFormattingToolbar.vue'
+import type { EditorFormattingCommand, EditorFormattingStyle } from './EditorFormattingToolbar.vue'
 import type { EditorScrollPayload, EditorWorkspaceFindState } from '../types'
 
 type FindAction =
@@ -102,7 +102,107 @@ const localContent = computed({
   get: () => props.content,
   set: (value: string) => emit('update:content', value),
 })
-const documentLineCount = computed(() => Math.max(1, props.content.split('\n').length))
+function getEnclosingCodeFenceRange(text: string, offset: number) {
+  let opener: { contentStart: number; marker: string; start: number } | undefined
+
+  for (const fence of text.matchAll(/^ {0,3}(`{3,}|~{3,})([^\n]*)$/gm)) {
+    const marker = fence[1] ?? ''
+    const suffix = fence[2] ?? ''
+    if (!opener) {
+      if (marker.startsWith('`') && suffix.includes('`')) continue
+      if (fence.index >= offset) return null
+      opener = {
+        contentStart: fence.index + fence[0].length + 1,
+        marker,
+        start: fence.index,
+      }
+      continue
+    }
+
+    if (!marker.startsWith(opener.marker) || suffix.trim()) continue
+    if (offset >= opener.contentStart && offset <= fence.index) {
+      return {
+        contentEnd: fence.index,
+        contentStart: opener.contentStart,
+        end: fence.index + fence[0].length,
+        start: opener.start,
+      }
+    }
+
+    opener = undefined
+  }
+
+  return null
+}
+
+function getEnclosingLinkRange(text: string, start: number, end: number) {
+  for (const link of text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
+    const linkStart = link.index ?? 0
+    const linkEnd = linkStart + link[0].length
+    if (start >= linkStart && end <= linkEnd) {
+      return {
+        end: linkEnd,
+        labelEnd: linkStart + 1 + (link[1]?.length ?? 0),
+        labelStart: linkStart + 1,
+        start: linkStart,
+      }
+    }
+  }
+
+  return null
+}
+
+function getEnclosingTokenRange(text: string, start: number, end: number, token: string) {
+  let opening = text.indexOf(token)
+  while (opening !== -1 && opening < start) {
+    const closing = text.indexOf(token, opening + token.length)
+    if (closing === -1) return null
+    if (start >= opening + token.length && end <= closing) {
+      return { end: closing + token.length, start: opening }
+    }
+    opening = text.indexOf(token, closing + token.length)
+  }
+
+  return null
+}
+
+function getLineTextAtOffset(text: string, offset: number): string {
+  const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
+  const nextBreak = text.indexOf('\n', offset)
+  return text.slice(lineStart, nextBreak === -1 ? text.length : nextBreak)
+}
+
+const blockMarkers = {
+  blockquote: { pattern: /^(\s*)>[ \t]?/, prefix: '> ' },
+  'bullet-list': { pattern: /^(\s*)-[ \t]+/, prefix: '- ' },
+  'numbered-list': { pattern: /^(\s*)\d+\.[ \t]+/, prefix: '1. ' },
+}
+
+const activeStyles = computed<EditorFormattingStyle[]>(() => {
+  const { end, start } = rememberedSelection.value
+  const content = props.content
+  const line = getLineTextAtOffset(content, activeOffset.value)
+  const isFenced = getEnclosingCodeFenceRange(content, activeOffset.value) !== null
+  const styles: EditorFormattingStyle[] = []
+
+  if (getEnclosingTokenRange(content, start, end, '**')) styles.push('bold')
+  if (getEnclosingTokenRange(content, start, end, '*')) styles.push('italic')
+  if (getEnclosingLinkRange(content, start, end)) styles.push('link')
+  if (!isFenced && getEnclosingTokenRange(content, start, end, '`')) styles.push('inline-code')
+
+  if (blockMarkers['bullet-list'].pattern.test(line)) styles.push('bullet-list')
+  if (blockMarkers['numbered-list'].pattern.test(line)) styles.push('numbered-list')
+  if (blockMarkers.blockquote.pattern.test(line)) styles.push('blockquote')
+  if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) styles.push('horizontal-rule')
+  if (isFenced) styles.push('code-block')
+
+  return styles
+})
+
+const headingLevel = computed<1 | 2 | 3 | 4 | 5 | 6 | null>(() => {
+  const match = /^(#{1,6})\s/.exec(getLineTextAtOffset(props.content, activeOffset.value))
+  return match ? (match[1]!.length as 1 | 2 | 3 | 4 | 5 | 6) : null
+})
 
 async function applyFormattingCommand(command: EditorFormattingCommand): Promise<void> {
   const editor = editorRef.value
@@ -172,9 +272,26 @@ async function formatBlock(
   }
 
   if (style === 'code-block') {
+    const enclosing = getEnclosingCodeFenceRange(editor.value, selectionStart)
+    if (enclosing) {
+      const inner = editor.value.slice(enclosing.contentStart, enclosing.contentEnd - 1)
+      await replaceEditorRange(
+        editor,
+        enclosing.start,
+        enclosing.end,
+        inner,
+        enclosing.start,
+        enclosing.start + inner.length,
+      )
+      return
+    }
+
     const selectedText = editor.value.slice(selectionStart, selectionEnd) || 'code'
-    const replacement = `\`\`\`\n${selectedText}\n\`\`\``
-    const contentStart = selectionStart + 4
+    const leadingBreak = selectionStart > 0 && editor.value[selectionStart - 1] !== '\n' ? '\n' : ''
+    const trailingBreak =
+      selectionEnd < editor.value.length && editor.value[selectionEnd] !== '\n' ? '\n' : ''
+    const replacement = `${leadingBreak}\`\`\`\n${selectedText}\n\`\`\`${trailingBreak}`
+    const contentStart = selectionStart + leadingBreak.length + 4
     await replaceEditorRange(
       editor,
       selectionStart,
@@ -191,14 +308,21 @@ async function formatBlock(
   const followingLineBreak = editor.value.indexOf('\n', lastSelectedCharacter)
   const lastLineEnd = followingLineBreak === -1 ? editor.value.length : followingLineBreak
   const lines = editor.value.slice(firstLineStart, lastLineEnd).split('\n')
-  const linePrefix = {
-    blockquote: '> ',
-    'bullet-list': '- ',
-    'numbered-list': '1. ',
-  }[style]
-  const replacement = lines.map((line) => `${linePrefix}${line}`).join('\n')
+  const { pattern, prefix } = blockMarkers[style]
+  const allPrefixed = lines.every((line) => pattern.test(line))
+  const replacement = allPrefixed
+    ? lines.map((line) => line.replace(pattern, '$1')).join('\n')
+    : lines.map((line) => `${prefix}${line}`).join('\n')
   const selectedBlock = selectionEnd > selectionStart
-  const nextSelectionStart = selectedBlock ? firstLineStart : firstLineStart + linePrefix.length
+  let nextSelectionStart = firstLineStart
+  if (!selectedBlock && allPrefixed) {
+    nextSelectionStart = Math.max(
+      firstLineStart,
+      selectionStart - (lastLineEnd - firstLineStart - replacement.length),
+    )
+  } else if (!selectedBlock) {
+    nextSelectionStart += prefix.length
+  }
   const nextSelectionEnd = selectedBlock ? firstLineStart + replacement.length : nextSelectionStart
 
   await replaceEditorRange(
@@ -255,6 +379,20 @@ async function formatInlineStyle(
   let selectionEnd: number
 
   if (style === 'link') {
+    const link = getEnclosingLinkRange(editor.value, start, end)
+    if (link) {
+      const label = editor.value.slice(link.labelStart, link.labelEnd)
+      await replaceEditorRange(
+        editor,
+        link.start,
+        link.end,
+        label,
+        link.start,
+        link.start + label.length,
+      )
+      return
+    }
+
     const linkText = selectedText || 'link text'
     replacement = `[${linkText}](url)`
     selectionStart = start + linkText.length + 3
@@ -266,6 +404,20 @@ async function formatInlineStyle(
       italic: { placeholder: 'italic text', token: '*' },
     }
     const { placeholder, token } = styleTokens[style]
+    const enclosing = getEnclosingTokenRange(editor.value, start, end, token)
+    if (enclosing) {
+      const inner = editor.value.slice(enclosing.start + token.length, enclosing.end - token.length)
+      await replaceEditorRange(
+        editor,
+        enclosing.start,
+        enclosing.end,
+        inner,
+        enclosing.start,
+        enclosing.start + inner.length,
+      )
+      return
+    }
+
     const formattedText = selectedText || placeholder
     replacement = `${token}${formattedText}${token}`
     selectionStart = start + token.length
@@ -538,6 +690,13 @@ watch(
   },
   { flush: 'post' },
 )
+
+watch(
+  () => props.findState.isOpen,
+  (isOpen, wasOpen) => {
+    if (!isOpen && wasOpen) editorRef.value?.focus()
+  },
+)
 </script>
 
 <template>
@@ -547,14 +706,11 @@ watch(
     @dragover.prevent="handleDragOver"
     @drop.prevent="handleDrop"
   >
-    <div class="pane-header">
-      <span class="pane-label">Markdown</span>
-      <span class="line-count">
-        {{ documentLineCount }} line{{ documentLineCount !== 1 ? 's' : '' }}
-      </span>
-    </div>
-
-    <EditorFormattingToolbar @format="applyFormattingCommand" />
+    <EditorFormattingToolbar
+      :active-styles="activeStyles"
+      :heading-level="headingLevel"
+      @format="applyFormattingCommand"
+    />
 
     <FindReplaceBar
       v-if="findState.isOpen"
@@ -570,6 +726,9 @@ watch(
       @previous="emit('find-action', { type: 'previous' })"
       @replace-all="emit('find-action', { type: 'replace-all' })"
       @replace-current="emit('find-action', { type: 'replace-current' })"
+      @toggle-replace="
+        emit('find-action', { type: findState.showReplace ? 'open' : 'open-replace' })
+      "
       @update:match-case="emit('find-action', { type: 'set-match-case', value: $event })"
       @update:query="emit('find-action', { type: 'set-query', value: $event })"
       @update:replace-text="emit('find-action', { type: 'set-replace-text', value: $event })"
@@ -682,7 +841,7 @@ watch(
   background: var(--panel);
   color: var(--text-faint);
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   line-height: var(--editor-line-height);
   list-style: none;
   pointer-events: none;
@@ -731,33 +890,7 @@ watch(
 .image-drop-hint {
   color: var(--text-muted);
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
-}
-
-.pane-header {
-  height: var(--pane-header-h);
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--app-gutter);
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.pane-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.line-count {
-  margin-left: auto;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--text-faint);
+  font-size: var(--font-size-ui-caption);
 }
 
 .editor,
@@ -801,10 +934,6 @@ watch(
     opacity: 0.72;
   }
 
-  .line-count {
-    display: none;
-  }
-
   .editor-body {
     --editor-padding-left: 52px;
     --editor-padding-right: var(--app-gutter);
@@ -817,7 +946,7 @@ watch(
 
   .editor-line-numbers {
     width: 40px;
-    font-size: 10px;
+    font-size: var(--font-size-ui-caption);
   }
 }
 

@@ -10,7 +10,10 @@ interface PopupCapture {
 }
 
 function clickDocumentAction(ariaLabel: string): void {
-  cy.get('button[aria-label="Document actions"]').click()
+  if (ariaLabel === 'Export HTML' || ariaLabel === 'Export PDF') {
+    cy.get('button[aria-label="Export document"]').click()
+  }
+
   cy.get(`button[aria-label="${ariaLabel}"]`).click()
 }
 
@@ -213,21 +216,19 @@ describe('Markdown Studio responsive shell', () => {
     })
     cy.get('.modal-overlay.open button[aria-label="Close dialog"]').click()
 
-    // Clear document from action sheet
-    cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(true)
-    })
+    // Clear document from action sheet requires confirmation
     cy.get('button[aria-label="Menu"]').click()
     cy.get('.mobile-action-sheet__action').contains('Clear Document').click()
+    cy.get('.modal-overlay.open').should('contain', 'Clear this document?')
+    cy.get('button[aria-label="Confirm clear"]').click()
     cy.get('textarea').should('have.value', '')
   })
 
   it('keeps split view on desktop and hides it on mobile', () => {
     cy.viewport(1280, 900)
     cy.visit('/')
-    cy.get('button[aria-label="Document actions"]').click()
-    cy.get('button[aria-label="Open document"]').should('be.visible')
-    cy.get('button[aria-label="Save document"]').should('be.visible')
+    cy.get('.toolbar__primary button[aria-label="Open document"]').should('be.visible')
+    cy.get('.toolbar__primary button[aria-label="Save document"]').should('be.visible')
     cy.get('.toolbar__desktop-controls').contains('button', 'Split').should('be.visible')
     cy.get('.editor-pane').should('be.visible')
     cy.get('.preview-pane').should('be.visible')
@@ -250,7 +251,7 @@ describe('Markdown Studio responsive shell', () => {
     clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Imported from Cypress')
-    cy.get('.status-item--document').should('contain', 'web-notes.md')
+    cy.get('.toolbar__document strong').should('contain', 'web-notes.md')
     cy.get('.status-bar').should('contain', 'Opened web-notes.md')
   })
 
@@ -267,7 +268,7 @@ describe('Markdown Studio responsive shell', () => {
     clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Loaded via fallback')
-    cy.get('.status-item--document').should('contain', 'brave-delayed.md')
+    cy.get('.toolbar__document strong').should('contain', 'brave-delayed.md')
     cy.get('.status-bar').should('contain', 'Opened brave-delayed.md')
   })
 
@@ -284,7 +285,7 @@ describe('Markdown Studio responsive shell', () => {
     clickDocumentAction('Open document')
 
     cy.get('textarea').should('have.value', '# Recovered from picker error')
-    cy.get('.status-item--document').should('contain', 'picker-fallback.md')
+    cy.get('.toolbar__document strong').should('contain', 'picker-fallback.md')
     cy.get('.status-bar').should('contain', 'Opened picker-fallback.md')
   })
 
@@ -309,7 +310,7 @@ describe('Markdown Studio responsive shell', () => {
         name: 'Untitled.md',
       })
     })
-    cy.get('.status-item--document').should('contain', 'Untitled.md')
+    cy.get('.toolbar__document strong').should('contain', 'Untitled.md')
     cy.get('.status-bar').should('contain', 'Saved Untitled.md')
   })
 
@@ -326,7 +327,7 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('textarea').clear()
     cy.get('textarea').type('# First save')
     clickDocumentAction('Save document')
-    cy.get('.status-item--document').should('contain', 'picked-from-browser.md')
+    cy.get('.toolbar__document strong').should('contain', 'picked-from-browser.md')
 
     cy.get('textarea').clear()
     cy.get('textarea').type('# Second save')
@@ -428,6 +429,44 @@ describe('Markdown Studio responsive shell', () => {
 
     cy.get('.command-palette').should('not.exist')
     cy.get('.find-replace-bar__input').first().should('be.focused')
+  })
+
+  it('expands and collapses Replace from Find', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('button[aria-label="Find in document"]').click()
+    cy.get('button[aria-label="Toggle Replace"]').click()
+    cy.get('input[placeholder="Replace"]').should('be.visible')
+    cy.get('button[aria-label="Toggle Replace"]').click()
+    cy.get('input[placeholder="Replace"]').should('not.exist')
+  })
+
+  it('shows block formatting inline on wide panes and in More on narrow panes', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('button[title="Numbered list"]').should('be.visible')
+    cy.get('button[aria-label="More formatting"]').should('not.be.visible')
+    cy.viewport('iphone-6')
+    cy.get('button[title="Numbered list"]').should('not.be.visible')
+    cy.get('button[aria-label="More formatting"]').click()
+    cy.contains('button', 'Numbered list').should('be.visible')
+    cy.viewport(1280, 900)
+    cy.get('button[title="Numbered list"]').should('be.visible')
+    cy.viewport('iphone-6')
+    cy.get('button[aria-label="More formatting"]').should('have.attr', 'aria-expanded', 'false')
+  })
+
+  it('shows the Source Navigation hint only when Split mode can use it', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.contains('Double-click to jump to source').should('be.visible')
+    cy.get('button[data-mode="preview"]').click()
+    cy.contains('Double-click to jump to source').should('not.exist')
+    cy.get('button[data-mode="split"]').click()
+    cy.contains('Double-click to jump to source').should('be.visible')
   })
 
   it('scrolls the command palette results with arrow-key navigation', () => {

@@ -2,6 +2,8 @@
 import { RotateCcw, X } from '@lucide/vue'
 import { nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 
+import { useEscapeDismiss } from '@/composables/useEscapeDismiss'
+
 const props = defineProps<{
   disabled: boolean
   explanation?: string
@@ -37,6 +39,8 @@ function close(): void {
   isOpen.value = false
   trigger.value?.focus()
 }
+
+useEscapeDismiss(isOpen, close)
 
 async function toggle(): Promise<void> {
   inputValue.value = String(props.value)
@@ -189,7 +193,7 @@ watch(
   background: var(--raised-bg);
   color: var(--text);
   box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
 }
 
 .workspace-width-control__header,

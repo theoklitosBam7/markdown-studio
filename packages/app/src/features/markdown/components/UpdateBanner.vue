@@ -160,19 +160,19 @@ onUnmounted(() => {
 }
 
 .update-banner__text {
-  font-size: 12px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   color: var(--accent);
 }
 
 .update-banner__versions {
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   color: var(--text-muted);
 }
 
 .update-banner__command {
   font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   padding: 2px 8px;
   border-radius: 4px;
   background: var(--accent-bg);
@@ -187,7 +187,7 @@ onUnmounted(() => {
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--accent-contrast);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -215,7 +215,7 @@ onUnmounted(() => {
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--accent-contrast);
-  font-size: 11px;
+  font-size: var(--font-size-ui-caption);
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.15s;
