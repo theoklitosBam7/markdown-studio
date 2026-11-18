@@ -1,5 +1,60 @@
 # markdown-studio
 
+## 0.12.1
+
+### Patch Changes
+
+- 73b4fad: Confirm before clearing a document.
+  
+  - Ask for confirmation before the Clear action replaces the current document
+  - Apply the same guard on desktop and mobile
+- 73b4fad: Dismiss transient controls with Escape consistently.
+  
+  - Close the formatting, rail, export, and width menus on Escape and restore focus to their triggers
+  - Return focus to the editor when Find closes
+- 73b4fad: Compact the Find/Replace bar.
+  
+  - Use labelled icon controls for navigation, close, and replace actions
+  - Show the match count as a compact badge with an accessible label
+  - Expand or collapse Replace from Find
+- 73b4fad: Give the editor and preview more vertical space.
+  
+  - Remove the duplicate pane header rows and their counts
+  - Keep the Source Navigation hint as a floating chip in Live Preview
+  - Tighten the toolbar padding
+- 73b4fad: Make formatting state match formatting commands.
+  
+  - Detect active formatting with the same ranges used to remove it
+  - Keep a valid formatting span active when an unmatched token appears later in the document
+- 73b4fad: Show formatting state in the editor toolbar.
+  
+  - Mark formatting buttons as pressed when the caret is inside the matching Markdown syntax
+  - Show the current heading level in the heading control instead of resetting to Text
+  - Remove the matching Markdown syntax when a formatting control is pressed again
+  - Show common block formatting controls inline when the editor pane has room
+- 73b4fad: Improve the mobile status bar and safe-area handling.
+  
+  - Keep the mobile status bar within the viewport without clipping the last statistic
+  - Add plain CSS fallbacks before safe-area inset declarations
+  - Add a viewport-height fallback for browsers without `dvh`
+- 73b4fad: Fit Live Preview padding to the pane.
+  
+  - Scale the preview gutter with the pane width instead of using a fixed padding
+- 73b4fad: Make Source Navigation visible in Live Preview.
+  
+  - Show a pointer cursor and hover outline on preview blocks that link back to the source
+  - Add a double-click hint to the Preview pane header
+- 73b4fad: Improve small-text legibility across the Editor Workspace.
+  
+  - Darken muted and faint text tokens to meet AA contrast in both themes
+  - Raise component UI text to a 12px minimum
+  - Hold that caption size in a shared token for future updates
+- 73b4fad: Surface primary document controls in the toolbar and give the status bar one clear set of information.
+  
+  - Place labelled Open, Save, and Export controls in the desktop toolbar
+  - Remove the GitHub link and the duplicate save state from the toolbar and status bar
+  - Show words, characters, lines, diagrams, and real status together in the status bar
+
 ## 0.12.0
 
 ### Minor Changes
