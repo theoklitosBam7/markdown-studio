@@ -283,6 +283,7 @@ defineExpose({ scrollToSourceOffset })
   display: flex;
   flex-direction: column;
   min-width: 0;
+  container-type: inline-size;
 }
 
 .pane-hint {
@@ -312,7 +313,7 @@ defineExpose({ scrollToSourceOffset })
 .preview-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 36px 48px;
+  padding: clamp(20px, 4cqi, 36px) clamp(16px, 5cqi, 48px);
   background: var(--surface);
 }
 
