@@ -54,7 +54,7 @@ export interface EditorWorkspaceController {
     restoreDraft(): Promise<void>
     save(): Promise<void>
     saveAs(): Promise<void>
-    startNew(): Promise<void>
+    startNew(options?: { discardConfirmed: boolean }): Promise<void>
   }
   editor: {
     cancelTableInsertion(): void

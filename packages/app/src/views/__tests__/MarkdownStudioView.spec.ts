@@ -296,6 +296,18 @@ describe('MarkdownStudioView', () => {
     wrapper.unmount()
   })
 
+  it('expands and collapses Replace from Find', async () => {
+    const { wrapper } = await mountMarkdownStudioView()
+    await wrapper.get('button[aria-label="Find in document"]').trigger('click')
+    const toggle = wrapper.get('button[aria-label="Toggle Replace"]')
+
+    await toggle.trigger('click')
+    expect(wrapper.find('button[aria-label="Replace current"]').exists()).toBe(true)
+    await toggle.trigger('click')
+    expect(wrapper.find('button[aria-label="Replace current"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('clears the document only after confirmation', async () => {
     const { wrapper } = await mountMarkdownStudioView()
     await wrapper.get('textarea').setValue('# discard me')
@@ -306,7 +318,8 @@ describe('MarkdownStudioView', () => {
     await flushPromises()
 
     expect(wrapper.find('.modal-overlay.open').exists()).toBe(false)
-    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).not.toBe('# discard me')
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('')
+    expect(window.confirm).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 

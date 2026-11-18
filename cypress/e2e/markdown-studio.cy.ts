@@ -431,6 +431,44 @@ describe('Markdown Studio responsive shell', () => {
     cy.get('.find-replace-bar__input').first().should('be.focused')
   })
 
+  it('expands and collapses Replace from Find', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('button[aria-label="Find in document"]').click()
+    cy.get('button[aria-label="Toggle Replace"]').click()
+    cy.get('input[placeholder="Replace"]').should('be.visible')
+    cy.get('button[aria-label="Toggle Replace"]').click()
+    cy.get('input[placeholder="Replace"]').should('not.exist')
+  })
+
+  it('shows block formatting inline on wide panes and in More on narrow panes', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.get('button[title="Numbered list"]').should('be.visible')
+    cy.get('button[aria-label="More formatting"]').should('not.be.visible')
+    cy.viewport('iphone-6')
+    cy.get('button[title="Numbered list"]').should('not.be.visible')
+    cy.get('button[aria-label="More formatting"]').click()
+    cy.contains('button', 'Numbered list').should('be.visible')
+    cy.viewport(1280, 900)
+    cy.get('button[title="Numbered list"]').should('be.visible')
+    cy.viewport('iphone-6')
+    cy.get('button[aria-label="More formatting"]').should('have.attr', 'aria-expanded', 'false')
+  })
+
+  it('shows the Source Navigation hint only when Split mode can use it', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/')
+
+    cy.contains('Double-click to jump to source').should('be.visible')
+    cy.get('button[data-mode="preview"]').click()
+    cy.contains('Double-click to jump to source').should('not.exist')
+    cy.get('button[data-mode="split"]').click()
+    cy.contains('Double-click to jump to source').should('be.visible')
+  })
+
   it('scrolls the command palette results with arrow-key navigation', () => {
     cy.viewport(1280, 900)
     cy.visit('/')

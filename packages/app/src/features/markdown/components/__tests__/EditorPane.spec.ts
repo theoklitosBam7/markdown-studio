@@ -197,20 +197,66 @@ describe('EditorPane', () => {
     wrapper.unmount()
   })
 
-  it('does not report code-block active for an indented fence', async () => {
-    const wrapper = mountEditorPane({ content: '  ```\ncode\n  ```' })
-    const editor = wrapper.get('textarea').element as HTMLTextAreaElement
-    editor.focus()
-    editor.setSelectionRange(7, 7)
-    await wrapper.get('textarea').trigger('select')
+  it.each(['  ```\ncode\n  ```', '~~~\ncode\n~~~'])(
+    'removes valid code fences from %s',
+    async (content) => {
+      const wrapper = mountEditorPane({ content })
+      const editor = wrapper.get('textarea')
+      const caret = content.indexOf('code') + 1
+      editor.element.focus()
+      editor.element.setSelectionRange(caret, caret)
+      await editor.trigger('select')
+
+      const codeBlock = wrapper.get('button[title="Code block"]')
+      expect(codeBlock.attributes('aria-pressed')).toBe('true')
+      await codeBlock.trigger('click')
+      await flushPromises()
+
+      expect(editor.element.value).toBe('code')
+    },
+  )
+
+  it.each([false, true])(
+    'keeps adjacent fences intact when inserting Code block (selection: %s)',
+    async (selectLine) => {
+      const content = '```\nfirst\n```\nbetween\n```\nsecond\n```'
+      const wrapper = mountEditorPane({ content })
+      const editor = wrapper.get('textarea')
+      const betweenStart = content.indexOf('between')
+      editor.element.focus()
+      editor.element.setSelectionRange(
+        betweenStart,
+        betweenStart + (selectLine ? 'between'.length : 0),
+      )
+      await editor.trigger('select')
+      await wrapper.get('button[aria-label="More formatting"]').trigger('click')
+
+      const codeBlock = wrapper.get('button[title="Code block"]')
+      expect(codeBlock.attributes('aria-pressed')).toBe('false')
+      await codeBlock.trigger('click')
+      await flushPromises()
+
+      const inserted = selectLine ? '```\nbetween\n```' : '```\ncode\n```\nbetween'
+      expect(editor.element.value).toBe(
+        ['```', 'first', '```', inserted, '```', 'second', '```'].join('\n'),
+      )
+    },
+  )
+
+  it('removes the active numbered list marker when it starts at two', async () => {
+    const wrapper = mountEditorPane({ content: '2. Item' })
+    const editor = wrapper.get('textarea')
+    editor.element.focus()
+    editor.element.setSelectionRange(5, 5)
+    await editor.trigger('select')
     await wrapper.get('button[aria-label="More formatting"]').trigger('click')
 
-    const codeBlock = wrapper
-      .findAll('.editor-formatting-toolbar__menu button')
-      .find((button) => button.text() === 'Code block')
+    const numberedList = wrapper.get('.editor-formatting-toolbar__menu button:first-child')
+    expect(numberedList.attributes('aria-pressed')).toBe('true')
+    await numberedList.trigger('click')
+    await flushPromises()
 
-    expect(codeBlock?.attributes('aria-pressed')).toBe('false')
-    wrapper.unmount()
+    expect(editor.element.value).toBe('Item')
   })
 
   it('reflects active formatting and heading level at the caret', async () => {

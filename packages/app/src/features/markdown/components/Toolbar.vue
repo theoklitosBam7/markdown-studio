@@ -225,11 +225,7 @@ function toggleOutline(): void {
           </ToolbarButton>
         </div>
 
-        <div
-          ref="exportMenu"
-          class="toolbar__export"
-          @keydown.esc.stop.prevent="closeExportMenu(true)"
-        >
+        <div ref="exportMenu" class="toolbar__export">
           <ToolbarButton
             aria-label="Export document"
             title="Export document"

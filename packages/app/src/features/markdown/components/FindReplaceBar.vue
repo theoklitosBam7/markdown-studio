@@ -19,6 +19,7 @@ const emit = defineEmits<{
   previous: []
   replaceAll: []
   replaceCurrent: []
+  toggleReplace: []
   'update:match-case': [value: boolean]
   'update:query': [value: string]
   'update:replace-text': [value: string]
@@ -38,7 +39,7 @@ function handleKeydown(event: KeyboardEvent): void {
     return
   }
 
-  if (event.key !== 'Enter') {
+  if (event.key !== 'Enter' || event.target instanceof HTMLButtonElement) {
     return
   }
 
@@ -65,6 +66,20 @@ defineExpose({ focusQueryInput })
 <template>
   <div class="find-replace-bar" @keydown.capture="handleKeydown">
     <div class="find-replace-bar__row">
+      <button
+        aria-label="Toggle Replace"
+        :aria-expanded="showReplace"
+        :title="showReplace ? 'Hide Replace' : 'Show Replace'"
+        class="find-replace-bar__icon-button"
+        type="button"
+        @click="emit('toggleReplace')"
+      >
+        <ChevronDown
+          :class="{ 'find-replace-bar__chevron--collapsed': !showReplace }"
+          :size="16"
+          aria-hidden="true"
+        />
+      </button>
       <input
         ref="queryInput"
         :value="query"
@@ -228,6 +243,10 @@ defineExpose({ focusQueryInput })
   background: var(--panel);
   border-color: var(--border-dark);
   color: var(--text);
+}
+
+.find-replace-bar__chevron--collapsed {
+  transform: rotate(-90deg);
 }
 
 .find-replace-bar__icon-button:disabled {

@@ -40,7 +40,7 @@ interface UseDocumentSessionReturn {
   savedContent: DeepReadonly<ShallowRef<string>>
   saveDocument: () => Promise<void>
   saveDocumentAs: () => Promise<void>
-  startNewDocument: () => Promise<void>
+  startNewDocument: (options?: { discardConfirmed: boolean }) => Promise<void>
   statusText: ComputedRef<string>
 }
 
@@ -270,8 +270,8 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     syncDocumentTitle()
   }
 
-  async function startNewDocument(): Promise<void> {
-    if (!(await confirmDiscardChanges())) return
+  async function startNewDocument(request?: { discardConfirmed: boolean }): Promise<void> {
+    if (!request?.discardConfirmed && !(await confirmDiscardChanges())) return
 
     await documents.clearCurrentDocumentReference()
     options.replaceContent('')

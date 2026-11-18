@@ -103,21 +103,36 @@ const localContent = computed({
   set: (value: string) => emit('update:content', value),
 })
 function getEnclosingCodeFenceRange(text: string, offset: number) {
-  const openers = [...text.slice(0, offset).matchAll(/^```[^\n]*$/gm)]
-  const opener = openers.at(-1)
-  if (!opener) return null
+  let opener: { contentStart: number; marker: string; start: number } | undefined
 
-  const closer = /^```[^\n]*$/m.exec(text.slice(offset))
-  if (!closer) return null
+  for (const fence of text.matchAll(/^ {0,3}(`{3,}|~{3,})([^\n]*)$/gm)) {
+    const marker = fence[1] ?? ''
+    const suffix = fence[2] ?? ''
+    if (!opener) {
+      if (marker.startsWith('`') && suffix.includes('`')) continue
+      if (fence.index >= offset) return null
+      opener = {
+        contentStart: fence.index + fence[0].length + 1,
+        marker,
+        start: fence.index,
+      }
+      continue
+    }
 
-  const openerStart = opener.index ?? 0
-  const closerStart = offset + (closer.index ?? 0)
-  return {
-    contentEnd: closerStart,
-    contentStart: openerStart + opener[0].length + 1,
-    end: closerStart + closer[0].length,
-    start: openerStart,
+    if (!marker.startsWith(opener.marker) || suffix.trim()) continue
+    if (offset >= opener.contentStart && offset <= fence.index) {
+      return {
+        contentEnd: fence.index,
+        contentStart: opener.contentStart,
+        end: fence.index + fence[0].length,
+        start: opener.start,
+      }
+    }
+
+    opener = undefined
   }
+
+  return null
 }
 
 function getEnclosingLinkRange(text: string, start: number, end: number) {
@@ -138,22 +153,14 @@ function getEnclosingLinkRange(text: string, start: number, end: number) {
 }
 
 function getEnclosingTokenRange(text: string, start: number, end: number, token: string) {
-  const occurrences: number[] = []
-  let searchFrom = 0
-
-  while (true) {
-    const index = text.indexOf(token, searchFrom)
-    if (index === -1) break
-    occurrences.push(index)
-    searchFrom = index + token.length
-  }
-
-  for (let index = 0; index + 1 < occurrences.length; index += 2) {
-    const opening = occurrences[index]!
-    const closing = occurrences[index + 1]!
+  let opening = text.indexOf(token)
+  while (opening !== -1 && opening < start) {
+    const closing = text.indexOf(token, opening + token.length)
+    if (closing === -1) return null
     if (start >= opening + token.length && end <= closing) {
       return { end: closing + token.length, start: opening }
     }
+    opening = text.indexOf(token, closing + token.length)
   }
 
   return null
@@ -163,6 +170,12 @@ function getLineTextAtOffset(text: string, offset: number): string {
   const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
   const nextBreak = text.indexOf('\n', offset)
   return text.slice(lineStart, nextBreak === -1 ? text.length : nextBreak)
+}
+
+const blockMarkers = {
+  blockquote: { pattern: /^(\s*)>[ \t]?/, prefix: '> ' },
+  'bullet-list': { pattern: /^(\s*)-[ \t]+/, prefix: '- ' },
+  'numbered-list': { pattern: /^(\s*)\d+\.[ \t]+/, prefix: '1. ' },
 }
 
 const activeStyles = computed<EditorFormattingStyle[]>(() => {
@@ -177,9 +190,9 @@ const activeStyles = computed<EditorFormattingStyle[]>(() => {
   if (getEnclosingLinkRange(content, start, end)) styles.push('link')
   if (!isFenced && getEnclosingTokenRange(content, start, end, '`')) styles.push('inline-code')
 
-  if (/^\s*-\s/.test(line)) styles.push('bullet-list')
-  if (/^\s*\d+\.\s/.test(line)) styles.push('numbered-list')
-  if (/^\s*>\s?/.test(line)) styles.push('blockquote')
+  if (blockMarkers['bullet-list'].pattern.test(line)) styles.push('bullet-list')
+  if (blockMarkers['numbered-list'].pattern.test(line)) styles.push('numbered-list')
+  if (blockMarkers.blockquote.pattern.test(line)) styles.push('blockquote')
   if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) styles.push('horizontal-rule')
   if (isFenced) styles.push('code-block')
 
@@ -274,8 +287,11 @@ async function formatBlock(
     }
 
     const selectedText = editor.value.slice(selectionStart, selectionEnd) || 'code'
-    const replacement = `\`\`\`\n${selectedText}\n\`\`\``
-    const contentStart = selectionStart + 4
+    const leadingBreak = selectionStart > 0 && editor.value[selectionStart - 1] !== '\n' ? '\n' : ''
+    const trailingBreak =
+      selectionEnd < editor.value.length && editor.value[selectionEnd] !== '\n' ? '\n' : ''
+    const replacement = `${leadingBreak}\`\`\`\n${selectedText}\n\`\`\`${trailingBreak}`
+    const contentStart = selectionStart + leadingBreak.length + 4
     await replaceEditorRange(
       editor,
       selectionStart,
@@ -292,21 +308,21 @@ async function formatBlock(
   const followingLineBreak = editor.value.indexOf('\n', lastSelectedCharacter)
   const lastLineEnd = followingLineBreak === -1 ? editor.value.length : followingLineBreak
   const lines = editor.value.slice(firstLineStart, lastLineEnd).split('\n')
-  const linePrefix = {
-    blockquote: '> ',
-    'bullet-list': '- ',
-    'numbered-list': '1. ',
-  }[style]
-  const allPrefixed = lines.every((line) => line.startsWith(linePrefix))
+  const { pattern, prefix } = blockMarkers[style]
+  const allPrefixed = lines.every((line) => pattern.test(line))
   const replacement = allPrefixed
-    ? lines.map((line) => line.slice(linePrefix.length)).join('\n')
-    : lines.map((line) => `${linePrefix}${line}`).join('\n')
+    ? lines.map((line) => line.replace(pattern, '$1')).join('\n')
+    : lines.map((line) => `${prefix}${line}`).join('\n')
   const selectedBlock = selectionEnd > selectionStart
-  const nextSelectionStart = selectedBlock
-    ? firstLineStart
-    : allPrefixed
-      ? Math.max(firstLineStart, selectionStart - linePrefix.length)
-      : firstLineStart + linePrefix.length
+  let nextSelectionStart = firstLineStart
+  if (!selectedBlock && allPrefixed) {
+    nextSelectionStart = Math.max(
+      firstLineStart,
+      selectionStart - (lastLineEnd - firstLineStart - replacement.length),
+    )
+  } else if (!selectedBlock) {
+    nextSelectionStart += prefix.length
+  }
   const nextSelectionEnd = selectedBlock ? firstLineStart + replacement.length : nextSelectionStart
 
   await replaceEditorRange(
@@ -710,6 +726,9 @@ watch(
       @previous="emit('find-action', { type: 'previous' })"
       @replace-all="emit('find-action', { type: 'replace-all' })"
       @replace-current="emit('find-action', { type: 'replace-current' })"
+      @toggle-replace="
+        emit('find-action', { type: findState.showReplace ? 'open' : 'open-replace' })
+      "
       @update:match-case="emit('find-action', { type: 'set-match-case', value: $event })"
       @update:query="emit('find-action', { type: 'set-query', value: $event })"
       @update:replace-text="emit('find-action', { type: 'set-replace-text', value: $event })"

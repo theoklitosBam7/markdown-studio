@@ -194,7 +194,7 @@ function closeShortcutsHelp(): void {
 
 function confirmClearDocument(): void {
   isClearConfirmOpen.value = false
-  void workspace.document.startNew().catch((error: unknown) => {
+  void workspace.document.startNew({ discardConfirmed: true }).catch((error: unknown) => {
     console.error('Failed to start new document:', error)
   })
 }
@@ -409,6 +409,7 @@ function handleTableInsertionConfirm(): void {
                 :document-path="currentPath"
                 :html="renderedHtml"
                 :source-map="sourceMap"
+                :source-navigation-enabled="!isMobile && viewMode === 'split'"
                 :theme="theme"
                 @jump-to-offset="workspace.preview.jumpToOffset"
                 @render-diagrams="workspace.preview.renderDiagrams"

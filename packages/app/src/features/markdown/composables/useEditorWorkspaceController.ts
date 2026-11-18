@@ -430,9 +430,9 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     await performDocumentAction(saveDocumentAs)
   }
 
-  async function startNew(): Promise<void> {
+  async function startNew(options?: { discardConfirmed: boolean }): Promise<void> {
     await performDocumentAction(async () => {
-      await startNewDocument()
+      await startNewDocument(options)
 
       if (!content.value) {
         await clearDraft()
@@ -636,8 +636,8 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       async saveAs(): Promise<void> {
         await saveWorkspaceDocumentAs()
       },
-      async startNew(): Promise<void> {
-        await startNew()
+      async startNew(options?: { discardConfirmed: boolean }): Promise<void> {
+        await startNew(options)
       },
     },
     editor: {

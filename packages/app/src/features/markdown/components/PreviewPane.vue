@@ -14,11 +14,13 @@ interface Props {
   documentPath?: null | string
   html: string
   sourceMap: MarkdownSourceMapEntry[]
+  sourceNavigationEnabled?: boolean
   theme: Theme
 }
 
 const props = withDefaults(defineProps<Props>(), {
   documentPath: null,
+  sourceNavigationEnabled: true,
 })
 const desktop = useDesktop()
 
@@ -79,6 +81,8 @@ function handleClick(event: MouseEvent): void {
 }
 
 function handleDoubleClick(event: MouseEvent): void {
+  if (!props.sourceNavigationEnabled) return
+
   const target = event.target
   const sourceElement =
     target instanceof Element
@@ -256,8 +260,8 @@ defineExpose({ scrollToSourceOffset })
 </script>
 
 <template>
-  <div class="preview-pane">
-    <span class="pane-hint">Double-click to jump to source</span>
+  <div class="preview-pane" :class="{ 'source-navigation-enabled': sourceNavigationEnabled }">
+    <span v-if="sourceNavigationEnabled" class="pane-hint">Double-click to jump to source</span>
     <div ref="previewScroll" class="preview-scroll">
       <!-- eslint-disable vue/no-v-html -->
       <div
@@ -300,11 +304,11 @@ defineExpose({ scrollToSourceOffset })
   pointer-events: none;
 }
 
-.rendered-md :deep(.preview-source-target) {
+.source-navigation-enabled .rendered-md :deep(.preview-source-target) {
   cursor: pointer;
 }
 
-.rendered-md :deep(.preview-source-target:hover) {
+.source-navigation-enabled .rendered-md :deep(.preview-source-target:hover) {
   outline: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
   outline-offset: 3px;
   border-radius: 3px;

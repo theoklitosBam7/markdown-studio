@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useEscapeDismiss } from '@/composables/useEscapeDismiss'
 import {
@@ -16,6 +16,8 @@ import {
   Redo2,
   Undo2,
 } from '@lucide/vue'
+
+import { useWorkspaceWidth } from '../composables/useWorkspaceWidth'
 
 export type EditorFormattingCommand =
   | { direction: 'redo' | 'undo'; type: 'history' }
@@ -55,9 +57,24 @@ function isActive(style: EditorFormattingStyle): boolean {
   return props.activeStyles.includes(style)
 }
 
+const blockControls = [
+  { icon: ListOrdered, label: 'Numbered list', style: 'numbered-list' },
+  { icon: Quote, label: 'Blockquote', style: 'blockquote' },
+  { icon: Code2, label: 'Code block', style: 'code-block' },
+  { icon: Minus, label: 'Horizontal rule', style: 'horizontal-rule' },
+] as const
+
 const isMoreMenuOpen = shallowRef(false)
 const moreButtonContainer = useTemplateRef<HTMLElement>('moreButtonContainer')
 const moreTrigger = useTemplateRef<HTMLButtonElement>('moreTrigger')
+
+const toolbar = useTemplateRef<HTMLElement>('toolbar')
+const toolbarWidth = useWorkspaceWidth(toolbar)
+const showsInlineBlocks = computed(() => toolbarWidth.value >= 500)
+
+watch(showsInlineBlocks, (showInline) => {
+  if (showInline) closeMoreMenu()
+})
 
 function closeMoreMenu(restoreFocus = false): void {
   isMoreMenuOpen.value = false
@@ -123,7 +140,12 @@ function handleHeadingChange(event: Event): void {
 </script>
 
 <template>
-  <div class="editor-formatting-toolbar" role="toolbar" aria-label="Editor formatting">
+  <div
+    ref="toolbar"
+    class="editor-formatting-toolbar"
+    role="toolbar"
+    aria-label="Editor formatting"
+  >
     <div class="editor-formatting-toolbar__row">
       <div class="editor-formatting-toolbar__scroll-area">
         <div class="editor-formatting-toolbar__group" aria-label="History">
@@ -225,7 +247,27 @@ function handleHeadingChange(event: Event): void {
         <span class="editor-formatting-toolbar__divider" aria-hidden="true"></span>
       </div>
 
-      <div ref="moreButtonContainer" class="editor-formatting-toolbar__more">
+      <div v-show="showsInlineBlocks" class="editor-formatting-toolbar__group">
+        <button
+          v-for="control in blockControls"
+          :key="control.style"
+          class="editor-formatting-toolbar__button"
+          :aria-label="control.label"
+          :aria-pressed="isActive(control.style)"
+          :title="control.label"
+          type="button"
+          @mousedown.prevent
+          @click="emitBlock(control.style)"
+        >
+          <component :is="control.icon" :size="17" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div
+        v-show="!showsInlineBlocks"
+        ref="moreButtonContainer"
+        class="editor-formatting-toolbar__more"
+      >
         <button
           ref="moreTrigger"
           class="editor-formatting-toolbar__button"
@@ -247,40 +289,15 @@ function handleHeadingChange(event: Event): void {
           aria-label="More formatting options"
         >
           <button
+            v-for="control in blockControls"
+            :key="control.style"
             type="button"
-            :aria-pressed="isActive('numbered-list')"
+            :aria-pressed="isActive(control.style)"
             @mousedown.prevent
-            @click="emitBlock('numbered-list')"
+            @click="emitBlock(control.style)"
           >
-            <ListOrdered :size="17" aria-hidden="true" />
-            <span>Numbered list</span>
-          </button>
-          <button
-            type="button"
-            :aria-pressed="isActive('blockquote')"
-            @mousedown.prevent
-            @click="emitBlock('blockquote')"
-          >
-            <Quote :size="17" aria-hidden="true" />
-            <span>Blockquote</span>
-          </button>
-          <button
-            type="button"
-            :aria-pressed="isActive('code-block')"
-            @mousedown.prevent
-            @click="emitBlock('code-block')"
-          >
-            <Code2 :size="17" aria-hidden="true" />
-            <span>Code block</span>
-          </button>
-          <button
-            type="button"
-            :aria-pressed="isActive('horizontal-rule')"
-            @mousedown.prevent
-            @click="emitBlock('horizontal-rule')"
-          >
-            <Minus :size="17" aria-hidden="true" />
-            <span>Horizontal rule</span>
+            <component :is="control.icon" :size="17" aria-hidden="true" />
+            <span>{{ control.label }}</span>
           </button>
         </div>
       </div>
@@ -337,7 +354,7 @@ function handleHeadingChange(event: Event): void {
   height: 34px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: 7px;
   background: transparent;
   color: var(--text-muted);

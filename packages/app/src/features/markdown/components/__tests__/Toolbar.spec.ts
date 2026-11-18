@@ -85,6 +85,16 @@ describe('Toolbar', () => {
     expect(wrapper.emitted('exportPdf')).toHaveLength(1)
   })
 
+  it('leaves Escape available when Export is closed', async () => {
+    const wrapper = mountToolbar()
+    const trigger = wrapper.get('button[aria-label="Export document"]')
+    const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' })
+    trigger.element.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    wrapper.unmount()
+  })
+
   it('closes the Export menu on Escape and restores focus', async () => {
     const wrapper = mountToolbar()
     const trigger = wrapper.get('button[aria-label="Export document"]')

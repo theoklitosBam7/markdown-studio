@@ -41,6 +41,14 @@ describe('EditorFormattingToolbar', () => {
     wrapper.unmount()
   })
 
+  it('offers common block formatting inline', async () => {
+    const wrapper = mount(EditorFormattingToolbar)
+    await wrapper.get('button[title="Numbered list"]').trigger('click')
+
+    expect(wrapper.emitted('format')).toEqual([[{ style: 'numbered-list', type: 'block' }]])
+    wrapper.unmount()
+  })
+
   it('reflects active formatting in the More formatting menu', async () => {
     const wrapper = mount(EditorFormattingToolbar, {
       props: { activeStyles: ['blockquote'] },
