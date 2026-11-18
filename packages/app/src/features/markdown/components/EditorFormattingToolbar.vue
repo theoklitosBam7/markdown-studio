@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+
+import { useEscapeDismiss } from '@/composables/useEscapeDismiss'
 import {
   Bold,
   Code2,
@@ -55,11 +57,24 @@ function isActive(style: EditorFormattingStyle): boolean {
 
 const isMoreMenuOpen = shallowRef(false)
 const moreButtonContainer = useTemplateRef<HTMLElement>('moreButtonContainer')
+const moreTrigger = useTemplateRef<HTMLButtonElement>('moreTrigger')
+
+function closeMoreMenu(restoreFocus = false): void {
+  isMoreMenuOpen.value = false
+  if (restoreFocus) void nextTick(() => moreTrigger.value?.focus())
+}
+
+useEscapeDismiss(isMoreMenuOpen, () => closeMoreMenu(true))
 
 function handleOutsideClick(event: MouseEvent): void {
   if (!moreButtonContainer.value?.contains(event.target as Node)) {
     isMoreMenuOpen.value = false
   }
+}
+
+function toggleMoreMenu(): void {
+  if (isMoreMenuOpen.value) closeMoreMenu(true)
+  else isMoreMenuOpen.value = true
 }
 
 onMounted(() => {
@@ -212,6 +227,7 @@ function handleHeadingChange(event: Event): void {
 
       <div ref="moreButtonContainer" class="editor-formatting-toolbar__more">
         <button
+          ref="moreTrigger"
           class="editor-formatting-toolbar__button"
           :aria-expanded="isMoreMenuOpen"
           aria-label="More formatting"
@@ -219,7 +235,7 @@ function handleHeadingChange(event: Event): void {
           title="More formatting"
           type="button"
           @mousedown.prevent
-          @click="isMoreMenuOpen = !isMoreMenuOpen"
+          @click="toggleMoreMenu"
         >
           <MoreHorizontal :size="19" :stroke-width="1.8" aria-hidden="true" />
         </button>

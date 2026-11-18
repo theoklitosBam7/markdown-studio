@@ -505,6 +505,29 @@ describe('EditorPane', () => {
     expect(wrapper.emitted('find-action')).toEqual([[{ type: 'open' }], [{ type: 'open-replace' }]])
   })
 
+  it('returns focus to the editor when Find closes', async () => {
+    const openFindState = {
+      activeMatchIndex: -1,
+      isOpen: true,
+      matchCase: false,
+      matchCount: 0,
+      matches: [],
+      query: 'needle',
+      replaceText: '',
+      showReplace: false,
+    }
+    const wrapper = mountEditorPane({ findState: openFindState })
+
+    wrapper.get<HTMLInputElement>('.find-replace-bar__input').element.focus()
+    expect(document.activeElement).toBe(wrapper.get('.find-replace-bar__input').element)
+
+    await wrapper.setProps({ findState: { ...openFindState, isOpen: false } })
+    await flushPromises()
+
+    expect(document.activeElement).toBe(wrapper.get('textarea').element)
+    wrapper.unmount()
+  })
+
   it('renders the inline find UI and emits navigation and close actions', async () => {
     const wrapper = mountEditorPane({
       findState: {

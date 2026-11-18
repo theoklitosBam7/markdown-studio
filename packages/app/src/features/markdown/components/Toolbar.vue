@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
 import {
   ChevronDown,
   FileDown,
@@ -11,6 +11,8 @@ import {
 } from '@lucide/vue'
 
 import type { Theme, ViewMode } from '@/types/editor'
+
+import { useEscapeDismiss } from '@/composables/useEscapeDismiss'
 
 import MobileToolbarActions from '@/components/base/MobileToolbarActions.vue'
 import ThemeToggle from '@/components/base/ThemeToggle.vue'
@@ -69,9 +71,12 @@ const emit = defineEmits<{
 const isExportMenuOpen = shallowRef(false)
 const exportMenuRef = useTemplateRef<HTMLElement>('exportMenu')
 
-function closeExportMenu(): void {
+function closeExportMenu(restoreFocus = false): void {
   isExportMenuOpen.value = false
+  if (restoreFocus) void nextTick(() => exportMenuRef.value?.querySelector('button')?.focus())
 }
+
+useEscapeDismiss(isExportMenuOpen, () => closeExportMenu(true))
 
 function handleDocumentPointerDown(event: PointerEvent): void {
   if (
@@ -220,7 +225,11 @@ function toggleOutline(): void {
           </ToolbarButton>
         </div>
 
-        <div ref="exportMenu" class="toolbar__export" @keydown.esc.stop.prevent="closeExportMenu">
+        <div
+          ref="exportMenu"
+          class="toolbar__export"
+          @keydown.esc.stop.prevent="closeExportMenu(true)"
+        >
           <ToolbarButton
             aria-label="Export document"
             title="Export document"

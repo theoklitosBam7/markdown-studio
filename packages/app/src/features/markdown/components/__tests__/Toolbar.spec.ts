@@ -85,6 +85,20 @@ describe('Toolbar', () => {
     expect(wrapper.emitted('exportPdf')).toHaveLength(1)
   })
 
+  it('closes the Export menu on Escape and restores focus', async () => {
+    const wrapper = mountToolbar()
+    const trigger = wrapper.get('button[aria-label="Export document"]')
+
+    await trigger.trigger('click')
+    expect(wrapper.find('.toolbar__export-menu').exists()).toBe(true)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.toolbar__export-menu').exists()).toBe(false)
+    expect(document.activeElement).toBe(trigger.element)
+  })
+
   it('disables PDF export in the toolbar with its reason', async () => {
     const wrapper = mountToolbar({
       canExportPdf: false,

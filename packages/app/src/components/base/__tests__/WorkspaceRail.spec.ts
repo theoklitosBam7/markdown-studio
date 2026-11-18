@@ -84,6 +84,26 @@ describe('WorkspaceRail', () => {
     wrapper.unmount()
   })
 
+  it('closes the actions menu on Escape from the trigger and restores focus', async () => {
+    const wrapper = mount(WorkspaceRail, {
+      attachTo: document.body,
+      props: { isOutlineOpen: false },
+    })
+    const trigger = wrapper.get('button[aria-label="Document actions"]')
+
+    await trigger.trigger('click')
+    expect(wrapper.find('.workspace-rail__actions-panel').exists()).toBe(true)
+
+    ;(trigger.element as HTMLButtonElement).focus()
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.workspace-rail__actions-panel').exists()).toBe(false)
+    expect(document.activeElement).toBe(trigger.element)
+
+    wrapper.unmount()
+  })
+
   it('keeps Outline and Find actions available', async () => {
     const toggleOutline = vi.fn()
     const find = vi.fn()

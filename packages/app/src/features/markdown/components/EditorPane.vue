@@ -677,6 +677,13 @@ watch(
   },
   { flush: 'post' },
 )
+
+watch(
+  () => props.findState.isOpen,
+  (isOpen, wasOpen) => {
+    if (!isOpen && wasOpen) editorRef.value?.focus()
+  },
+)
 </script>
 
 <template>

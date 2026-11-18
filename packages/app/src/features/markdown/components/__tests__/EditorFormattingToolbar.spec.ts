@@ -93,6 +93,22 @@ describe('EditorFormattingToolbar', () => {
     wrapper.unmount()
   })
 
+  it('closes the More formatting menu on Escape and restores focus', async () => {
+    const wrapper = mount(EditorFormattingToolbar, { attachTo: document.body })
+    const trigger = wrapper.get('button[aria-label="More formatting"]')
+
+    await trigger.trigger('click')
+    expect(wrapper.find('.editor-formatting-toolbar__menu').exists()).toBe(true)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.editor-formatting-toolbar__menu').exists()).toBe(false)
+    expect(document.activeElement).toBe(trigger.element)
+
+    wrapper.unmount()
+  })
+
   it('closes the More formatting menu when clicking outside it', async () => {
     const wrapper = mount(EditorFormattingToolbar, { attachTo: document.body })
 

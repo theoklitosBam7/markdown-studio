@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+
+import { useEscapeDismiss } from '@/composables/useEscapeDismiss'
 import {
   Check,
   Copy,
@@ -106,6 +108,8 @@ function handleOutsideClick(event: MouseEvent): void {
     closeActionsMenu()
   }
 }
+
+useEscapeDismiss(isActionsMenuOpen, () => closeActionsMenu(true))
 
 function performAction(name: DocumentActionName): void {
   actionHandlers[name]()
