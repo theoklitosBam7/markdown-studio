@@ -78,6 +78,7 @@ Before making architectural changes, read the relevant decisions in [`docs/adr`]
 
 - Use the supported scopes from `commitlint.config.ts` when writing commit subjects.
 - Use the appropriate issue or pull-request template from `.github` when creating one.
+- Before opening a pull request, run the `code-review` skill against the merge base and resolve or explicitly accept every finding.
 - Before creating a pull request, validate any Changeset with `vpr changeset:validate-scopes`.
 
 ## Changesets
