@@ -33,7 +33,7 @@ _Avoid_: web page, HTML source
 
 **HTML Preview**:
 The **Product Surface** that presents an **HTML Document** in a sandboxed frame.
-It does not provide Source Navigation and does not run scripts.
+It does not provide Source Navigation. Scripts stay blocked until the user enables them for the active preview.
 
 **HTML Preview Asset Grant**:
 A permission bounded to one **HTML Preview** and the folder of its **HTML Document**.
@@ -93,6 +93,7 @@ _Avoid_: route, layout
 - A **Markdown Document** may contain zero or more **Embedded Diagrams**.
 - An **Editor Workspace** has at most one active **Markdown Document**.
 - An **Editor Workspace** can show one active **HTML Document** through the **HTML Preview**.
+- Opening another **HTML Document** disables scripts for the **HTML Preview**.
 - An **HTML Preview Asset Grant** belongs to exactly one **HTML Document**.
 - A desktop **HTML Preview** can load local assets only through an **HTML Preview Asset Grant**.
 - Markdown Studio releases an **HTML Preview Asset Grant** when its **HTML Preview** closes or another document becomes active.

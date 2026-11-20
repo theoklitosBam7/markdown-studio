@@ -147,6 +147,36 @@ describe('prepareHtmlPreview', () => {
     expect(preview.sandbox).toBe('')
   })
 
+  it('allows inline scripts and keeps the other policy restrictions when scripts are enabled', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: true,
+      content: `
+        <div onclick="this.dataset.handlerRan = 'yes'">Card</div>
+        <script>document.body.dataset.scriptRan = 'yes'</script>
+      `,
+    })
+    const parsed = new DOMParser().parseFromString(preview.srcdoc, 'text/html')
+    const policy = getCsp(preview.srcdoc)
+
+    expect(policy).toContain("script-src 'unsafe-inline' markdown-studio-preview:")
+    expect(policy).toContain("default-src 'none'")
+    expect(policy).toContain("connect-src 'none'")
+    expect(policy).not.toContain('script-src *')
+    expect(parsed.querySelector('script')?.textContent).toContain("dataset.scriptRan = 'yes'")
+    expect(parsed.querySelector('[onclick]')?.getAttribute('onclick')).toBe(
+      "this.dataset.handlerRan = 'yes'",
+    )
+  })
+
+  it('uses the allow-scripts sandbox when scripts are enabled', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: true,
+      content: '<p>Interactive</p>',
+    })
+
+    expect(preview.sandbox).toBe('allow-scripts')
+  })
+
   it('rewrites relative src and href values through the asset base', () => {
     const preview = prepareHtmlPreview({
       allowScripts: false,

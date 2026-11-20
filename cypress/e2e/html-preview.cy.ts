@@ -3,6 +3,10 @@ interface BrowserFrameTree {
   frame: { id: string; loaderId: string; url: string }
 }
 
+interface BrowserTargets {
+  targetInfos: { targetId: string; type: string }[]
+}
+
 type BrowserWindow = {
   showOpenFilePicker?: (options?: unknown) => Promise<FileSystemFileHandle[]>
 } & typeof globalThis &
@@ -15,6 +19,13 @@ function findHtmlPreviewFrame(tree: BrowserFrameTree): BrowserFrameTree['frame']
     const frame = findHtmlPreviewFrame(child)
     if (frame) return frame
   }
+}
+
+function pageTargetIds(result: BrowserTargets): string[] {
+  return result.targetInfos
+    .filter((target) => target.type === 'page')
+    .map((target) => target.targetId)
+    .sort()
 }
 
 const htmlDocument = `<!doctype html>
@@ -242,13 +253,112 @@ describe('HTML preview', () => {
       cy.then(() =>
         Cypress.automation('remote:debugger:protocol', { command: 'Target.getTargets' }),
       ).then((after) => {
-        const pageIds = (result: { targetInfos: { targetId: string; type: string }[] }) =>
-          result.targetInfos
-            .filter((target) => target.type === 'page')
-            .map((target) => target.targetId)
-            .sort()
-        expect(pageIds(after), 'no popup browser target').to.deep.equal(pageIds(before))
+        expect(pageTargetIds(after), 'no popup browser target').to.deep.equal(pageTargetIds(before))
       })
+    })
+  })
+
+  it('runs hostile scripts only after opt-in and keeps them inside the frame', () => {
+    const messages: string[] = []
+    const scriptDocument = `<!doctype html>
+      <body>
+        <h1 id="headline">Script-enabled hostile preview</h1>
+        <img src="https://html-preview-hostile.invalid/image.png">
+        <script>
+          const result = {
+            content: 'unchanged',
+            parentAccess: 'not-checked',
+            popup: 'not-checked',
+            origin: window.origin
+          }
+          document.getElementById('headline').textContent = 'Script changed this frame'
+          result.content = document.getElementById('headline').textContent
+          try {
+            window.parent.document.body.dataset.hostileAccess = 'reached'
+            result.parentAccess = 'reached'
+          } catch {
+            result.parentAccess = 'blocked'
+          }
+          try {
+            result.popup = window.open('https://html-preview-hostile.invalid/popup', '_blank')
+              ? 'opened'
+              : 'blocked'
+          } catch {
+            result.popup = 'blocked'
+          }
+          fetch('https://html-preview-hostile.invalid/fetch').catch(() => {})
+          parent.postMessage('enabled-hostile:' + JSON.stringify(result), '*')
+        </script>
+      </body>`
+
+    cy.intercept('https://html-preview-hostile.invalid/**', { statusCode: 204 }).as(
+      'enabledHostileNetwork',
+    )
+    cy.viewport(1280, 900)
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        stubDocumentOpen(win as BrowserWindow, scriptDocument, 'enabled-hostile.html')
+        win.addEventListener('message', (event) => {
+          if (typeof event.data === 'string' && event.data.startsWith('enabled-hostile:')) {
+            messages.push(event.data)
+          }
+        })
+      },
+    })
+
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', { command: 'Target.getTargets' }),
+    ).then((before) => {
+      cy.get('button[aria-label="Open document"]').click()
+      cy.get('iframe[title="HTML preview"]')
+        .should('have.attr', 'sandbox', '')
+        .invoke('attr', 'srcdoc')
+        .should('not.contain', '<script')
+
+      cy.contains('button', 'Enable scripts for this preview').click()
+      cy.get('[role="status"]').should('contain', 'Scripts enabled for this preview')
+      cy.get('iframe[title="HTML preview"]')
+        .should('have.attr', 'sandbox', 'allow-scripts')
+        .invoke('attr', 'srcdoc')
+        .should('contain', '<script>')
+        .and('contain', "script-src 'unsafe-inline' markdown-studio-preview:")
+
+      cy.get('iframe[title="HTML preview"]').then(($frame) => {
+        const frame = $frame[0] as HTMLIFrameElement
+        expect(frame.contentDocument).to.equal(null)
+      })
+      cy.wrap(messages)
+        .should('have.length', 1)
+        .then(([message]) => {
+          const result = JSON.parse(message.slice('enabled-hostile:'.length)) as {
+            content: string
+            origin: string
+            parentAccess: string
+            popup: string
+          }
+
+          expect(result.content).to.equal('Script changed this frame')
+          expect(result.parentAccess).to.equal('blocked')
+          expect(result.popup).to.equal('blocked')
+          expect(result.origin).to.equal('null')
+        })
+      cy.get('body').should('not.have.attr', 'data-hostile-access')
+      cy.get('@enabledHostileNetwork.all').should('have.length', 0)
+
+      cy.then(() =>
+        Cypress.automation('remote:debugger:protocol', { command: 'Target.getTargets' }),
+      ).then((after) => {
+        expect(pageTargetIds(after), 'no popup browser target').to.deep.equal(pageTargetIds(before))
+      })
+
+      cy.screenshot('html-preview-scripts-enabled', { capture: 'viewport' })
+
+      cy.window().then((win) => {
+        stubDocumentOpen(win as BrowserWindow, '<p>Another document</p>', 'another.html')
+      })
+      cy.get('button[aria-label="Open document"]').click()
+      cy.get('[role="status"]').should('not.exist')
+      cy.get('iframe[title="HTML preview"]').should('have.attr', 'sandbox', '')
     })
   })
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 
 import { useHtmlPreviewAssets } from '../composables/useHtmlPreviewAssets'
 import { prepareHtmlPreview } from '../utils/prepareHtmlPreview'
@@ -11,19 +11,27 @@ const props = defineProps<{
 }>()
 
 const { assetBaseUrl, error } = useHtmlPreviewAssets(() => props.documentPath)
+const allowScripts = shallowRef(false)
+
+watch([() => props.documentPath, () => props.content], () => {
+  allowScripts.value = false
+})
 
 const preview = computed(() =>
   prepareHtmlPreview({
-    allowScripts: false,
+    allowScripts: allowScripts.value,
     assetBaseUrl: assetBaseUrl.value,
     content: props.content,
   }),
 )
-const notice = computed(
-  () =>
-    error.value ??
-    "Read-only preview. Scripts and forms are blocked. Local assets in the HTML Document's folder load on desktop.",
-)
+const notice = computed(() => {
+  if (error.value) return error.value
+  if (allowScripts.value) {
+    return 'Read-only preview. Scripts can run in this frame. Network and parent app access stay blocked, and file reads stay limited to the preview asset grant.'
+  }
+
+  return "Read-only preview. Scripts and forms are blocked. Local assets in the HTML Document's folder load on desktop."
+})
 </script>
 
 <template>
@@ -35,6 +43,19 @@ const notice = computed(
     >
       {{ notice }}
     </p>
+    <div class="html-preview__controls">
+      <button
+        class="html-preview__scripts-toggle"
+        type="button"
+        :aria-pressed="allowScripts"
+        @click="allowScripts = true"
+      >
+        Enable scripts for this preview
+      </button>
+      <p v-if="allowScripts" class="html-preview__scripts-status" role="status">
+        Scripts enabled for this preview
+      </p>
+    </div>
     <HtmlPreviewFrame :preview="preview" />
   </section>
 </template>
@@ -59,6 +80,42 @@ const notice = computed(
 
 .html-preview__notice--error {
   color: var(--destructive);
+}
+
+.html-preview__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.html-preview__scripts-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-ui-caption);
+}
+
+.html-preview__scripts-toggle:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.html-preview__scripts-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.html-preview__scripts-status {
+  margin: 0;
+  color: var(--brass);
+  font-size: var(--font-size-ui-caption);
+  font-weight: 600;
 }
 
 .html-preview :deep(.html-preview-frame) {

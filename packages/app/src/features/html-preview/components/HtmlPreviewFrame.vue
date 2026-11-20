@@ -8,6 +8,7 @@ defineProps<{
 
 <template>
   <iframe
+    :key="preview.sandbox"
     class="html-preview-frame"
     title="HTML preview"
     :sandbox="preview.sandbox"

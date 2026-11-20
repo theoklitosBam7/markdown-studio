@@ -28,6 +28,69 @@ function mountSurface(): ReturnType<typeof mount> {
   })
 }
 
+describe('HtmlPreviewSurface script opt-in', () => {
+  const appWindow = window as AppWindow
+  const originalDesktop = appWindow.desktop
+
+  beforeEach(() => {
+    appWindow.desktop = undefined
+  })
+
+  afterEach(() => {
+    appWindow.desktop = originalDesktop
+  })
+
+  it('starts with scripts blocked and exposes an accessible opt-in control', () => {
+    const wrapper = mountSurface()
+    const toggle = wrapper.get('button')
+    const frame = wrapper.get('iframe')
+
+    expect(toggle.text()).toBe('Enable scripts for this preview')
+    expect(toggle.attributes('aria-pressed')).toBe('false')
+    expect(frame.attributes('sandbox')).toBe('')
+    expect(frame.attributes('srcdoc')).not.toContain('<script')
+  })
+
+  it('shows the enabled state and prepares a script-enabled preview', async () => {
+    const wrapper = mount(HtmlPreviewSurface, {
+      props: {
+        content: '<script>document.body.dataset.scriptRan = "yes"</script>',
+        documentPath: '/reports/first.html',
+      },
+    })
+    const toggle = wrapper.get('button')
+
+    await toggle.trigger('click')
+
+    const frame = wrapper.get('iframe')
+    const status = wrapper.find('[role="status"]')
+
+    expect(toggle.attributes('aria-pressed')).toBe('true')
+    expect(status.text()).toBe('Scripts enabled for this preview')
+    expect(frame.attributes('sandbox')).toBe('allow-scripts')
+    expect(frame.attributes('srcdoc')).toContain('document.body.dataset.scriptRan')
+    expect(frame.attributes('srcdoc')).toContain(
+      "script-src 'unsafe-inline' markdown-studio-preview:",
+    )
+  })
+
+  it('resets the opt-in when another HTML Document becomes active', async () => {
+    const wrapper = mountSurface()
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.get('iframe').attributes('sandbox')).toBe('allow-scripts')
+
+    await wrapper.setProps({
+      content: '<p>Second report</p>',
+      documentPath: '/reports/second.html',
+    })
+
+    expect(wrapper.get('button').attributes('aria-pressed')).toBe('false')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.get('iframe').attributes('sandbox')).toBe('')
+  })
+})
+
 describe('HtmlPreviewSurface asset grants', () => {
   const appWindow = window as AppWindow
   const originalDesktop = appWindow.desktop
