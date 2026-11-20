@@ -1,3 +1,13 @@
+export interface FrameNavigationDetails {
+  isMainFrame: boolean
+  preventDefault: () => void
+  url: string
+}
+
+interface FrameNavigationEventSource {
+  on(event: 'will-frame-navigate', listener: (details: FrameNavigationDetails) => void): unknown
+}
+
 export function isAllowedFrameNavigation(url: string, isMainFrame: boolean): boolean {
   if (isMainFrame) return true
 
@@ -9,4 +19,12 @@ export function isAllowedFrameNavigation(url: string, isMainFrame: boolean): boo
   } catch {
     return false
   }
+}
+
+export function registerFrameNavigationGuard(webContents: FrameNavigationEventSource): void {
+  webContents.on('will-frame-navigate', (details) => {
+    if (isAllowedFrameNavigation(details.url, details.isMainFrame)) return
+
+    details.preventDefault()
+  })
 }

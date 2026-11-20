@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vite-plus/test'
 
-import { isAllowedFrameNavigation } from './frame-navigation'
+import {
+  type FrameNavigationDetails,
+  isAllowedFrameNavigation,
+  registerFrameNavigationGuard,
+} from './frame-navigation'
 
 describe('isAllowedFrameNavigation', () => {
   it('allows the main frame to navigate through the existing main-frame guard', () => {
@@ -27,5 +31,38 @@ describe('isAllowedFrameNavigation', () => {
 
   it('blocks an unparsable navigation URL', () => {
     expect(isAllowedFrameNavigation('', false)).toBe(false)
+  })
+})
+
+describe('registerFrameNavigationGuard', () => {
+  it('prevents a subframe from navigating to an external URL', () => {
+    let listener: ((details: FrameNavigationDetails) => void) | undefined
+    const webContents = {
+      on(event: string, callback: (details: FrameNavigationDetails) => void) {
+        if (event === 'will-frame-navigate') listener = callback
+      },
+    }
+    const preventDefault = vi.fn()
+
+    registerFrameNavigationGuard(webContents)
+    listener?.({ isMainFrame: false, preventDefault, url: 'https://example.com/destination' })
+
+    expect(preventDefault).toHaveBeenCalledOnce()
+  })
+
+  it('allows srcdoc frame setup and main-frame navigation', () => {
+    let listener: ((details: FrameNavigationDetails) => void) | undefined
+    const webContents = {
+      on(event: string, callback: (details: FrameNavigationDetails) => void) {
+        if (event === 'will-frame-navigate') listener = callback
+      },
+    }
+    const preventDefault = vi.fn()
+
+    registerFrameNavigationGuard(webContents)
+    listener?.({ isMainFrame: false, preventDefault, url: 'about:srcdoc' })
+    listener?.({ isMainFrame: true, preventDefault, url: 'https://example.com/destination' })
+
+    expect(preventDefault).not.toHaveBeenCalled()
   })
 })

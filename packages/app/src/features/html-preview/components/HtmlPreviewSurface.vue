@@ -21,16 +21,17 @@ watch([() => props.documentPath, () => props.content], () => {
 })
 
 const canEnableScripts = computed(() => desktop.value.isDesktop)
+const scriptsEnabled = computed(() => canEnableScripts.value && allowScripts.value)
 const preview = computed(() =>
   prepareHtmlPreview({
-    allowScripts: canEnableScripts.value && allowScripts.value,
+    allowScripts: scriptsEnabled.value,
     assetBaseUrl: assetBaseUrl.value,
     content: props.content,
   }),
 )
 const notice = computed(() => {
   if (error.value) return error.value
-  if (canEnableScripts.value && allowScripts.value) {
+  if (scriptsEnabled.value) {
     return 'Read-only preview. Local inline scripts can run. CDN scripts, network APIs, and parent DOM access stay blocked.'
   }
 

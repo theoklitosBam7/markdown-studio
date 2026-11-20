@@ -281,7 +281,7 @@ The kitchen-sink example loads by default on first visit.
 - **Save As.** Save with a new name or location
 - **Clear.** Start fresh with an empty editor
 
-The desktop asset grant ends when the HTML Preview closes or another document becomes active. The script control is available only in the desktop app. The choice is not saved. It ends when you disable it or when another HTML Document opens. Enabled scripts run in an opaque-origin frame with only `allow-scripts`. The main process blocks subframe navigation, and scripts cannot reach the parent DOM, the desktop bridge, or network APIs. The per-preview asset grant still confines file reads. Libraries loaded from a CDN need network access, so they do not run in this preview. Use a local classic bundle through a relative `<script src>` and remove CDN module imports, which the preview does not rewrite to the asset grant.
+The desktop asset grant ends when the HTML Preview closes or another document becomes active. The script control is available only in the desktop app. The choice is not saved. It ends when you disable it or when another HTML Document opens. Enabled scripts run in an opaque-origin frame with only `allow-scripts`. The main process blocks subframe navigation, and scripts cannot reach the parent DOM, the desktop bridge, or network APIs. The per-preview asset grant still confines file reads. Mermaid loaded from a CDN, like other libraries loaded from a CDN, needs network access and does not run in this preview. Use a bundled local Mermaid script through a relative `<script src>` instead. Remove CDN module imports because the preview does not rewrite them to the asset grant.
 
 **Web App:**
 
