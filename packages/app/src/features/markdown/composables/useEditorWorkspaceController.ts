@@ -243,6 +243,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       return
     }
 
+    // The viewport may have become mobile while HTML was open, where split mode is unavailable.
     setViewMode(isMobile.value && markdownViewMode === 'split' ? 'editor' : markdownViewMode)
   })
 
