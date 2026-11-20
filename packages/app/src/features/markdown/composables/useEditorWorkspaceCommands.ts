@@ -3,6 +3,18 @@ import { computed, type ComputedRef } from 'vue'
 import type { EditorWorkspaceCommand } from '../types/commands'
 import type { EditorWorkspaceController } from '../types/workspace'
 
+const HTML_PREVIEW_EXCLUDED_COMMANDS = new Set([
+  'document:exportHtml',
+  'document:exportPdf',
+  'document:save',
+  'document:saveAs',
+  'editor:find',
+  'editor:replace',
+  'workspace:editor:display',
+  'workspace:editor:insertTable',
+  'workspace:examples:open',
+])
+
 export function useEditorWorkspaceCommands(
   workspace: EditorWorkspaceController,
   options: { openEditorDisplay: () => void },
@@ -17,6 +29,7 @@ export function useEditorWorkspaceCommands(
     const viewMode = state.viewMode.value
     const theme = state.theme.value
     const isFolderBrowserAvailable = state.isFolderBrowserAvailable.value
+    const documentKind = state.documentKind.value
 
     const commands: EditorWorkspaceCommand[] = [
       {
@@ -202,6 +215,10 @@ export function useEditorWorkspaceCommands(
     ]
 
     return commands.filter((command) => {
+      if (documentKind === 'html' && HTML_PREVIEW_EXCLUDED_COMMANDS.has(command.id)) {
+        return false
+      }
+
       if (command.id === 'workspace:view:editor') return availableModes.includes('editor')
       if (command.id === 'workspace:view:split') return availableModes.includes('split')
       if (command.id === 'workspace:view:preview') return availableModes.includes('preview')

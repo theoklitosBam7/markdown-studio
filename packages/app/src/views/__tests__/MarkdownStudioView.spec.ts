@@ -452,4 +452,29 @@ describe('MarkdownStudioView', () => {
 
     wrapper.unmount()
   })
+
+  it('shows an HTML file in a read-only preview instead of the Markdown editor', async () => {
+    const desktop = createDesktopApi({})
+    desktop.documents.open = (async () => ({
+      content: '<p>Page</p>',
+      modifiedAt: 1,
+      path: '/tmp/page.html',
+    })) as unknown as typeof desktop.documents.open
+    appWindow.desktop = desktop as unknown as AppWindow['desktop']
+
+    const { wrapper } = await mountMarkdownStudioView()
+
+    await wrapper.get('button[aria-label="Open document"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.html-preview').exists()).toBe(true)
+    expect(wrapper.get('iframe').attributes('sandbox')).toBe('')
+    expect(wrapper.find('textarea').exists()).toBe(false)
+    expect(wrapper.find('.preview-pane').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="Save document"]').exists()).toBe(false)
+    expect(wrapper.get('.toolbar__document strong').text()).toBe('page.html')
+    expect(wrapper.get('.status-bar').text()).toContain('read-only')
+
+    wrapper.unmount()
+  })
 })

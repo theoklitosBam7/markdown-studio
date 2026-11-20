@@ -1,6 +1,7 @@
 import type { AppCommand } from '@markdown-studio/desktop-contract/types'
 import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
+import type { ActiveDocumentKind } from '@/types/document'
 import type { Theme, ViewMode } from '@/types/editor'
 
 import type { DocumentFolderNode, SidebarTab } from './folders'
@@ -153,6 +154,7 @@ export interface EditorWorkspaceState {
   content: Readonly<Ref<string>>
   currentPath: Readonly<Ref<null | string>>
   displayName: Readonly<Ref<string>>
+  documentKind: Readonly<Ref<ActiveDocumentKind>>
   folderMessage: Readonly<Ref<null | string>>
   folderNodes: ComputedRef<DocumentFolderNode[]>
   homebrewUpgradeCommand: Readonly<ComputedRef<string>>

@@ -2,12 +2,14 @@
 interface Props {
   chars: number
   diagrams: number
+  isHtmlPreview?: boolean
   lines: number
   status?: string
   words: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  isHtmlPreview: false,
   status: 'Ready',
 })
 </script>
@@ -15,7 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 <template>
   <div class="status-bar">
     <div class="status-item">{{ props.status }}</div>
-    <div class="status-item status-item--stats">
+    <div v-if="!props.isHtmlPreview" class="status-item status-item--stats">
       <span class="status-item__stat--words">{{ props.words.toLocaleString() }} words</span>
       <span class="status-item__separator status-item__separator--chars" aria-hidden="true">·</span>
       <span class="status-item__stat--chars">{{ props.chars.toLocaleString() }} chars</span>

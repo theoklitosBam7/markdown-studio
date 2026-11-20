@@ -29,12 +29,14 @@ type DocumentActionName = 'clear' | 'copy' | 'insertTable' | 'install' | 'openEx
 interface Props {
   canInstall?: boolean
   isCopied?: boolean
+  isHtmlPreview?: boolean
   isOutlineOpen: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canInstall: false,
   isCopied: false,
+  isHtmlPreview: false,
 })
 
 const emit = defineEmits<{
@@ -141,6 +143,7 @@ onUnmounted(() => {
         <PanelLeft :size="20" :stroke-width="1.8" aria-hidden="true" />
       </button>
       <button
+        v-if="!props.isHtmlPreview"
         class="workspace-rail__button"
         aria-label="Find in document"
         title="Find in document"
@@ -151,9 +154,9 @@ onUnmounted(() => {
       </button>
     </nav>
 
-    <div class="workspace-rail__divider" aria-hidden="true"></div>
+    <div v-if="!props.isHtmlPreview" class="workspace-rail__divider" aria-hidden="true"></div>
 
-    <div class="workspace-rail__actions-wrap">
+    <div v-if="!props.isHtmlPreview" class="workspace-rail__actions-wrap">
       <button
         ref="actionsTrigger"
         class="workspace-rail__button workspace-rail__actions-trigger"

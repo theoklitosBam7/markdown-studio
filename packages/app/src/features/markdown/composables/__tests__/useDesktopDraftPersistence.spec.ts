@@ -1,4 +1,5 @@
 import type { DesktopApi } from '@markdown-studio/desktop-contract/types'
+import type { ActiveDocumentKind } from '@/types/document'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { effectScope, nextTick, shallowRef } from 'vue'
@@ -78,6 +79,7 @@ describe('useDesktopDraftPersistence', () => {
         content: shallowRef(''),
         currentPath: shallowRef(null),
         displayName: shallowRef('Untitled.md'),
+        documentKind: shallowRef<ActiveDocumentKind>('markdown'),
         isDesktop: shallowRef(true),
         isDirty: shallowRef(false),
         restoreDraft,
@@ -111,6 +113,7 @@ describe('useDesktopDraftPersistence', () => {
         content,
         currentPath,
         displayName,
+        documentKind: shallowRef<ActiveDocumentKind>('markdown'),
         isDesktop: shallowRef(true),
         isDirty,
         restoreDraft: vi.fn(async () => undefined),
@@ -146,6 +149,7 @@ describe('useDesktopDraftPersistence', () => {
         content: shallowRef('# Edited'),
         currentPath: shallowRef(null),
         displayName: shallowRef('Untitled.md'),
+        documentKind: shallowRef<ActiveDocumentKind>('markdown'),
         isDesktop: shallowRef(true),
         isDirty,
         restoreDraft: vi.fn(async () => undefined),
@@ -158,6 +162,34 @@ describe('useDesktopDraftPersistence', () => {
     await nextTick()
 
     expect(desktop.documents.clearWorkspaceDraft).toHaveBeenCalledTimes(1)
+
+    scope.stop()
+  })
+
+  it('does not write a desktop draft while an HTML preview is active', async () => {
+    const desktop = appWindow.desktop as DesktopApi
+    const content = shallowRef('<p>Page</p>')
+
+    const scope = effectScope()
+    const persistence = scope.run(() =>
+      useDesktopDraftPersistence({
+        content,
+        currentPath: shallowRef('/tmp/page.html'),
+        displayName: shallowRef('page.html'),
+        documentKind: shallowRef<ActiveDocumentKind>('html'),
+        isDesktop: shallowRef(true),
+        isDirty: shallowRef(true),
+        restoreDraft: vi.fn(async () => undefined),
+        savedContent: shallowRef('<p>Page</p>'),
+      }),
+    )
+
+    await persistence?.restoreStoredDraft()
+    content.value = '<p>Updated</p>'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(250)
+
+    expect(desktop.documents.saveWorkspaceDraft).not.toHaveBeenCalled()
 
     scope.stop()
   })

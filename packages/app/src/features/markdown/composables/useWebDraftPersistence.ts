@@ -1,3 +1,4 @@
+import type { ActiveDocumentKind } from '@/types/document'
 import type { ComputedRef } from 'vue'
 
 import type { DraftPersistenceAdapter } from './useDebouncedDraftPersistence'
@@ -12,6 +13,7 @@ interface StoredDraftPayload {
 interface UseWebDraftPersistenceOptions {
   content: { value: string } | ComputedRef<string>
   displayName: { value: string } | ComputedRef<string>
+  documentKind: { value: ActiveDocumentKind } | ComputedRef<ActiveDocumentKind>
   isDesktop: { value: boolean } | ComputedRef<boolean>
   isDirty: { value: boolean } | ComputedRef<boolean>
   restoreDraft: (payload: StoredDraftPayload) => Promise<void>
@@ -70,7 +72,7 @@ export function useWebDraftPersistence(options: UseWebDraftPersistenceOptions) {
   }
 
   return useDebouncedDraftPersistence({
-    active: () => !options.isDesktop.value,
+    active: () => !options.isDesktop.value && options.documentKind.value === 'markdown',
     adapter,
     buildPayload: () => ({
       content: options.content.value,
@@ -82,6 +84,7 @@ export function useWebDraftPersistence(options: UseWebDraftPersistenceOptions) {
       [
         options.content.value,
         options.displayName.value,
+        options.documentKind.value,
         options.isDesktop.value,
         options.isDirty.value,
       ] as const,
