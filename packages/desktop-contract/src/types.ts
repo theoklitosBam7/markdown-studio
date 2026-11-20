@@ -16,6 +16,7 @@ export interface DesktopApi {
   editing: DesktopEditingApi
   exports: DesktopExportsApi
   folders?: DesktopFoldersApi
+  htmlPreview?: DesktopHtmlPreviewApi
   images?: DesktopImagesApi
   install: DesktopInstallApi
   isDesktop: boolean
@@ -103,6 +104,22 @@ export interface DesktopFoldersApi {
   list: (input: DesktopFolderListInput) => Promise<DesktopFolderListing>
   remove: (folderId: string) => Promise<void>
   restore: () => Promise<DesktopDocumentFolderRestore>
+}
+
+export interface DesktopHtmlPreviewApi {
+  releaseAssetGrant: (grantId: string) => Promise<void>
+  requestAssetGrant: (
+    input: DesktopHtmlPreviewAssetGrantRequest,
+  ) => Promise<DesktopHtmlPreviewAssetGrantResult>
+}
+
+export interface DesktopHtmlPreviewAssetGrantRequest {
+  documentPath: string
+}
+
+export interface DesktopHtmlPreviewAssetGrantResult {
+  assetBaseUrl: string
+  grantId: string
 }
 
 export interface DesktopImagesApi {
