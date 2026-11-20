@@ -353,6 +353,14 @@ describe('HTML preview', () => {
 
       cy.screenshot('html-preview-scripts-enabled', { capture: 'viewport' })
 
+      cy.contains('button', 'Disable scripts for this preview').click()
+      cy.get('[role="status"]').should('not.exist')
+      cy.get('iframe[title="HTML preview"]')
+        .should('have.attr', 'sandbox', '')
+        .invoke('attr', 'srcdoc')
+        .should('not.contain', '<script')
+        .and('not.contain', "script-src 'unsafe-inline' markdown-studio-preview:")
+
       cy.window().then((win) => {
         stubDocumentOpen(win as BrowserWindow, '<p>Another document</p>', 'another.html')
       })

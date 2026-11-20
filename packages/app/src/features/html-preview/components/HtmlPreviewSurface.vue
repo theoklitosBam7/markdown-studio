@@ -27,11 +27,14 @@ const preview = computed(() =>
 const notice = computed(() => {
   if (error.value) return error.value
   if (allowScripts.value) {
-    return 'Read-only preview. Scripts can run in this frame. Network and parent app access stay blocked, and file reads stay limited to the preview asset grant.'
+    return 'Read-only preview. Local inline scripts can run. CDN scripts, network access, and parent app access stay blocked.'
   }
 
   return "Read-only preview. Scripts and forms are blocked. Local assets in the HTML Document's folder load on desktop."
 })
+const scriptsToggleLabel = computed(() =>
+  allowScripts.value ? 'Disable scripts for this preview' : 'Enable scripts for this preview',
+)
 </script>
 
 <template>
@@ -48,9 +51,9 @@ const notice = computed(() => {
         class="html-preview__scripts-toggle"
         type="button"
         :aria-pressed="allowScripts"
-        @click="allowScripts = true"
+        @click="allowScripts = !allowScripts"
       >
-        Enable scripts for this preview
+        {{ scriptsToggleLabel }}
       </button>
       <p v-if="allowScripts" class="html-preview__scripts-status" role="status">
         Scripts enabled for this preview

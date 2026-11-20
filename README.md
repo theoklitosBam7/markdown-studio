@@ -276,12 +276,12 @@ The kitchen-sink example loads by default on first visit.
 **Desktop App:**
 
 - **Open.** Load an existing `.md`, `.markdown`, `.mdown`, `.txt`, `.html`, or `.htm` file from a native dialog
-- **HTML preview.** Open an HTML file in a read-only frame. Scripts, forms, external network assets, and source navigation stay blocked until you use **Enable scripts for this preview**. Local CSS, images, fonts, and media load from the HTML Document's folder through a temporary grant.
+- **HTML preview.** Open an HTML file in a read-only frame. Scripts, forms, external network assets, and source navigation stay blocked until you use **Enable scripts for this preview**. Use **Disable scripts for this preview** to return to the static view. Local CSS, images, fonts, and media load from the HTML Document's folder through a temporary grant.
 - **Save.** Save the current Markdown Document
 - **Save As.** Save with a new name or location
 - **Clear.** Start fresh with an empty editor
 
-The desktop asset grant ends when the HTML Preview closes or another document becomes active. The script choice is not saved and ends when another HTML Document opens. Enabled scripts run in an opaque-origin frame with only `allow-scripts`. They cannot reach the parent app, the desktop bridge, or the network. The per-preview asset grant still confines file reads.
+The desktop asset grant ends when the HTML Preview closes or another document becomes active. The script choice is not saved. It ends when you disable it or when another HTML Document opens. Enabled scripts run in an opaque-origin frame with only `allow-scripts`. They cannot reach the parent app, the desktop bridge, or the network. The per-preview asset grant still confines file reads. Libraries loaded from a CDN need network access, so they do not run in this preview. Use a local classic bundle through a relative `<script src>` and remove CDN module imports, which the preview does not rewrite to the asset grant.
 
 **Web App:**
 

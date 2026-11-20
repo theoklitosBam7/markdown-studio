@@ -74,6 +74,25 @@ describe('HtmlPreviewSurface script opt-in', () => {
     )
   })
 
+  it('disables scripts when the toggle is pressed again', async () => {
+    const wrapper = mountSurface()
+    const toggle = wrapper.get('button')
+
+    await toggle.trigger('click')
+
+    expect(toggle.text()).toBe('Disable scripts for this preview')
+    expect(toggle.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('iframe').attributes('sandbox')).toBe('allow-scripts')
+
+    await toggle.trigger('click')
+
+    expect(toggle.text()).toBe('Enable scripts for this preview')
+    expect(toggle.attributes('aria-pressed')).toBe('false')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.get('iframe').attributes('sandbox')).toBe('')
+    expect(wrapper.get('iframe').attributes('srcdoc')).not.toContain('<script')
+  })
+
   it('resets the opt-in when another HTML Document becomes active', async () => {
     const wrapper = mountSurface()
     await wrapper.get('button').trigger('click')
