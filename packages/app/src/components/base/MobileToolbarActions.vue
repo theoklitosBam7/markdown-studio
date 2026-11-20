@@ -38,6 +38,7 @@ interface Props {
   documentName?: string
   isCopied: boolean
   isDirty?: boolean
+  isHtmlPreview?: boolean
   isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
   theme: Theme
@@ -66,6 +67,7 @@ const props = withDefaults(defineProps<Props>(), {
   canSaveDocuments: false,
   documentName: 'Untitled.md',
   isDirty: false,
+  isHtmlPreview: false,
   isOutlineOpen: false,
   pdfExportUnavailableReason: '',
 })
@@ -106,7 +108,7 @@ const actionGroups = computed<SheetGroup[]>(() => {
     })
   }
 
-  if (props.canSaveDocuments) {
+  if (props.canSaveDocuments && !props.isHtmlPreview) {
     documentActions.push({
       action: () => emit('saveDocument'),
       icon: Save,
@@ -129,44 +131,50 @@ const actionGroups = computed<SheetGroup[]>(() => {
     groups.push({ items: documentActions, label: 'Document' })
   }
 
-  groups.push({
-    items: [
-      { action: () => emit('openFind'), icon: Search, label: 'Find in Document' },
-      { action: () => emit('insertTable'), icon: Table2, label: 'Insert Table' },
-      { action: () => emit('openExamples'), icon: Grid2X2, label: 'Load Examples' },
-      {
-        action: () => emit('copy'),
-        icon: Copy,
-        label: props.isCopied ? 'Copied!' : 'Copy Markdown',
-        variant: props.isCopied ? 'primary' : 'default',
-      },
-    ],
-    label: 'Edit',
-  })
-
-  groups.push({
-    items: [
-      { action: () => emit('exportHtml'), icon: FileText, label: 'Export as HTML' },
-      {
-        action: () => emit('exportPdf'),
-        description: props.canExportPdf ? undefined : props.pdfExportUnavailableReason,
-        disabled: !props.canExportPdf,
-        icon: FileDown,
-        label: 'Export as PDF',
-      },
-    ],
-    label: 'Export',
-  })
-
-  groups.push({
-    items: [
-      {
-        action: () => {
-          openDisplayAfterDismissal = true
+  if (!props.isHtmlPreview) {
+    groups.push({
+      items: [
+        { action: () => emit('openFind'), icon: Search, label: 'Find in Document' },
+        { action: () => emit('insertTable'), icon: Table2, label: 'Insert Table' },
+        { action: () => emit('openExamples'), icon: Grid2X2, label: 'Load Examples' },
+        {
+          action: () => emit('copy'),
+          icon: Copy,
+          label: props.isCopied ? 'Copied!' : 'Copy Markdown',
+          variant: props.isCopied ? 'primary' : 'default',
         },
-        icon: SlidersHorizontal,
-        label: 'Editor display',
-      },
+      ],
+      label: 'Edit',
+    })
+
+    groups.push({
+      items: [
+        { action: () => emit('exportHtml'), icon: FileText, label: 'Export as HTML' },
+        {
+          action: () => emit('exportPdf'),
+          description: props.canExportPdf ? undefined : props.pdfExportUnavailableReason,
+          disabled: !props.canExportPdf,
+          icon: FileDown,
+          label: 'Export as PDF',
+        },
+      ],
+      label: 'Export',
+    })
+  }
+
+  groups.push({
+    items: [
+      ...(props.isHtmlPreview
+        ? []
+        : [
+            {
+              action: () => {
+                openDisplayAfterDismissal = true
+              },
+              icon: SlidersHorizontal,
+              label: 'Editor display',
+            },
+          ]),
       {
         action: () => emit('update:theme', { theme: nextTheme.value }),
         icon: props.theme === 'light' ? Moon : Sun,
@@ -188,12 +196,14 @@ const actionGroups = computed<SheetGroup[]>(() => {
     label: 'More',
   })
 
-  groups.push({
-    items: [
-      { action: () => emit('clear'), icon: Trash2, label: 'Clear Document', variant: 'danger' },
-    ],
-    label: 'Danger',
-  })
+  if (!props.isHtmlPreview) {
+    groups.push({
+      items: [
+        { action: () => emit('clear'), icon: Trash2, label: 'Clear Document', variant: 'danger' },
+      ],
+      label: 'Danger',
+    })
+  }
 
   return groups
 })

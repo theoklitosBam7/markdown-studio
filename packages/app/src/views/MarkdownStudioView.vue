@@ -3,6 +3,7 @@ import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 
 import type { EditorScrollPayload, ShortcutBinding } from '@/features/markdown/types'
 
+import HtmlPreviewSurface from '@/features/html-preview/components/HtmlPreviewSurface.vue'
 import ClearDocumentDialog from '@/features/markdown/components/ClearDocumentDialog.vue'
 import CommandPalette from '@/features/markdown/components/CommandPalette.vue'
 import EditorPane from '@/features/markdown/components/EditorPane.vue'
@@ -121,6 +122,7 @@ const {
   content,
   currentPath,
   displayName,
+  documentKind,
   folderMessage,
   folderNodes,
   homebrewUpgradeCommand,
@@ -293,6 +295,7 @@ function handleTableInsertionConfirm(): void {
       v-if="!isMobile"
       :can-install="canInstall"
       :is-copied="isCopied"
+      :is-html-preview="documentKind === 'html'"
       :is-outline-open="isOutlineOpen"
       @clear="handleClearRequest"
       @copy="workspace.toolbar.copy"
@@ -312,6 +315,7 @@ function handleTableInsertionConfirm(): void {
         :can-save-documents="canSaveDocuments"
         :document-name="displayName"
         :is-mobile="isMobile"
+        :is-html-preview="documentKind === 'html'"
         :is-outline-open="isOutlineOpen"
         :is-dirty="isDirty"
         :view-mode="viewMode"
@@ -389,7 +393,8 @@ function handleTableInsertionConfirm(): void {
               @navigate="workspace.outline.navigate"
             />
           </template>
-          <WorkspaceSplitLayout :view-mode="viewMode">
+          <HtmlPreviewSurface v-if="documentKind === 'html'" :content="content" />
+          <WorkspaceSplitLayout v-else :view-mode="viewMode">
             <template #editor>
               <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->
               <EditorPane
@@ -423,6 +428,7 @@ function handleTableInsertionConfirm(): void {
       <StatusBar
         :chars="stats.chars"
         :diagrams="stats.diagrams"
+        :is-html-preview="documentKind === 'html'"
         :lines="stats.lines"
         :status="statusText"
         :words="stats.words"

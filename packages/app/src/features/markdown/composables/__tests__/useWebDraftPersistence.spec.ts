@@ -1,3 +1,5 @@
+import type { ActiveDocumentKind } from '@/types/document'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { computed, shallowRef } from 'vue'
 
@@ -32,6 +34,7 @@ describe('useWebDraftPersistence', () => {
     const persistence = useWebDraftPersistence({
       content,
       displayName,
+      documentKind: shallowRef<ActiveDocumentKind>('markdown'),
       isDesktop,
       isDirty,
       restoreDraft,
@@ -60,6 +63,7 @@ describe('useWebDraftPersistence', () => {
     const persistence = useWebDraftPersistence({
       content: shallowRef('# Initial'),
       displayName: computed(() => 'Untitled.md'),
+      documentKind: shallowRef<ActiveDocumentKind>('markdown'),
       isDesktop: shallowRef(true),
       isDirty,
       restoreDraft,
@@ -77,6 +81,7 @@ describe('useWebDraftPersistence', () => {
     const persistence = useWebDraftPersistence({
       content,
       displayName: computed(() => label.value),
+      documentKind: shallowRef<ActiveDocumentKind>('markdown'),
       isDesktop: shallowRef(false),
       isDirty,
       restoreDraft: vi.fn(),
@@ -102,6 +107,7 @@ describe('useWebDraftPersistence', () => {
     const persistence = useWebDraftPersistence({
       content,
       displayName: computed(() => 'Untitled.md'),
+      documentKind: shallowRef<ActiveDocumentKind>('markdown'),
       isDesktop: shallowRef(false),
       isDirty,
       restoreDraft: vi.fn(),
@@ -115,6 +121,24 @@ describe('useWebDraftPersistence', () => {
     expect(window.localStorage.getItem('markdown-studio:web-draft')).not.toBeNull()
 
     await persistence.clearDraft()
+
+    expect(window.localStorage.getItem('markdown-studio:web-draft')).toBeNull()
+  })
+
+  it('does not write a draft while an HTML preview is active', async () => {
+    const content = shallowRef('<p>Page</p>')
+    const persistence = useWebDraftPersistence({
+      content,
+      displayName: computed(() => 'page.html'),
+      documentKind: shallowRef<ActiveDocumentKind>('html'),
+      isDesktop: shallowRef(false),
+      isDirty: shallowRef(true),
+      restoreDraft: vi.fn(),
+    })
+
+    await persistence.restoreStoredDraft()
+    content.value = '<p>Updated</p>'
+    await vi.advanceTimersByTimeAsync(300)
 
     expect(window.localStorage.getItem('markdown-studio:web-draft')).toBeNull()
   })

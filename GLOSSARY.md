@@ -27,6 +27,14 @@ _Avoid_: vault, project, library, workspace
 A diagram authored inside a **Markdown Document** using a supported diagram syntax such as Mermaid.
 _Avoid_: SVG, chart
 
+**HTML Document**:
+A user-provided HTML file with a **Document Identity** and read-only content in the Editor Workspace.
+_Avoid_: web page, HTML source
+
+**HTML Preview**:
+The **Product Surface** that presents an **HTML Document** in a sandboxed frame.
+It does not provide Source Navigation and does not run scripts.
+
 **Editor Workspace**:
 The active environment where a user edits a **Markdown Document** and moves between editing, previewing, restoring, and exporting.
 _Avoid_: app shell, page
@@ -79,7 +87,8 @@ _Avoid_: route, layout
 - A **Markdown Document** can produce one or more **Rendered Markdown Documents**.
 - A **Markdown Document** may contain zero or more **Embedded Diagrams**.
 - An **Editor Workspace** has at most one active **Markdown Document**.
-- A **Document Folder** contains zero or more **Markdown Documents**.
+- An **Editor Workspace** can show one active **HTML Document** through the **HTML Preview**.
+- A **Document Folder** contains zero or more **Markdown Documents** and **HTML Documents**.
 - An **Editor Workspace** can browse zero or more **Document Folders**.
 - Opening a **Markdown Document** from a **Document Folder** replaces the active **Markdown Document**.
 - A **Document Folder** can be browsed in the desktop **Runtime** only.
@@ -92,7 +101,9 @@ _Avoid_: route, layout
 - A **Rendered Markdown Document** presents each **Embedded Diagram** as rendered visual content when possible.
 - An untitled **Markdown Document** has no saved file path but can still have a display name.
 - The **Live Preview** is a **Product Surface**.
+- The **HTML Preview** is a **Product Surface**.
 - The **Live Preview** can navigate back to source positions in the **Markdown Document**.
+- The **HTML Preview** does not use Source Navigation.
 - A **Product Surface** can be available in one or more **Runtimes**.
 - The **Live Preview** uses **Source Navigation** to move from rendered content back to Markdown source.
 - **Source Navigation** depends on a **Rendered Markdown Document** preserving source positions.

@@ -716,4 +716,57 @@ describe('useEditorWorkspaceController', () => {
 
     expect(removeDesktopCommandListener).toHaveBeenCalledTimes(1)
   })
+
+  it('forces preview-only mode and blocks editing actions for HTML documents', async () => {
+    const save = vi.fn(async () => null)
+    const exportHtml = vi.fn(async () => null)
+
+    appWindow.desktop = {
+      commands: { onAppCommand: vi.fn(() => () => undefined) },
+      documents: {
+        clearLastOpened: vi.fn(async () => undefined),
+        clearWorkspaceDraft: vi.fn(async () => undefined),
+        open: vi.fn(async () => ({
+          content: '<p>Page</p>',
+          modifiedAt: 1,
+          path: '/tmp/page.html',
+        })),
+        restoreLastOpened: vi.fn(async () => null),
+        restoreWorkspaceDraft: vi.fn(async () => null),
+        save,
+        saveAs: vi.fn(async () => null),
+        saveWorkspaceDraft: vi.fn(async () => undefined),
+      },
+      editing: { insertText: vi.fn(async () => undefined) },
+      exports: {
+        exportHtml,
+        exportPdf: vi.fn(async () => null),
+      },
+      install: { isHomebrew: async () => false },
+      isDesktop: true,
+      shell: { openExternal: vi.fn(async () => undefined) },
+    }
+
+    const { workspace, wrapper } = await mountWorkspace()
+    await flushPromises()
+    await workspace.document.open()
+    await flushPromises()
+
+    expect(workspace.state.documentKind.value).toBe('html')
+    expect(workspace.state.availableModes.value).toEqual(['preview'])
+    expect(workspace.state.viewMode.value).toBe('preview')
+
+    await workspace.document.save()
+    await workspace.export.html()
+    await workspace.document.handleAppCommand('document:exportHtml')
+    workspace.find.open()
+    await workspace.editor.insertTable()
+
+    expect(save).not.toHaveBeenCalled()
+    expect(exportHtml).not.toHaveBeenCalled()
+    expect(workspace.find.state.value.isOpen).toBe(false)
+    expect(workspace.state.isTableDimensionPickerOpen.value).toBe(false)
+
+    wrapper.unmount()
+  })
 })

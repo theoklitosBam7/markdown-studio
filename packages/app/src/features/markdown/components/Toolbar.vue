@@ -30,6 +30,7 @@ interface Props {
   documentName?: string
   isCopied: boolean
   isDirty?: boolean
+  isHtmlPreview?: boolean
   isMobile?: boolean
   isOutlineOpen?: boolean
   pdfExportUnavailableReason?: string
@@ -45,6 +46,7 @@ const props = withDefaults(defineProps<Props>(), {
   canSaveDocuments: false,
   documentName: 'Untitled.md',
   isDirty: false,
+  isHtmlPreview: false,
   isMobile: false,
   isOutlineOpen: false,
   pdfExportUnavailableReason: '',
@@ -168,6 +170,7 @@ function toggleOutline(): void {
       :document-name="props.documentName"
       :is-copied="props.isCopied"
       :is-dirty="props.isDirty"
+      :is-html-preview="props.isHtmlPreview"
       :is-outline-open="props.isOutlineOpen"
       :pdf-export-unavailable-reason="props.pdfExportUnavailableReason"
       :theme="props.theme"
@@ -214,7 +217,7 @@ function toggleOutline(): void {
             <span>Open</span>
           </ToolbarButton>
           <ToolbarButton
-            v-if="props.canSaveDocuments"
+            v-if="props.canSaveDocuments && !props.isHtmlPreview"
             variant="primary"
             aria-label="Save document"
             title="Save document"
@@ -225,7 +228,7 @@ function toggleOutline(): void {
           </ToolbarButton>
         </div>
 
-        <div ref="exportMenu" class="toolbar__export">
+        <div v-if="!props.isHtmlPreview" ref="exportMenu" class="toolbar__export">
           <ToolbarButton
             aria-label="Export document"
             title="Export document"
@@ -263,6 +266,7 @@ function toggleOutline(): void {
 
         <div class="toolbar__desktop-controls">
           <ViewToggle
+            v-if="!props.isHtmlPreview"
             :available-modes="props.availableModes"
             :model-value="props.viewMode"
             @update:model-value="handleViewModeChange"
@@ -277,6 +281,7 @@ function toggleOutline(): void {
             <Keyboard :size="18" :stroke-width="1.8" aria-hidden="true" />
           </ToolbarButton>
           <ToolbarButton
+            v-if="!props.isHtmlPreview"
             class="editor-display-button"
             aria-label="Editor display"
             title="Editor display"

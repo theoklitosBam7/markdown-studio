@@ -306,4 +306,49 @@ describe('useDocumentActions', () => {
     expect(saved).toEqual({ path: 'notes.md' })
     expect(anchorClickSpy).toHaveBeenCalled()
   })
+
+  it('offers HTML files in the browser open picker', async () => {
+    const handle = {
+      getFile: vi.fn(async () => new File(['<p>Page</p>'], 'page.html', { type: 'text/html' })),
+      kind: 'file',
+      name: 'page.html',
+    } as unknown as FileSystemFileHandle
+    const picker = vi.fn(async () => [handle])
+    appWindow.showOpenFilePicker = picker
+
+    await useDocumentActions().open()
+
+    expect(picker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        types: [
+          expect.objectContaining({
+            accept: expect.objectContaining({ 'text/html': ['.html', '.htm'] }),
+          }),
+        ],
+      }),
+    )
+  })
+
+  it('accepts HTML files in the browser fallback input', async () => {
+    appWindow.showOpenFilePicker = undefined
+    const selectedFile = new File(['<p>Page</p>'], 'page.html', { type: 'text/html' })
+    let accepted = ''
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function mockClick(
+      this: HTMLInputElement,
+    ) {
+      accepted = this.accept
+      Object.defineProperty(this, 'files', { configurable: true, value: [selectedFile] })
+      this.dispatchEvent(new Event('change'))
+    })
+
+    const opened = await useDocumentActions().open()
+
+    expect(opened).toEqual({
+      content: '<p>Page</p>',
+      modifiedAt: 0,
+      path: 'page.html',
+    })
+    expect(accepted).toContain('.html')
+    expect(accepted).toContain('.htm')
+  })
 })

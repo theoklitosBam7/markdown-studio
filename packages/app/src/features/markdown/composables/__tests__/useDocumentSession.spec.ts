@@ -535,4 +535,43 @@ describe('useDocumentSession', () => {
     expect(session.currentPath.value).toBe(null)
     expect(session.isDirty.value).toBe(false)
   })
+
+  it('tracks an HTML file as a read-only document and returns to Markdown for a new document', async () => {
+    desktopMock.documents.open.mockResolvedValueOnce({
+      content: '<p>Page</p>',
+      modifiedAt: 42,
+      path: '/tmp/page.html',
+    })
+    const { content, session } = createSession()
+
+    await session.openDocument()
+    await nextTick()
+
+    expect(content.value).toBe('<p>Page</p>')
+    expect(session.documentKind.value).toBe('html')
+    expect(session.displayName.value).toBe('page.html')
+    expect(session.statusText.value).toContain('Opened page.html')
+
+    await session.saveDocument()
+
+    expect(desktopMock.documents.save).not.toHaveBeenCalled()
+
+    await session.startNewDocument({ discardConfirmed: true })
+
+    expect(session.documentKind.value).toBe('markdown')
+  })
+
+  it('detects an HTML file restored from the last opened desktop path', async () => {
+    desktopMock.documents.restoreLastOpened.mockResolvedValueOnce({
+      content: '<p>Restored</p>',
+      modifiedAt: 7,
+      path: '/tmp/restored.htm',
+    })
+    const { session } = createSession()
+
+    await session.restoreLastOpenedDocument()
+
+    expect(session.documentKind.value).toBe('html')
+    expect(session.displayName.value).toBe('restored.htm')
+  })
 })

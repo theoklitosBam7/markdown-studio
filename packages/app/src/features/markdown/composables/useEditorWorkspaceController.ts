@@ -73,6 +73,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     checkForDiskChanges,
     currentPath,
     displayName,
+    documentKind,
     handleAppCommand,
     isDesktop,
     isDirty,
@@ -165,6 +166,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       content,
       currentPath,
       displayName,
+      documentKind,
       isDesktop,
       isDirty,
       restoreDraft: restoreDocumentWorkspaceDraft,
@@ -173,6 +175,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   const { clearDraft, restoreStoredDraft } = useWebDraftPersistence({
     content,
     displayName,
+    documentKind,
     isDesktop,
     isDirty,
     restoreDraft,
@@ -188,11 +191,11 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   const showPwaBanner = computed(
     () => !desktop.value.isDesktop && (needRefresh.value || offlineReady.value),
   )
-  const availableModes = computed(() =>
-    isMobile.value
-      ? (['editor', 'preview'] satisfies ViewMode[])
-      : (['editor', 'split', 'preview'] satisfies ViewMode[]),
-  )
+  const availableModes = computed<ViewMode[]>(() => {
+    if (documentKind.value === 'html') return ['preview']
+
+    return isMobile.value ? ['editor', 'preview'] : ['editor', 'split', 'preview']
+  })
   const bodyClasses = computed(() => ({
     'is-mobile': isMobile.value,
     'view-editor': viewMode.value === 'editor',
@@ -230,6 +233,10 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     },
     { immediate: true },
   )
+
+  watch(documentKind, (kind) => {
+    if (kind === 'html') setViewMode('preview')
+  })
 
   watch(
     () => [content.value, isMobile.value, sourceMap.value, viewMode.value],
@@ -307,6 +314,14 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
   }
 
   async function handleDesktopCommand(command: AppCommand): Promise<void> {
+    const isMarkdownOnlyCommand =
+      command === 'document:exportHtml' ||
+      command === 'document:exportPdf' ||
+      command === 'editor:find' ||
+      command === 'editor:replace'
+
+    if (documentKind.value === 'html' && isMarkdownOnlyCommand) return
+
     switch (command) {
       case 'document:exportHtml':
         await exportHtml()
@@ -631,9 +646,11 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
         await restoreWorkspaceDraft()
       },
       async save(): Promise<void> {
+        if (documentKind.value === 'html') return
         await saveWorkspaceDocument()
       },
       async saveAs(): Promise<void> {
+        if (documentKind.value === 'html') return
         await saveWorkspaceDocumentAs()
       },
       async startNew(options?: { discardConfirmed: boolean }): Promise<void> {
@@ -644,15 +661,20 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       cancelTableInsertion,
       confirmTableInsertion,
       async insertTable(): Promise<void> {
+        if (documentKind.value === 'html') return
         await insertTable()
       },
       setTableDimensions,
       async setTheme(request: ThemeChangeRequest) {
         await setWorkspaceTheme(request)
       },
-      setViewMode,
+      setViewMode(mode) {
+        setViewMode(documentKind.value === 'html' ? 'preview' : mode)
+      },
       syncPreviewToEditorPosition,
-      updateContent,
+      updateContent(value) {
+        if (documentKind.value === 'markdown') updateContent(value)
+      },
     },
     examples: {
       close: closeExamples,
@@ -660,17 +682,23 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     },
     export: {
       async html(): Promise<void> {
+        if (documentKind.value === 'html') return
         await exportHtml()
       },
       async pdf(): Promise<void> {
+        if (documentKind.value === 'html') return
         await exportPdf()
       },
     },
     find: {
       close: closeFindPanel,
       next: findNext,
-      open: openFindPanel,
-      openReplace: openReplacePanel,
+      open() {
+        if (documentKind.value === 'markdown') openFindPanel()
+      },
+      openReplace() {
+        if (documentKind.value === 'markdown') openReplacePanel()
+      },
       previous: findPrevious,
       replaceAll,
       replaceCurrent,
@@ -711,6 +739,7 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
       content,
       currentPath,
       displayName,
+      documentKind,
       folderMessage,
       folderNodes,
       homebrewUpgradeCommand,

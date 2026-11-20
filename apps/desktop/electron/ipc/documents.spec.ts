@@ -197,4 +197,35 @@ describe('document modification IPC', () => {
       status: 'changed',
     })
   })
+
+  it('offers HTML in the Open dialog but not in Save As', async () => {
+    const htmlPath = join(temporaryDirectory, 'page.html')
+    await writeFile(htmlPath, '<p>Page</p>')
+    showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [htmlPath] })
+
+    const opened = await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
+
+    expect(opened).toMatchObject({ content: '<p>Page</p>', path: htmlPath })
+    expect(showOpenDialog).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        filters: expect.arrayContaining([{ extensions: ['html', 'htm'], name: 'HTML Documents' }]),
+      }),
+    )
+
+    showSaveDialog.mockResolvedValue({
+      canceled: false,
+      filePath: join(temporaryDirectory, 'copy.md'),
+    })
+    await handlers.get(DOCUMENTS_SAVE_AS_CHANNEL)?.({}, { content: '<p>Page</p>' })
+
+    expect(showSaveDialog).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        filters: expect.not.arrayContaining([
+          { extensions: ['html', 'htm'], name: 'HTML Documents' },
+        ]),
+      }),
+    )
+  })
 })

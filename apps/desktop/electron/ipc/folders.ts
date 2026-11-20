@@ -14,7 +14,7 @@ import type { Dirent, Stats } from 'node:fs'
 import { readdir, readFile, realpath, stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute, join, relative, resolve } from 'node:path'
 
-const LISTED_EXTENSIONS = new Set(['.markdown', '.md', '.mdown', '.txt'])
+const LISTED_EXTENSIONS = new Set(['.htm', '.html', '.markdown', '.md', '.mdown', '.txt'])
 const IGNORED_DIRECTORIES = new Set(['node_modules'])
 
 export interface DocumentFolderRegistry {

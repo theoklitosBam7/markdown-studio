@@ -15,6 +15,7 @@ Markdown Studio is a split-pane Markdown editor that lets you write on one side 
 - Built-in diagram support via Mermaid
 - Dark and light themes
 - File management (open, save, save as)
+- Read-only preview for self-contained HTML files
 - Document Folder browsing in the desktop app
 - Example templates to get you started
 - Available as a web app, desktop application, or installable PWA
@@ -172,6 +173,7 @@ intentionally want to remove labels that are absent from `.github/labels.yml`.
 - **Split-pane editor.** Write on the left, preview on the right
 - **View modes.** Toggle between split view, editor-only, or preview-only modes
 - **Live Markdown rendering.** See changes instantly as you type
+- **HTML Document preview.** Open a self-contained `.html` or `.htm` file in a read-only sandboxed frame
 - **Mermaid diagram support.** Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
 - **Theme switching.** Toggle between light and dark modes with smooth animated transitions
 - **Document statistics.** Track word, character, line, and diagram counts in real time
@@ -272,14 +274,16 @@ The kitchen-sink example loads by default on first visit.
 
 **Desktop App:**
 
-- **Open.** Load an existing `.md`, `.markdown`, `.mdown`, or `.txt` file from a native dialog
-- **Save.** Save your current document
+- **Open.** Load an existing `.md`, `.markdown`, `.mdown`, `.txt`, `.html`, or `.htm` file from a native dialog
+- **HTML preview.** Open an HTML file in a read-only frame. Scripts, forms, external assets, and source navigation are blocked.
+- **Save.** Save the current Markdown Document
 - **Save As.** Save with a new name or location
 - **Clear.** Start fresh with an empty editor
 
 **Web App:**
 
-- **Open.** Load `.md` files using the File System Access API (Chrome/Edge) or file picker
+- **Open.** Load `.md`, `.html`, or `.htm` files using the File System Access API (Chrome/Edge) or file picker
+- **HTML preview.** Open an HTML file in a read-only frame. Self-contained files render best.
 - **Save.** Save to previously opened file, or download if using the fallback
 - **Save As.** Save with a new name (uses File System Access API when available, otherwise downloads)
 
@@ -291,7 +295,7 @@ The desktop app can keep folders open so you can move between files without the 
 2. Expand a folder to list its Markdown files.
 3. Click a file to open it. The open document is highlighted in the tree.
 
-The panel remembers the folders you added between sessions. It lists files with the `.md`, `.markdown`, `.mdown`, and `.txt` extensions and hides dotfiles and `node_modules`.
+The panel remembers the folders you added between sessions. It lists files with the `.md`, `.markdown`, `.mdown`, `.txt`, `.html`, and `.htm` extensions and hides dotfiles and `node_modules`.
 
 Move through the tree with the arrow keys, expand and collapse with Left and Right, and open a file with Enter. `Cmd+Shift+E` shows the folder panel and `Cmd+Shift+O` adds a folder. Removing a folder from the panel leaves the open document alone.
 

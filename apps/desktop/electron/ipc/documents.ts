@@ -61,6 +61,10 @@ const MARKDOWN_FILTERS = [
   { extensions: ['md', 'markdown', 'mdown', 'txt'], name: 'Markdown Files' },
   { extensions: ['*'], name: 'All Files' },
 ]
+const HTML_OPEN_FILTERS = [
+  { extensions: ['html', 'htm'], name: 'HTML Documents' },
+  ...MARKDOWN_FILTERS,
+]
 const PDF_FILTERS = [
   { extensions: ['pdf'], name: 'PDF Files' },
   { extensions: ['*'], name: 'All Files' },
@@ -142,7 +146,7 @@ export async function openDocument(
   authorizedDocumentPaths?: Set<string>,
 ): Promise<DesktopDocumentHandle | null> {
   const result = await dialog.showOpenDialog(mainWindow, {
-    filters: MARKDOWN_FILTERS,
+    filters: HTML_OPEN_FILTERS,
     properties: ['openFile'],
   })
 

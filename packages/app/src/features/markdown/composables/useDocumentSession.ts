@@ -1,5 +1,7 @@
 import type { AppCommand, DesktopDocumentHandle } from '@markdown-studio/desktop-contract/types'
 
+import type { ActiveDocumentKind } from '@/types/document'
+
 import {
   computed,
   type ComputedRef,
@@ -9,6 +11,8 @@ import {
   type ShallowRef,
   watch,
 } from 'vue'
+
+import { resolveDocumentKind } from '@/utils/documentKind'
 
 import { useDocumentActions } from './useDocumentActions'
 
@@ -23,6 +27,7 @@ interface UseDocumentSessionReturn {
   checkForDiskChanges: () => Promise<void>
   currentPath: DeepReadonly<ShallowRef<null | string>>
   displayName: ComputedRef<string>
+  documentKind: DeepReadonly<ShallowRef<ActiveDocumentKind>>
   handleAppCommand: (command: AppCommand) => Promise<void>
   isDesktop: ComputedRef<boolean>
   isDirty: ComputedRef<boolean>
@@ -48,6 +53,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   const documents = useDocumentActions()
   const currentPath = shallowRef<null | string>(null)
   const currentModifiedAt = shallowRef(0)
+  const documentKind = shallowRef<ActiveDocumentKind>('markdown')
   const draftLabel = shallowRef<null | string>(null)
   const lastAction = shallowRef('Ready')
   const savedContent = shallowRef(options.content.value)
@@ -80,12 +86,16 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   function applyDocument(handle: DesktopDocumentHandle): void {
+    const kind = resolveDocumentKind(handle.path)
+    const name = getFileName(handle.path)
+
     options.replaceContent(handle.content)
     currentPath.value = handle.path
     currentModifiedAt.value = handle.modifiedAt
+    documentKind.value = kind
     draftLabel.value = null
     savedContent.value = handle.content
-    lastAction.value = `Opened ${getFileName(handle.path)}`
+    lastAction.value = kind === 'html' ? `Opened ${name} (read-only)` : `Opened ${name}`
     syncDocumentTitle()
   }
 
@@ -190,6 +200,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
 
     options.replaceContent(input.content)
     currentPath.value = null
+    documentKind.value = resolveDocumentKind(input.label)
     draftLabel.value = input.label || 'Untitled.md'
     savedContent.value = ''
     lastAction.value = 'Restored local draft'
@@ -207,6 +218,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     options.replaceContent(input.content)
     currentPath.value = input.path
     currentModifiedAt.value = 0
+    documentKind.value = resolveDocumentKind(input.path ?? input.label)
     draftLabel.value = input.path ? null : input.label || 'Untitled.md'
     savedContent.value = input.savedContent
     lastAction.value = 'Restored unsaved changes'
@@ -220,6 +232,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     options.replaceContent(restored.content)
     currentPath.value = restored.path
     currentModifiedAt.value = restored.modifiedAt
+    documentKind.value = resolveDocumentKind(restored.path)
     draftLabel.value = null
     savedContent.value = restored.content
     lastAction.value = `Restored ${getFileName(restored.path)}`
@@ -230,6 +243,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     await documents.clearCurrentDocumentReference()
     options.replaceContent(input.content)
     currentPath.value = null
+    documentKind.value = 'markdown'
     draftLabel.value = null
     savedContent.value = input.content
     lastAction.value = `Loaded example: ${input.title}`
@@ -237,6 +251,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   async function saveDocument(): Promise<void> {
+    if (documentKind.value === 'html') return
     if (!(await confirmSafeToSave())) return
 
     const saved = await documents.save({
@@ -255,6 +270,8 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
   }
 
   async function saveDocumentAs(): Promise<void> {
+    if (documentKind.value === 'html') return
+
     const saved = await documents.saveAs({
       content: options.content.value,
       suggestedPath: currentPath.value ?? displayName.value,
@@ -276,6 +293,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     await documents.clearCurrentDocumentReference()
     options.replaceContent('')
     currentPath.value = null
+    documentKind.value = 'markdown'
     draftLabel.value = null
     savedContent.value = ''
     lastAction.value = 'Started a new document'
@@ -307,6 +325,7 @@ export function useDocumentSession(options: UseDocumentSessionOptions): UseDocum
     checkForDiskChanges,
     currentPath: readonly(currentPath),
     displayName,
+    documentKind: readonly(documentKind),
     handleAppCommand,
     isDesktop,
     isDirty,

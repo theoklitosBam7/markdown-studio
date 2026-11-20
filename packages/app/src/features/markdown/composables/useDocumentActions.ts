@@ -203,7 +203,7 @@ async function openBrowserDocument(): Promise<BrowserOpenResult | null> {
 
   const input = document.createElement('input')
   input.type = 'file'
-  input.accept = '.md,.markdown,.mdown,text/markdown,text/plain'
+  input.accept = '.md,.markdown,.mdown,.html,.htm,text/markdown,text/plain,text/html'
   input.style.display = 'none'
 
   let resolveFile: (value: File | null) => void = () => undefined
@@ -311,10 +311,11 @@ async function showBrowserOpenPicker(): Promise<BrowserOpenResult | null | undef
       types: [
         {
           accept: {
+            'text/html': ['.html', '.htm'],
             'text/markdown': ['.md', '.markdown', '.mdown'],
             'text/plain': ['.txt'],
           },
-          description: 'Markdown Files',
+          description: 'Documents',
         },
       ],
     })
