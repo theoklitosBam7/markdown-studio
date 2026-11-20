@@ -144,6 +144,8 @@ describe('document folder listing', () => {
     await mkdir(join(documentFolder, 'node_modules'))
     await mkdir(join(documentFolder, '.git'))
     await writeFile(join(documentFolder, 'notes.md'), '# Notes')
+    await writeFile(join(documentFolder, 'page.html'), '<p>Page</p>')
+    await writeFile(join(documentFolder, 'index.HTM'), '<p>Index</p>')
     await writeFile(join(documentFolder, 'todo.txt'), 'todo')
     await writeFile(join(documentFolder, 'readme.MARKDOWN'), '# Readme')
     await writeFile(join(documentFolder, 'image.png'), 'png')
@@ -155,7 +157,9 @@ describe('document folder listing', () => {
     expect(listing).toEqual({
       entries: [
         { kind: 'folder', name: 'sub', relativePath: 'sub' },
+        { kind: 'file', name: 'index.HTM', relativePath: 'index.HTM' },
         { kind: 'file', name: 'notes.md', relativePath: 'notes.md' },
+        { kind: 'file', name: 'page.html', relativePath: 'page.html' },
         { kind: 'file', name: 'readme.MARKDOWN', relativePath: 'readme.MARKDOWN' },
         { kind: 'file', name: 'todo.txt', relativePath: 'todo.txt' },
       ],
