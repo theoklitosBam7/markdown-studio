@@ -173,7 +173,7 @@ intentionally want to remove labels that are absent from `.github/labels.yml`.
 - **Split-pane editor.** Write on the left, preview on the right
 - **View modes.** Toggle between split view, editor-only, or preview-only modes
 - **Live Markdown rendering.** See changes instantly as you type
-- **HTML Document preview.** Open a self-contained `.html` or `.htm` file in a read-only sandboxed frame
+- **HTML Document preview.** Open a `.html` or `.htm` file in a read-only sandboxed frame. Desktop previews load local styles, images, fonts, and media from the file's folder.
 - **Mermaid diagram support.** Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
 - **Theme switching.** Toggle between light and dark modes with smooth animated transitions
 - **Document statistics.** Track word, character, line, and diagram counts in real time
@@ -190,6 +190,7 @@ intentionally want to remove labels that are absent from `.github/labels.yml`.
 - **File System Access API.** Open and save files directly in supported browsers
 - **Desktop file operations.** Native open, save, and save as in the Electron app
 - **Constrained folder reads.** Every folder listing is resolved with `realpath` and confined to the folder the user opened
+- **Scoped HTML preview assets.** Relative assets in desktop HTML previews use a per-preview grant confined to the HTML Document's folder
 - **Responsive design.** Works on desktop and mobile devices
 - **Keyboard shortcuts.** Efficient editing with familiar shortcuts
 - **Scroll synchronization.** Source map tracking enables editor-preview sync
@@ -275,10 +276,12 @@ The kitchen-sink example loads by default on first visit.
 **Desktop App:**
 
 - **Open.** Load an existing `.md`, `.markdown`, `.mdown`, `.txt`, `.html`, or `.htm` file from a native dialog
-- **HTML preview.** Open an HTML file in a read-only frame. Scripts, forms, external assets, and source navigation are blocked.
+- **HTML preview.** Open an HTML file in a read-only frame. Scripts, forms, external network assets, and source navigation are blocked. Local CSS, images, fonts, and media load from the HTML Document's folder through a temporary grant.
 - **Save.** Save the current Markdown Document
 - **Save As.** Save with a new name or location
 - **Clear.** Start fresh with an empty editor
+
+The desktop asset grant ends when the HTML Preview closes or another document becomes active. Markdown Studio serves JavaScript assets referenced by a page, but the read-only preview does not execute scripts.
 
 **Web App:**
 
