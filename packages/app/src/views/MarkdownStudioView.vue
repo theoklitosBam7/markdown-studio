@@ -393,7 +393,11 @@ function handleTableInsertionConfirm(): void {
               @navigate="workspace.outline.navigate"
             />
           </template>
-          <HtmlPreviewSurface v-if="documentKind === 'html'" :content="content" />
+          <HtmlPreviewSurface
+            v-if="documentKind === 'html'"
+            :content="content"
+            :document-path="currentPath"
+          />
           <WorkspaceSplitLayout v-else :view-mode="viewMode">
             <template #editor>
               <!-- workspace.find.state is a ComputedRef, so we pass its current snapshot via .value -->

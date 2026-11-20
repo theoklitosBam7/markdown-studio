@@ -19,6 +19,8 @@ import {
   FOLDERS_LIST_CHANNEL,
   FOLDERS_REMOVE_CHANNEL,
   FOLDERS_RESTORE_CHANNEL,
+  HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL,
+  HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL,
   IMAGES_SAVE_CHANNEL,
   INSTALL_IS_HOMEBREW_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
@@ -68,6 +70,12 @@ function createDesktopApi(): DesktopApi {
       list: (input) => ipcRenderer.invoke(FOLDERS_LIST_CHANNEL, input),
       remove: (folderId) => ipcRenderer.invoke(FOLDERS_REMOVE_CHANNEL, folderId),
       restore: () => ipcRenderer.invoke(FOLDERS_RESTORE_CHANNEL),
+    },
+    htmlPreview: {
+      releaseAssetGrant: (grantId) =>
+        ipcRenderer.invoke(HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL, grantId),
+      requestAssetGrant: (input) =>
+        ipcRenderer.invoke(HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL, input),
     },
     images: {
       save: (input) => ipcRenderer.invoke(IMAGES_SAVE_CHANNEL, input),

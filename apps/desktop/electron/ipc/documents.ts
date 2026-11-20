@@ -22,6 +22,8 @@ import {
   FOLDERS_LIST_CHANNEL,
   FOLDERS_REMOVE_CHANNEL,
   FOLDERS_RESTORE_CHANNEL,
+  HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL,
+  HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL,
   IMAGES_SAVE_CHANNEL,
   SHELL_OPEN_EXTERNAL_CHANNEL,
 } from '@markdown-studio/desktop-contract/channels'
@@ -32,6 +34,8 @@ import {
   assertExternalUrl,
   assertFolderId,
   assertFolderListInput,
+  assertHtmlPreviewAssetGrantRequest,
+  assertHtmlPreviewGrantId,
   assertSaveAsInput,
   assertSaveImageInput,
   assertSaveInput,
@@ -44,6 +48,9 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
+import type { HtmlPreviewAssetGrants } from '../html-asset-protocol'
+
+import { createHtmlPreviewAssetGrants } from '../html-asset-protocol'
 import {
   checkDocumentModification,
   createDocumentFolderRegistry,
@@ -182,9 +189,23 @@ const documentFolderStore: DocumentFolderStore = {
   },
 }
 
-export function registerDesktopIpc(mainWindow: BrowserWindow): void {
+export function registerDesktopIpc(
+  mainWindow: BrowserWindow,
+  assetGrants: HtmlPreviewAssetGrants = createHtmlPreviewAssetGrants(),
+): void {
   const folders = createDocumentFolderRegistry(documentFolderStore)
   const authorizedDocumentPaths = new Set<string>()
+  const activeGrantIds = new Set<string>()
+
+  function releaseWindowGrants(): void {
+    for (const grantId of activeGrantIds) {
+      assetGrants.release(grantId)
+    }
+    activeGrantIds.clear()
+  }
+
+  mainWindow.once('closed', releaseWindowGrants)
+
   ipcMain.removeHandler(DOCUMENTS_CLEAR_LAST_OPENED_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_CLEAR_WORKSPACE_DRAFT_CHANNEL)
   ipcMain.removeHandler(DOCUMENTS_OPEN_CHANNEL)
@@ -202,6 +223,8 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
   ipcMain.removeHandler(FOLDERS_LIST_CHANNEL)
   ipcMain.removeHandler(FOLDERS_REMOVE_CHANNEL)
   ipcMain.removeHandler(FOLDERS_RESTORE_CHANNEL)
+  ipcMain.removeHandler(HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL)
+  ipcMain.removeHandler(HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL)
   ipcMain.removeHandler(IMAGES_SAVE_CHANNEL)
   ipcMain.removeHandler(SHELL_OPEN_EXTERNAL_CHANNEL)
 
@@ -263,6 +286,26 @@ export function registerDesktopIpc(mainWindow: BrowserWindow): void {
     folders.remove(assertFolderId(folderId)),
   )
   ipcMain.handle(FOLDERS_RESTORE_CHANNEL, async () => folders.restore())
+  ipcMain.handle(HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL, (_, payload) => {
+    const grantId = assertHtmlPreviewGrantId(payload)
+    activeGrantIds.delete(grantId)
+    assetGrants.release(grantId)
+  })
+  ipcMain.handle(HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL, async (_, payload) => {
+    const { documentPath } = assertHtmlPreviewAssetGrantRequest(payload)
+
+    if (!authorizedDocumentPaths.has(documentPath)) {
+      throw new Error('An asset grant is not authorized for this path.')
+    }
+
+    if (!isHtmlDocumentPath(documentPath)) {
+      throw new Error('Asset grants are only available for an HTML Document.')
+    }
+
+    const grant = await assetGrants.create(documentPath)
+    activeGrantIds.add(grant.grantId)
+    return grant
+  })
   ipcMain.handle(IMAGES_SAVE_CHANNEL, async (_, payload) =>
     saveImage(assertSaveImageInput(payload)),
   )
@@ -374,6 +417,10 @@ async function clearDocumentState<K extends keyof DocumentState>(key: K): Promis
 
 function getDocumentStatePath(): string {
   return join(app.getPath('userData'), DOCUMENT_STATE_FILE)
+}
+
+function isHtmlDocumentPath(documentPath: string): boolean {
+  return /\.html?$/i.test(documentPath)
 }
 
 async function openDocumentFromFolder(

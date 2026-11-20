@@ -35,6 +35,11 @@ _Avoid_: web page, HTML source
 The **Product Surface** that presents an **HTML Document** in a sandboxed frame.
 It does not provide Source Navigation and does not run scripts.
 
+**HTML Preview Asset Grant**:
+A permission bounded to one **HTML Preview** and the folder of its **HTML Document**.
+It allows that preview to read supported sibling assets only while the document is active.
+_Avoid_: asset token, file access pass
+
 **Editor Workspace**:
 The active environment where a user edits a **Markdown Document** and moves between editing, previewing, restoring, and exporting.
 _Avoid_: app shell, page
@@ -88,6 +93,9 @@ _Avoid_: route, layout
 - A **Markdown Document** may contain zero or more **Embedded Diagrams**.
 - An **Editor Workspace** has at most one active **Markdown Document**.
 - An **Editor Workspace** can show one active **HTML Document** through the **HTML Preview**.
+- An **HTML Preview Asset Grant** belongs to exactly one **HTML Document**.
+- A desktop **HTML Preview** can load local assets only through an **HTML Preview Asset Grant**.
+- Markdown Studio releases an **HTML Preview Asset Grant** when its **HTML Preview** closes or another document becomes active.
 - A **Document Folder** contains zero or more **Markdown Documents** and **HTML Documents**.
 - An **Editor Workspace** can browse zero or more **Document Folders**.
 - Opening a **Markdown Document** from a **Document Folder** replaces the active **Markdown Document**.

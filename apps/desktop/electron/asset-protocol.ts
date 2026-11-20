@@ -1,5 +1,7 @@
 import { readFile, realpath } from 'node:fs/promises'
-import { dirname, extname, isAbsolute, relative, resolve } from 'node:path'
+import { dirname, extname, resolve } from 'node:path'
+
+import { isPathInside } from './path-containment'
 
 const CONTENT_TYPES: Record<string, string> = {
   '.gif': 'image/gif',
@@ -26,9 +28,8 @@ export async function handleAssetRequest(request: Request): Promise<Response> {
 
     const assetsDirectory = resolve(dirname(documentPath), '.markdown-studio', 'assets')
     const requestedPath = resolve(dirname(documentPath), relativePath)
-    const pathFromAssets = relative(assetsDirectory, requestedPath)
 
-    if (!pathFromAssets || pathFromAssets.startsWith('..') || isAbsolute(pathFromAssets)) {
+    if (!isPathInside(assetsDirectory, requestedPath)) {
       return new Response('Asset path is outside the managed assets folder.', { status: 403 })
     }
 
@@ -40,9 +41,8 @@ export async function handleAssetRequest(request: Request): Promise<Response> {
       realpath(assetsDirectory),
       realpath(requestedPath),
     ])
-    const realPathFromAssets = relative(realAssetsDirectory, realRequestedPath)
 
-    if (realPathFromAssets.startsWith('..') || isAbsolute(realPathFromAssets)) {
+    if (!isPathInside(realAssetsDirectory, realRequestedPath)) {
       return new Response('Asset path is outside the managed assets folder.', { status: 403 })
     }
 

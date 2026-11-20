@@ -2,6 +2,7 @@ import type {
   DesktopDocumentCheckInput,
   DesktopExportInput,
   DesktopFolderListInput,
+  DesktopHtmlPreviewAssetGrantRequest,
   DesktopSaveAsInput,
   DesktopSaveImageInput,
   DesktopSaveInput,
@@ -70,6 +71,23 @@ export function assertFolderListInput(value: unknown): DesktopFolderListInput {
     folderId: assertNonEmptyPath(input.folderId),
     relativePath: assertRelativePath(input.relativePath),
   }
+}
+
+export function assertHtmlPreviewAssetGrantRequest(
+  value: unknown,
+): DesktopHtmlPreviewAssetGrantRequest {
+  assertObject(value, 'HTML preview asset grant payload must be an object.')
+  const input = value as Record<string, unknown>
+
+  return { documentPath: assertNonEmptyPath(input.documentPath) }
+}
+
+export function assertHtmlPreviewGrantId(value: unknown): string {
+  if (typeof value !== 'string' || !/^[a-f0-9]{32}$/.test(value)) {
+    throw new TypeError('A valid HTML preview asset grant is required.')
+  }
+
+  return value
 }
 
 export function assertSaveAsInput(value: unknown): DesktopSaveAsInput {

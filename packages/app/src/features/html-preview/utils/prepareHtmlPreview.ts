@@ -1,17 +1,21 @@
+import { HTML_PREVIEW_ASSET_PROTOCOL } from '@markdown-studio/desktop-contract/constants'
+
 import type { HtmlPreviewRequest, PreparedHtmlPreview } from '../types'
 
+const PREVIEW_ASSET_SCHEME = `${HTML_PREVIEW_ASSET_PROTOCOL}:`
 const BASE_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
   "connect-src 'none'",
-  'font-src data: blob:',
+  `font-src data: blob: ${PREVIEW_ASSET_SCHEME}`,
   "form-action 'none'",
   "frame-src 'none'",
-  'img-src data: blob:',
-  'media-src data: blob:',
+  `img-src data: blob: ${PREVIEW_ASSET_SCHEME}`,
+  `media-src data: blob: ${PREVIEW_ASSET_SCHEME}`,
   "object-src 'none'",
-  "style-src 'unsafe-inline' data: blob:",
+  `style-src 'unsafe-inline' data: blob: ${PREVIEW_ASSET_SCHEME}`,
 ].join('; ')
+const CSS_URL_PATTERN = /url\(\s*(?:(['"])(.*?)\1|([^'")]+))\s*\)/gi
 
 export function prepareHtmlPreview(input: HtmlPreviewRequest): PreparedHtmlPreview {
   const documentNode = new DOMParser().parseFromString(input.content, 'text/html')
@@ -21,6 +25,10 @@ export function prepareHtmlPreview(input: HtmlPreviewRequest): PreparedHtmlPrevi
   head.prepend(csp)
   removeUnsafeElements(documentNode, input.allowScripts)
   redirectLinks(documentNode)
+
+  if (input.assetBaseUrl) {
+    rewriteAssetUrls(documentNode, input.assetBaseUrl)
+  }
 
   return {
     sandbox: input.allowScripts ? 'allow-scripts' : '',
@@ -44,6 +52,12 @@ function getOrCreateHead(documentNode: Document): HTMLElement {
   const head = documentNode.createElement('head')
   documentNode.documentElement.prepend(head)
   return head
+}
+
+function isRewritableUrl(value: string): boolean {
+  if (!value || value.startsWith('#') || value.startsWith('//')) return false
+
+  return !/^[a-z][a-z\d+.-]*:/i.test(value)
 }
 
 function redirectLinks(documentNode: Document): void {
@@ -78,4 +92,96 @@ function removeUnsafeElements(documentNode: Document, allowScripts: boolean): vo
       }
     }
   }
+}
+
+function rewriteAssetUrl(value: string, assetBaseUrl: string): string {
+  const trimmed = value.trim()
+  if (!isRewritableUrl(trimmed)) return value
+
+  const relativeUrl = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
+
+  try {
+    return new URL(relativeUrl, assetBaseUrl).toString()
+  } catch {
+    return value
+  }
+}
+
+function rewriteAssetUrls(documentNode: Document, assetBaseUrl: string): void {
+  for (const element of documentNode.querySelectorAll('[href], [src], [srcset], [style]')) {
+    for (const attribute of ['href', 'src']) {
+      const value = element.getAttribute(attribute)
+      if (value !== null) {
+        element.setAttribute(attribute, rewriteAssetUrl(value, assetBaseUrl))
+      }
+    }
+
+    const srcset = element.getAttribute('srcset')
+    if (srcset !== null) {
+      element.setAttribute('srcset', rewriteSrcSet(srcset, assetBaseUrl))
+    }
+
+    const inlineStyle = element.getAttribute('style')
+    if (inlineStyle !== null) {
+      element.setAttribute('style', rewriteCssUrls(inlineStyle, assetBaseUrl))
+    }
+  }
+
+  for (const style of documentNode.querySelectorAll('style')) {
+    style.textContent = rewriteCssUrls(style.textContent ?? '', assetBaseUrl)
+  }
+}
+
+function rewriteCssUrls(css: string, assetBaseUrl: string): string {
+  return css.replace(
+    CSS_URL_PATTERN,
+    (
+      match: string,
+      quote: string | undefined,
+      quotedUrl: string | undefined,
+      unquotedUrl: string | undefined,
+    ) => {
+      const original = quotedUrl ?? unquotedUrl ?? ''
+      const rewritten = rewriteAssetUrl(original, assetBaseUrl)
+
+      if (rewritten === original) return match
+
+      return `url(${quote ?? ''}${rewritten}${quote ?? ''})`
+    },
+  )
+}
+
+function rewriteSrcSet(value: string, assetBaseUrl: string): string {
+  let result = ''
+  let index = 0
+
+  while (index < value.length) {
+    while (index < value.length && /\s/.test(value.charAt(index))) {
+      result += value.charAt(index)
+      index += 1
+    }
+
+    const urlStart = index
+    while (index < value.length && !/\s/.test(value.charAt(index))) {
+      const character = value.charAt(index)
+      const token = value.slice(urlStart, index + 1)
+
+      if (character === ',' && !/^data:/i.test(token)) break
+      index += 1
+    }
+
+    result += rewriteAssetUrl(value.slice(urlStart, index), assetBaseUrl)
+
+    while (index < value.length && value.charAt(index) !== ',') {
+      result += value.charAt(index)
+      index += 1
+    }
+
+    if (index < value.length) {
+      result += ','
+      index += 1
+    }
+  }
+
+  return result
 }
