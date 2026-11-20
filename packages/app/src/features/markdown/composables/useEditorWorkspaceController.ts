@@ -234,8 +234,17 @@ export function useEditorWorkspaceController(): EditorWorkspaceController {
     { immediate: true },
   )
 
+  let markdownViewMode = viewMode.value
+
   watch(documentKind, (kind) => {
-    if (kind === 'html') setViewMode('preview')
+    if (kind === 'html') {
+      markdownViewMode = viewMode.value
+      setViewMode('preview')
+      return
+    }
+
+    // The viewport may have become mobile while HTML was open, where split mode is unavailable.
+    setViewMode(isMobile.value && markdownViewMode === 'split' ? 'editor' : markdownViewMode)
   })
 
   watch(

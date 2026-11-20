@@ -1,7 +1,7 @@
 import type { ActiveDocumentKind } from '@/types/document'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { computed, shallowRef } from 'vue'
+import { computed, nextTick, shallowRef } from 'vue'
 
 import { clearStoredWebDraft, useWebDraftPersistence } from '../useWebDraftPersistence'
 
@@ -121,6 +121,36 @@ describe('useWebDraftPersistence', () => {
     expect(window.localStorage.getItem('markdown-studio:web-draft')).not.toBeNull()
 
     await persistence.clearDraft()
+
+    expect(window.localStorage.getItem('markdown-studio:web-draft')).toBeNull()
+  })
+
+  it('cancels a pending Markdown draft when an HTML document opens', async () => {
+    const content = shallowRef('# Saved')
+    const displayName = shallowRef('notes.md')
+    const documentKind = shallowRef<ActiveDocumentKind>('markdown')
+    const isDirty = shallowRef(false)
+    const persistence = useWebDraftPersistence({
+      content,
+      displayName,
+      documentKind,
+      isDesktop: shallowRef(false),
+      isDirty,
+      restoreDraft: vi.fn(),
+    })
+
+    await persistence.restoreStoredDraft()
+    content.value = '# Edited'
+    isDirty.value = true
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(100)
+
+    documentKind.value = 'html'
+    content.value = '<h1>HTML document</h1>'
+    displayName.value = 'report.html'
+    isDirty.value = false
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(250)
 
     expect(window.localStorage.getItem('markdown-studio:web-draft')).toBeNull()
   })

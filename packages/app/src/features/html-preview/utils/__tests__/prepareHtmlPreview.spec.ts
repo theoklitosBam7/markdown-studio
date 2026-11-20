@@ -80,6 +80,27 @@ describe('prepareHtmlPreview', () => {
     expect(targets).toEqual(['_blank', '_blank', '_blank'])
   })
 
+  it('redirects image-map links and rewrites only relative destinations through the asset grant', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl: ASSET_BASE_URL,
+      content: `<map name="report">
+        <area href="https://example.test/" target="_self">
+        <area href="reports/detail.html" target="_top">
+        <area href="#section">
+      </map>`,
+    })
+    const parsed = new DOMParser().parseFromString(preview.srcdoc, 'text/html')
+    const links = [...parsed.querySelectorAll('area')]
+
+    expect(links.map((link) => link.getAttribute('target'))).toEqual(['_blank', '_blank', '_blank'])
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      'https://example.test/',
+      'markdown-studio-preview://local/0123456789abcdef0123456789abcdef/reports/detail.html',
+      '#section',
+    ])
+  })
+
   it('keeps inline styles but removes scripts and event handlers when scripts are blocked', () => {
     const preview = prepareHtmlPreview({
       allowScripts: false,

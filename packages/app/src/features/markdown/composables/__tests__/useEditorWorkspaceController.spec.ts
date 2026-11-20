@@ -1,3 +1,5 @@
+import type { DesktopApi } from '@markdown-studio/desktop-contract/types'
+
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { defineComponent, h } from 'vue'
@@ -14,6 +16,30 @@ import { resetPwaStateForTests } from '@/composables/usePwa'
 
 import { resetBrowserDocumentSessionForTests } from '../useDocumentActions'
 import { useEditorWorkspaceController } from '../useEditorWorkspaceController'
+
+function createDesktopApi(): DesktopApi {
+  return {
+    commands: { onAppCommand: vi.fn(() => () => undefined) },
+    documents: {
+      clearLastOpened: vi.fn(async () => undefined),
+      clearWorkspaceDraft: vi.fn(async () => undefined),
+      open: vi.fn(async () => null),
+      restoreLastOpened: vi.fn(async () => null),
+      restoreWorkspaceDraft: vi.fn(async () => null),
+      save: vi.fn(async () => null),
+      saveAs: vi.fn(async () => null),
+      saveWorkspaceDraft: vi.fn(async () => undefined),
+    },
+    editing: { insertText: vi.fn(async () => undefined) },
+    exports: {
+      exportHtml: vi.fn(async () => null),
+      exportPdf: vi.fn(async () => null),
+    },
+    install: { isHomebrew: async () => false },
+    isDesktop: true,
+    shell: { openExternal: vi.fn(async () => undefined) },
+  }
+}
 
 function createEditorAdapter(): EditorPaneAdapter {
   return {
@@ -672,35 +698,8 @@ describe('useEditorWorkspaceController', () => {
     const removeDesktopCommandListener = vi.fn()
     const onAppCommand = vi.fn(() => removeDesktopCommandListener)
 
-    appWindow.desktop = {
-      commands: {
-        onAppCommand,
-      },
-      documents: {
-        clearLastOpened: vi.fn(async () => undefined),
-        clearWorkspaceDraft: vi.fn(async () => undefined),
-        open: async () => null,
-        restoreLastOpened: async () => null,
-        restoreWorkspaceDraft: async () => null,
-        save: async () => null,
-        saveAs: async () => null,
-        saveWorkspaceDraft: async () => undefined,
-      },
-      editing: {
-        insertText: async () => undefined,
-      },
-      exports: {
-        exportHtml: async () => null,
-        exportPdf: async () => null,
-      },
-      install: {
-        isHomebrew: async () => false,
-      },
-      isDesktop: true,
-      shell: {
-        openExternal: async () => undefined,
-      },
-    }
+    appWindow.desktop = createDesktopApi()
+    appWindow.desktop.commands.onAppCommand = onAppCommand
 
     const { workspace, wrapper } = await mountWorkspace()
     await flushPromises()
@@ -717,56 +716,60 @@ describe('useEditorWorkspaceController', () => {
     expect(removeDesktopCommandListener).toHaveBeenCalledTimes(1)
   })
 
-  it('forces preview-only mode and blocks editing actions for HTML documents', async () => {
-    const save = vi.fn(async () => null)
-    const exportHtml = vi.fn(async () => null)
+  it.each([
+    { expectedMode: 'split', initialMode: 'split', width: 1280 },
+    { expectedMode: 'editor', initialMode: 'editor', width: 1280 },
+    { expectedMode: 'preview', initialMode: 'preview', width: 1280 },
+    { expectedMode: 'editor', initialMode: 'split', width: 640 },
+    { expectedMode: 'preview', initialMode: 'preview', width: 640 },
+  ] as const)(
+    'restores $initialMode as $expectedMode after HTML at width $width and blocks HTML editing',
+    async ({ expectedMode, initialMode, width }) => {
+      appWindow.desktop = createDesktopApi()
+      vi.mocked(appWindow.desktop.documents.open).mockResolvedValueOnce({
+        content: '<p>Page</p>',
+        modifiedAt: 1,
+        path: '/tmp/page.html',
+      })
+      const save = appWindow.desktop.documents.save
+      const exportHtml = appWindow.desktop.exports.exportHtml
 
-    appWindow.desktop = {
-      commands: { onAppCommand: vi.fn(() => () => undefined) },
-      documents: {
-        clearLastOpened: vi.fn(async () => undefined),
-        clearWorkspaceDraft: vi.fn(async () => undefined),
-        open: vi.fn(async () => ({
-          content: '<p>Page</p>',
-          modifiedAt: 1,
-          path: '/tmp/page.html',
-        })),
-        restoreLastOpened: vi.fn(async () => null),
-        restoreWorkspaceDraft: vi.fn(async () => null),
-        save,
-        saveAs: vi.fn(async () => null),
-        saveWorkspaceDraft: vi.fn(async () => undefined),
-      },
-      editing: { insertText: vi.fn(async () => undefined) },
-      exports: {
-        exportHtml,
-        exportPdf: vi.fn(async () => null),
-      },
-      install: { isHomebrew: async () => false },
-      isDesktop: true,
-      shell: { openExternal: vi.fn(async () => undefined) },
-    }
+      const { workspace, wrapper } = await mountWorkspace()
+      await flushPromises()
+      workspace.system.handleViewportResize(1280, 900)
+      workspace.editor.setViewMode(initialMode)
+      await workspace.document.open()
+      await flushPromises()
 
-    const { workspace, wrapper } = await mountWorkspace()
-    await flushPromises()
-    await workspace.document.open()
-    await flushPromises()
+      expect(workspace.state.documentKind.value).toBe('html')
+      expect(workspace.state.availableModes.value).toEqual(['preview'])
+      expect(workspace.state.viewMode.value).toBe('preview')
 
-    expect(workspace.state.documentKind.value).toBe('html')
-    expect(workspace.state.availableModes.value).toEqual(['preview'])
-    expect(workspace.state.viewMode.value).toBe('preview')
+      await workspace.document.save()
+      await workspace.export.html()
+      await workspace.document.handleAppCommand('document:exportHtml')
+      workspace.find.open()
+      await workspace.editor.insertTable()
 
-    await workspace.document.save()
-    await workspace.export.html()
-    await workspace.document.handleAppCommand('document:exportHtml')
-    workspace.find.open()
-    await workspace.editor.insertTable()
+      expect(save).not.toHaveBeenCalled()
+      expect(exportHtml).not.toHaveBeenCalled()
+      expect(workspace.find.state.value.isOpen).toBe(false)
+      expect(workspace.state.isTableDimensionPickerOpen.value).toBe(false)
 
-    expect(save).not.toHaveBeenCalled()
-    expect(exportHtml).not.toHaveBeenCalled()
-    expect(workspace.find.state.value.isOpen).toBe(false)
-    expect(workspace.state.isTableDimensionPickerOpen.value).toBe(false)
+      workspace.system.handleViewportResize(width, 900)
+      vi.mocked(appWindow.desktop.documents.open).mockResolvedValueOnce({
+        content: '# Markdown again',
+        modifiedAt: 2,
+        path: '/tmp/notes.md',
+      })
+      await workspace.document.open()
+      await flushPromises()
 
-    wrapper.unmount()
-  })
+      expect(workspace.state.documentKind.value).toBe('markdown')
+      expect(workspace.state.viewMode.value).toBe(expectedMode)
+      expect(workspace.state.availableModes.value).toContain(expectedMode)
+
+      wrapper.unmount()
+    },
+  )
 })
