@@ -2,11 +2,14 @@ import { app, BrowserWindow, Menu, protocol, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 
 import { handleAssetRequest } from './asset-protocol'
+import { createHtmlPreviewAssetGrants } from './html-asset-protocol'
 import { registerDesktopIpc } from './ipc/documents'
 import { registerInstallIpc } from './ipc/install-method'
 import { buildAppMenu } from './menu/appMenu'
 
 const ASSET_PROTOCOL = 'markdown-studio-asset'
+const PREVIEW_ASSET_PROTOCOL = 'markdown-studio-preview'
+const htmlPreviewAssetGrants = createHtmlPreviewAssetGrants()
 const preloadPath = fileURLToPath(new URL('../preload/preload.cjs', import.meta.url))
 const rendererHtmlPath = fileURLToPath(new URL('../renderer/index.html', import.meta.url))
 
@@ -19,6 +22,15 @@ protocol.registerSchemesAsPrivileged([
       supportFetchAPI: true,
     },
     scheme: ASSET_PROTOCOL,
+  },
+  {
+    privileges: {
+      corsEnabled: true,
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+    },
+    scheme: PREVIEW_ASSET_PROTOCOL,
   },
 ])
 
@@ -59,7 +71,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
     void openExternal(url)
   })
 
-  registerDesktopIpc(window)
+  registerDesktopIpc(window, htmlPreviewAssetGrants)
   registerInstallIpc()
   Menu.setApplicationMenu(buildAppMenu(window))
 
@@ -108,6 +120,7 @@ async function openExternal(url: string): Promise<void> {
 
 app.whenReady().then(async () => {
   protocol.handle(ASSET_PROTOCOL, handleAssetRequest)
+  protocol.handle(PREVIEW_ASSET_PROTOCOL, htmlPreviewAssetGrants.handleRequest)
   await createMainWindow()
 
   app.on('activate', async () => {

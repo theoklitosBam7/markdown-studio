@@ -12,6 +12,8 @@ import {
   DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL,
   DOCUMENTS_SAVE_AS_CHANNEL,
   DOCUMENTS_SAVE_WORKSPACE_DRAFT_CHANNEL,
+  HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL,
+  HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL,
 } from '@markdown-studio/desktop-contract/channels'
 
 const { handlers, setUserDataPath, showOpenDialog, showSaveDialog } = vi.hoisted(() => ({
@@ -37,16 +39,19 @@ vi.mock('electron', () => ({
 }))
 
 import { registerDesktopIpc } from './documents'
+import { createHtmlPreviewAssetGrants } from '../html-asset-protocol'
 
+let assetGrants: ReturnType<typeof createHtmlPreviewAssetGrants>
 let temporaryDirectory: string
 
 beforeEach(async () => {
   temporaryDirectory = await mkdtemp(join(tmpdir(), 'markdown-studio-ipc-'))
+  assetGrants = createHtmlPreviewAssetGrants()
   setUserDataPath.mockReturnValue(temporaryDirectory)
   handlers.clear()
   showOpenDialog.mockReset()
   showSaveDialog.mockReset()
-  registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never)
+  registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
 })
 
 afterEach(async () => {
@@ -123,7 +128,7 @@ describe('document modification IPC', () => {
     )
 
     handlers.clear()
-    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never)
+    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
     const restoreDraft = handlers.get(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL)
     const checkModification = handlers.get(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
 
@@ -154,7 +159,7 @@ describe('document modification IPC', () => {
     )
 
     handlers.clear()
-    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never)
+    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
     await handlers.get(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL)?.({})
     const checkModification = handlers.get(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
 
@@ -170,7 +175,7 @@ describe('document modification IPC', () => {
     await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
 
     handlers.clear()
-    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never)
+    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
     const restoreDocument = handlers.get(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL)
     const checkModification = handlers.get(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
 
@@ -227,5 +232,63 @@ describe('document modification IPC', () => {
         ]),
       }),
     )
+  })
+})
+
+describe('HTML preview asset grant IPC', () => {
+  type GrantResult = { assetBaseUrl: string; grantId: string }
+
+  async function requestGrant(documentPath: string): Promise<GrantResult> {
+    return (await handlers.get(HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL)?.(
+      {},
+      { documentPath },
+    )) as GrantResult
+  }
+
+  it('grants access to the sibling files of an opened HTML Document', async () => {
+    const htmlPath = join(temporaryDirectory, 'report.html')
+    await writeFile(htmlPath, '<html></html>')
+    await writeFile(join(temporaryDirectory, 'site.css'), 'body {}')
+    showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [htmlPath] })
+    await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
+
+    const grant = await requestGrant(htmlPath)
+    const url = new URL(grant.assetBaseUrl)
+    url.pathname = `${url.pathname}site.css`
+    const response = await assetGrants.handleRequest(new Request(url))
+
+    expect(await response.text()).toBe('body {}')
+  })
+
+  it('refuses to grant access to a path that was never opened', async () => {
+    const htmlPath = join(temporaryDirectory, 'private.html')
+    await writeFile(htmlPath, '<html></html>')
+
+    await expect(requestGrant(htmlPath)).rejects.toThrow('not authorized')
+  })
+
+  it('refuses to grant access to an opened Markdown Document', async () => {
+    const markdownPath = join(temporaryDirectory, 'notes.md')
+    await writeFile(markdownPath, '# Notes')
+    showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [markdownPath] })
+    await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
+
+    await expect(requestGrant(markdownPath)).rejects.toThrow('HTML Document')
+  })
+
+  it('revokes a grant when the renderer releases it', async () => {
+    const htmlPath = join(temporaryDirectory, 'report.html')
+    await writeFile(htmlPath, '<html></html>')
+    await writeFile(join(temporaryDirectory, 'site.css'), 'body {}')
+    showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [htmlPath] })
+    await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
+    const grant = await requestGrant(htmlPath)
+
+    await handlers.get(HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL)?.({}, grant.grantId)
+
+    const url = new URL(grant.assetBaseUrl)
+    url.pathname = `${url.pathname}site.css`
+    const response = await assetGrants.handleRequest(new Request(url))
+    expect(response.status).toBe(404)
   })
 })
