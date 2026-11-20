@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import { prepareHtmlPreview } from '../prepareHtmlPreview'
 
 const CSP_EQUIV = 'http-equiv="content-security-policy"'
+const ASSET_BASE_URL = 'markdown-studio-preview://local/0123456789abcdef0123456789abcdef/'
 
 describe('prepareHtmlPreview', () => {
   it('injects the policy as the first head element when the source has no head', () => {
@@ -105,6 +106,119 @@ describe('prepareHtmlPreview', () => {
     })
 
     expect(preview.sandbox).toBe('')
+  })
+
+  it('rewrites relative src and href values through the asset base', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl: ASSET_BASE_URL,
+      content: `
+        <link rel="stylesheet" href="styles/site.css">
+        <img src="images/logo.png">
+        <video src="media/clip.mp4"></video>
+        <a href="other.html">Other page</a>
+      `,
+    })
+
+    const parsed = new DOMParser().parseFromString(preview.srcdoc, 'text/html')
+
+    expect(parsed.querySelector('link')?.getAttribute('href')).toBe(
+      'markdown-studio-preview://local/0123456789abcdef0123456789abcdef/styles/site.css',
+    )
+    expect(parsed.querySelector('img')?.getAttribute('src')).toBe(
+      'markdown-studio-preview://local/0123456789abcdef0123456789abcdef/images/logo.png',
+    )
+    expect(parsed.querySelector('video')?.getAttribute('src')).toBe(
+      'markdown-studio-preview://local/0123456789abcdef0123456789abcdef/media/clip.mp4',
+    )
+    expect(parsed.querySelector('a')?.getAttribute('href')).toBe(
+      'markdown-studio-preview://local/0123456789abcdef0123456789abcdef/other.html',
+    )
+    expect(preview.srcdoc).not.toContain('file://')
+  })
+
+  it('leaves absolute, protocol-relative, data, and fragment URLs unchanged', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl: ASSET_BASE_URL,
+      content: `
+        <img src="data:image/png;base64,AAAA">
+        <link rel="stylesheet" href="https://example.test/site.css">
+        <script src="//cdn.example.test/app.js"></script>
+        <a href="mailto:hello@example.test">Email</a>
+        <a href="#section">Section</a>
+      `,
+    })
+
+    const parsed = new DOMParser().parseFromString(preview.srcdoc, 'text/html')
+    const scripts = [...parsed.querySelectorAll('script')].map((script) =>
+      script.getAttribute('src'),
+    )
+    const hrefs = [...parsed.querySelectorAll('a')].map((link) => link.getAttribute('href'))
+
+    expect(parsed.querySelector('img')?.getAttribute('src')).toBe('data:image/png;base64,AAAA')
+    expect(parsed.querySelector('link')?.getAttribute('href')).toBe('https://example.test/site.css')
+    expect(scripts).toEqual([])
+    expect(hrefs).toEqual(['mailto:hello@example.test', '#section'])
+  })
+
+  it('rewrites each candidate in a srcset value', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl: ASSET_BASE_URL,
+      content: `
+        <img
+          srcset="data:image/png;base64,AAAA 1x, images/large.png 2x"
+          src="images/logo.png"
+        >
+      `,
+    })
+
+    const parsed = new DOMParser().parseFromString(preview.srcdoc, 'text/html')
+
+    expect(parsed.querySelector('img')?.getAttribute('srcset')).toBe(
+      'data:image/png;base64,AAAA 1x, markdown-studio-preview://local/0123456789abcdef0123456789abcdef/images/large.png 2x',
+    )
+  })
+
+  it('rewrites CSS url() declarations without changing the rest of inline CSS', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl: ASSET_BASE_URL,
+      content: `
+        <style>.hero { background: url('./img/hero.png'); color: rebeccapurple; }</style>
+        <p style="background-image: url(images/bg.webp)">Card</p>
+      `,
+    })
+
+    const parsed = new DOMParser().parseFromString(preview.srcdoc, 'text/html')
+    const css = parsed.querySelector('style')?.textContent ?? ''
+
+    expect(css).toContain(
+      "url('markdown-studio-preview://local/0123456789abcdef0123456789abcdef/img/hero.png')",
+    )
+    expect(css).toContain('color: rebeccapurple;')
+    expect(parsed.querySelector('p')?.getAttribute('style')).toBe(
+      'background-image: url(markdown-studio-preview://local/0123456789abcdef0123456789abcdef/images/bg.webp)',
+    )
+  })
+
+  it('allows only local preview assets while keeping remote network access blocked', () => {
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl: ASSET_BASE_URL,
+      content: '<p>Static</p>',
+    })
+
+    const policy = getCsp(preview.srcdoc)
+
+    expect(policy).toContain("default-src 'none'")
+    expect(policy).toContain("connect-src 'none'")
+    expect(policy).toContain('img-src data: blob: markdown-studio-preview:')
+    expect(policy).toContain('media-src data: blob: markdown-studio-preview:')
+    expect(policy).toContain('font-src data: blob: markdown-studio-preview:')
+    expect(policy).toContain("style-src 'unsafe-inline' data: blob: markdown-studio-preview:")
+    expect(policy).not.toContain('script-src')
   })
 })
 

@@ -1,5 +1,6 @@
 export interface HtmlPreviewRequest {
   allowScripts: boolean
+  assetBaseUrl?: string
   content: string
 }
 
