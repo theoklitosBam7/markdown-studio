@@ -166,6 +166,47 @@ describe('useDesktopDraftPersistence', () => {
     scope.stop()
   })
 
+  it('cancels a pending Markdown draft when an HTML document opens', async () => {
+    const desktop = appWindow.desktop as DesktopApi
+    const content = shallowRef('# Saved')
+    const currentPath = shallowRef('/tmp/notes.md')
+    const displayName = shallowRef('notes.md')
+    const documentKind = shallowRef<ActiveDocumentKind>('markdown')
+    const isDirty = shallowRef(false)
+    const savedContent = shallowRef('# Saved')
+    const scope = effectScope()
+    const persistence = scope.run(() =>
+      useDesktopDraftPersistence({
+        content,
+        currentPath,
+        displayName,
+        documentKind,
+        isDesktop: shallowRef(true),
+        isDirty,
+        restoreDraft: vi.fn(async () => undefined),
+        savedContent,
+      }),
+    )
+
+    await persistence?.restoreStoredDraft()
+    content.value = '# Edited'
+    isDirty.value = true
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(100)
+
+    documentKind.value = 'html'
+    content.value = '<h1>HTML document</h1>'
+    savedContent.value = content.value
+    currentPath.value = '/tmp/report.html'
+    displayName.value = 'report.html'
+    isDirty.value = false
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(250)
+
+    expect(desktop.documents.saveWorkspaceDraft).not.toHaveBeenCalled()
+    scope.stop()
+  })
+
   it('does not write a desktop draft while an HTML preview is active', async () => {
     const desktop = appWindow.desktop as DesktopApi
     const content = shallowRef('<p>Page</p>')

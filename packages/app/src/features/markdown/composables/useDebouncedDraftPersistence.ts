@@ -4,7 +4,7 @@ export interface DebouncedDraftPersistenceOptions<TPayload> {
   /**
    * Whether persistence is currently active.
    * Web persistence is active when NOT on desktop; desktop persistence is
-   * active when ON desktop. The composable treats `false` as "do nothing."
+   * active when ON desktop. Deactivation cancels pending writes.
    */
   active: () => boolean
 
@@ -134,8 +134,8 @@ export function useDebouncedDraftPersistence<TPayload>(
   }
 
   watch(
-    options.watchSources,
-    () => {
+    () => [options.active(), ...options.watchSources()],
+    (_sources, _previous, onCleanup) => {
       if (!options.active() || !restored.value) {
         return
       }
@@ -145,15 +145,20 @@ export function useDebouncedDraftPersistence<TPayload>(
         return
       }
 
-      if (writeTimeoutId !== undefined) {
-        clearTimeout(writeTimeoutId)
-      }
-
       writeTimeoutId = setTimeout(() => {
+        writeTimeoutId = undefined
+        if (!options.active() || !options.isDirty()) return
+
         const generation = ++writeGeneration
         void persist(options.buildPayload(), generation)
-        writeTimeoutId = undefined
       }, delay)
+
+      onCleanup(() => {
+        if (writeTimeoutId !== undefined) {
+          clearTimeout(writeTimeoutId)
+          writeTimeoutId = undefined
+        }
+      })
     },
     { immediate: true },
   )
