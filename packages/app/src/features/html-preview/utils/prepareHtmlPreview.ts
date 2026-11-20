@@ -61,7 +61,7 @@ function isRewritableUrl(value: string): boolean {
 }
 
 function redirectLinks(documentNode: Document): void {
-  for (const link of documentNode.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+  for (const link of documentNode.querySelectorAll('a[href], area[href]')) {
     link.setAttribute('target', '_blank')
   }
 }
