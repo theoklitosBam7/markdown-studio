@@ -33,11 +33,20 @@ describe('HtmlPreviewSurface script opt-in', () => {
   const originalDesktop = appWindow.desktop
 
   beforeEach(() => {
-    appWindow.desktop = undefined
+    appWindow.desktop = { isDesktop: true } as AppWindow['desktop']
   })
 
   afterEach(() => {
     appWindow.desktop = originalDesktop
+  })
+
+  it('keeps scripts blocked in the web runtime without an opt-in control', () => {
+    appWindow.desktop = undefined
+    const wrapper = mountSurface()
+
+    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.get('iframe').attributes('sandbox')).toBe('')
+    expect(wrapper.get('iframe').attributes('srcdoc')).not.toContain('<script')
   })
 
   it('starts with scripts blocked and exposes an accessible opt-in control', () => {

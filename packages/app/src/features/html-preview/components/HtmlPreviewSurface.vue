@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
 
+import { useDesktop } from '@/composables/useDesktop'
+
 import { useHtmlPreviewAssets } from '../composables/useHtmlPreviewAssets'
 import { prepareHtmlPreview } from '../utils/prepareHtmlPreview'
 import HtmlPreviewFrame from './HtmlPreviewFrame.vue'
@@ -10,6 +12,7 @@ const props = defineProps<{
   documentPath?: null | string
 }>()
 
+const desktop = useDesktop()
 const { assetBaseUrl, error } = useHtmlPreviewAssets(() => props.documentPath)
 const allowScripts = shallowRef(false)
 
@@ -17,24 +20,22 @@ watch([() => props.documentPath, () => props.content], () => {
   allowScripts.value = false
 })
 
+const canEnableScripts = computed(() => desktop.value.isDesktop)
 const preview = computed(() =>
   prepareHtmlPreview({
-    allowScripts: allowScripts.value,
+    allowScripts: canEnableScripts.value && allowScripts.value,
     assetBaseUrl: assetBaseUrl.value,
     content: props.content,
   }),
 )
 const notice = computed(() => {
   if (error.value) return error.value
-  if (allowScripts.value) {
-    return 'Read-only preview. Local inline scripts can run. CDN scripts, network access, and parent app access stay blocked.'
+  if (canEnableScripts.value && allowScripts.value) {
+    return 'Read-only preview. Local inline scripts can run. CDN scripts, network APIs, and parent DOM access stay blocked.'
   }
 
   return "Read-only preview. Scripts and forms are blocked. Local assets in the HTML Document's folder load on desktop."
 })
-const scriptsToggleLabel = computed(() =>
-  allowScripts.value ? 'Disable scripts for this preview' : 'Enable scripts for this preview',
-)
 </script>
 
 <template>
@@ -46,14 +47,14 @@ const scriptsToggleLabel = computed(() =>
     >
       {{ notice }}
     </p>
-    <div class="html-preview__controls">
+    <div v-if="canEnableScripts" class="html-preview__controls">
       <button
         class="html-preview__scripts-toggle"
         type="button"
         :aria-pressed="allowScripts"
         @click="allowScripts = !allowScripts"
       >
-        {{ scriptsToggleLabel }}
+        {{ allowScripts ? 'Disable scripts for this preview' : 'Enable scripts for this preview' }}
       </button>
       <p v-if="allowScripts" class="html-preview__scripts-status" role="status">
         Scripts enabled for this preview

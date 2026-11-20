@@ -3,6 +3,7 @@ import { app, BrowserWindow, Menu, protocol, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 
 import { handleAssetRequest } from './asset-protocol'
+import { isAllowedFrameNavigation } from './frame-navigation'
 import { createHtmlPreviewAssetGrants } from './html-asset-protocol'
 import { registerDesktopIpc } from './ipc/documents'
 import { registerInstallIpc } from './ipc/install-method'
@@ -61,6 +62,12 @@ async function createMainWindow(): Promise<BrowserWindow> {
   window.webContents.setWindowOpenHandler(({ url }) => {
     void openExternal(url)
     return { action: 'deny' }
+  })
+
+  window.webContents.on('will-frame-navigate', (details) => {
+    if (isAllowedFrameNavigation(details.url, details.isMainFrame)) return
+
+    details.preventDefault()
   })
 
   window.webContents.on('will-navigate', (event, url) => {

@@ -33,7 +33,7 @@ _Avoid_: web page, HTML source
 
 **HTML Preview**:
 The **Product Surface** that presents an **HTML Document** in a sandboxed frame.
-It does not provide Source Navigation. Scripts stay blocked until the user enables them for the active preview.
+It does not provide Source Navigation. Scripts stay blocked until the user enables them for the active desktop preview.
 
 **HTML Preview Asset Grant**:
 A permission bounded to one **HTML Preview** and the folder of its **HTML Document**.
