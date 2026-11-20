@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import type { DesktopHtmlPreviewAssetGrantResult } from '@markdown-studio/desktop-contract/types'
+
 import {
   DOCUMENTS_CHECK_MODIFICATION_CHANNEL,
   DOCUMENTS_OPEN_CHANNEL,
@@ -43,6 +45,8 @@ import { createHtmlPreviewAssetGrants } from '../html-asset-protocol'
 
 let assetGrants: ReturnType<typeof createHtmlPreviewAssetGrants>
 let temporaryDirectory: string
+let windowListeners: Map<string, () => void>
+let mainWindow: { once: (event: string, listener: () => void) => unknown; webContents: unknown }
 
 beforeEach(async () => {
   temporaryDirectory = await mkdtemp(join(tmpdir(), 'markdown-studio-ipc-'))
@@ -51,7 +55,15 @@ beforeEach(async () => {
   handlers.clear()
   showOpenDialog.mockReset()
   showSaveDialog.mockReset()
-  registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
+  windowListeners = new Map()
+  mainWindow = {
+    once(event: string, listener: () => void) {
+      windowListeners.set(event, listener)
+      return mainWindow
+    },
+    webContents: { insertText: vi.fn() },
+  }
+  registerDesktopIpc(mainWindow as never, assetGrants)
 })
 
 afterEach(async () => {
@@ -128,7 +140,7 @@ describe('document modification IPC', () => {
     )
 
     handlers.clear()
-    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
+    registerDesktopIpc(mainWindow as never, assetGrants)
     const restoreDraft = handlers.get(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL)
     const checkModification = handlers.get(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
 
@@ -159,7 +171,7 @@ describe('document modification IPC', () => {
     )
 
     handlers.clear()
-    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
+    registerDesktopIpc(mainWindow as never, assetGrants)
     await handlers.get(DOCUMENTS_RESTORE_WORKSPACE_DRAFT_CHANNEL)?.({})
     const checkModification = handlers.get(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
 
@@ -175,7 +187,7 @@ describe('document modification IPC', () => {
     await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
 
     handlers.clear()
-    registerDesktopIpc({ webContents: { insertText: vi.fn() } } as never, assetGrants)
+    registerDesktopIpc(mainWindow as never, assetGrants)
     const restoreDocument = handlers.get(DOCUMENTS_RESTORE_LAST_OPENED_CHANNEL)
     const checkModification = handlers.get(DOCUMENTS_CHECK_MODIFICATION_CHANNEL)
 
@@ -236,13 +248,11 @@ describe('document modification IPC', () => {
 })
 
 describe('HTML preview asset grant IPC', () => {
-  type GrantResult = { assetBaseUrl: string; grantId: string }
-
-  async function requestGrant(documentPath: string): Promise<GrantResult> {
+  async function requestGrant(documentPath: string): Promise<DesktopHtmlPreviewAssetGrantResult> {
     return (await handlers.get(HTML_PREVIEW_REQUEST_ASSET_GRANT_CHANNEL)?.(
       {},
       { documentPath },
-    )) as GrantResult
+    )) as DesktopHtmlPreviewAssetGrantResult
   }
 
   it('grants access to the sibling files of an opened HTML Document', async () => {
@@ -285,6 +295,22 @@ describe('HTML preview asset grant IPC', () => {
     const grant = await requestGrant(htmlPath)
 
     await handlers.get(HTML_PREVIEW_RELEASE_ASSET_GRANT_CHANNEL)?.({}, grant.grantId)
+
+    const url = new URL(grant.assetBaseUrl)
+    url.pathname = `${url.pathname}site.css`
+    const response = await assetGrants.handleRequest(new Request(url))
+    expect(response.status).toBe(404)
+  })
+
+  it('revokes all window grants when the desktop window closes', async () => {
+    const htmlPath = join(temporaryDirectory, 'report.html')
+    await writeFile(htmlPath, '<html></html>')
+    await writeFile(join(temporaryDirectory, 'site.css'), 'body {}')
+    showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [htmlPath] })
+    await handlers.get(DOCUMENTS_OPEN_CHANNEL)?.({})
+    const grant = await requestGrant(htmlPath)
+
+    windowListeners.get('closed')?.()
 
     const url = new URL(grant.assetBaseUrl)
     url.pathname = `${url.pathname}site.css`

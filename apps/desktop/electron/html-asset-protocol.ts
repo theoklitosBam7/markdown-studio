@@ -1,11 +1,14 @@
 import type { DesktopHtmlPreviewAssetGrantResult } from '@markdown-studio/desktop-contract/types'
 
+import { HTML_PREVIEW_ASSET_PROTOCOL } from '@markdown-studio/desktop-contract/constants'
 import { assertHtmlPreviewGrantId } from '@markdown-studio/desktop-contract/validation'
 import { randomBytes } from 'node:crypto'
 import { readFile, realpath, stat } from 'node:fs/promises'
-import { dirname, extname, isAbsolute, relative, resolve } from 'node:path'
+import { dirname, extname, resolve } from 'node:path'
 
-const PREVIEW_PROTOCOL = 'markdown-studio-preview:'
+import { isPathInside } from './path-containment'
+
+const PREVIEW_PROTOCOL = `${HTML_PREVIEW_ASSET_PROTOCOL}:`
 const CONTENT_TYPES: Record<string, string> = {
   '.avif': 'image/avif',
   '.bmp': 'image/bmp',
@@ -42,6 +45,13 @@ export interface HtmlPreviewAssetGrants {
   release: (grantId: string) => void
 }
 
+interface ParsedAssetRequest {
+  grantId: string
+  relativeAssetPath: string
+}
+
+type ResolvedAssetPath = { ok: false; reason: 'missing' | 'outside' } | { ok: true; path: string }
+
 export function createHtmlPreviewAssetGrants(): HtmlPreviewAssetGrants {
   const grantRoots = new Map<string, string>()
 
@@ -67,56 +77,27 @@ export function createHtmlPreviewAssetGrants(): HtmlPreviewAssetGrants {
         return new Response('Invalid asset request.', { status: 400 })
       }
 
-      if (url.protocol !== PREVIEW_PROTOCOL || url.hostname !== 'local') {
-        return new Response('Invalid asset request.', { status: 400 })
-      }
+      const parsed = parseAssetRequest(url)
+      if (!parsed) return new Response('Invalid asset request.', { status: 400 })
 
-      const segments = url.pathname.split('/').filter(Boolean)
-      let grantId: string
-      try {
-        grantId = assertHtmlPreviewGrantId(segments[0])
-      } catch {
-        return new Response('Invalid asset request.', { status: 400 })
-      }
-
-      const root = grantRoots.get(grantId)
+      const root = grantRoots.get(parsed.grantId)
       if (!root) return new Response('Asset grant is not active.', { status: 404 })
 
-      let relativeAssetPath: string
-      try {
-        relativeAssetPath = decodeURIComponent(segments.slice(1).join('/'))
-      } catch {
-        return new Response('Invalid asset request.', { status: 400 })
+      const resolved = await resolveAssetPath(root, parsed.relativeAssetPath)
+      if (!resolved.ok) {
+        return new Response(
+          resolved.reason === 'outside'
+            ? 'Asset path is outside the grant root.'
+            : 'Asset not found.',
+          { status: resolved.reason === 'outside' ? 403 : 404 },
+        )
       }
 
-      if (!relativeAssetPath || isUnsafeRelativePath(relativeAssetPath)) {
-        return new Response('Asset path is outside the grant root.', { status: 403 })
-      }
-
-      const requestedRoot = resolve(root)
-      const requestedPath = resolve(requestedRoot, relativeAssetPath)
-      if (!isInside(requestedRoot, requestedPath)) {
-        return new Response('Asset path is outside the grant root.', { status: 403 })
-      }
+      const contentType = getContentType(resolved.path)
+      if (!contentType) return new Response('Unsupported asset type.', { status: 415 })
 
       try {
-        const realRoot = await realpath(requestedRoot)
-        const realRequestedPath = await realpath(requestedPath)
-        if (!isInside(realRoot, realRequestedPath)) {
-          return new Response('Asset path is outside the grant root.', { status: 403 })
-        }
-
-        const stats = await stat(realRequestedPath)
-        if (!stats.isFile()) {
-          return new Response('Asset not found.', { status: 404 })
-        }
-
-        const contentType = CONTENT_TYPES[extname(realRequestedPath).toLowerCase()]
-        if (!contentType) {
-          return new Response('Unsupported asset type.', { status: 415 })
-        }
-
-        return new Response(await readFile(realRequestedPath), {
+        return new Response(await readFile(resolved.path), {
           headers: {
             'cache-control': 'no-store',
             'content-type': contentType,
@@ -133,12 +114,47 @@ export function createHtmlPreviewAssetGrants(): HtmlPreviewAssetGrants {
   }
 }
 
-function isInside(root: string, requestedPath: string): boolean {
-  const pathFromRoot = relative(root, requestedPath)
-
-  return Boolean(pathFromRoot) && !pathFromRoot.startsWith('..') && !isAbsolute(pathFromRoot)
+function getContentType(filePath: string): string | undefined {
+  return CONTENT_TYPES[extname(filePath).toLowerCase()]
 }
 
-function isUnsafeRelativePath(value: string): boolean {
-  return isAbsolute(value) || value.split(/[\\/]/).includes('..')
+function parseAssetRequest(url: URL): null | ParsedAssetRequest {
+  if (url.protocol !== PREVIEW_PROTOCOL || url.hostname !== 'local') return null
+
+  const segments = url.pathname.split('/').filter(Boolean)
+  let grantId: string
+  let relativeAssetPath: string
+
+  try {
+    grantId = assertHtmlPreviewGrantId(segments[0])
+    relativeAssetPath = decodeURIComponent(segments.slice(1).join('/'))
+  } catch {
+    return null
+  }
+
+  if (!relativeAssetPath) return null
+
+  return { grantId, relativeAssetPath }
+}
+
+async function resolveAssetPath(
+  root: string,
+  relativeAssetPath: string,
+): Promise<ResolvedAssetPath> {
+  const requestedRoot = resolve(root)
+  const requestedPath = resolve(requestedRoot, relativeAssetPath)
+
+  if (!isPathInside(requestedRoot, requestedPath)) return { ok: false, reason: 'outside' }
+
+  try {
+    const realRoot = await realpath(requestedRoot)
+    const realRequestedPath = await realpath(requestedPath)
+
+    if (!isPathInside(realRoot, realRequestedPath)) return { ok: false, reason: 'outside' }
+
+    const stats = await stat(realRequestedPath)
+    return stats.isFile() ? { ok: true, path: realRequestedPath } : { ok: false, reason: 'missing' }
+  } catch {
+    return { ok: false, reason: 'missing' }
+  }
 }

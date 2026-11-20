@@ -1,6 +1,8 @@
+import { HTML_PREVIEW_ASSET_PROTOCOL } from '@markdown-studio/desktop-contract/constants'
+
 import type { HtmlPreviewRequest, PreparedHtmlPreview } from '../types'
 
-const PREVIEW_ASSET_SCHEME = 'markdown-studio-preview:'
+const PREVIEW_ASSET_SCHEME = `${HTML_PREVIEW_ASSET_PROTOCOL}:`
 const BASE_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
@@ -96,8 +98,10 @@ function rewriteAssetUrl(value: string, assetBaseUrl: string): string {
   const trimmed = value.trim()
   if (!isRewritableUrl(trimmed)) return value
 
+  const relativeUrl = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
+
   try {
-    return new URL(trimmed, assetBaseUrl).toString()
+    return new URL(relativeUrl, assetBaseUrl).toString()
   } catch {
     return value
   }

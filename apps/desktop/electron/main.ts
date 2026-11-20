@@ -1,3 +1,4 @@
+import { HTML_PREVIEW_ASSET_PROTOCOL } from '@markdown-studio/desktop-contract/constants'
 import { app, BrowserWindow, Menu, protocol, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 
@@ -8,7 +9,7 @@ import { registerInstallIpc } from './ipc/install-method'
 import { buildAppMenu } from './menu/appMenu'
 
 const ASSET_PROTOCOL = 'markdown-studio-asset'
-const PREVIEW_ASSET_PROTOCOL = 'markdown-studio-preview'
+const PREVIEW_ASSET_PROTOCOL = HTML_PREVIEW_ASSET_PROTOCOL
 const htmlPreviewAssetGrants = createHtmlPreviewAssetGrants()
 const preloadPath = fileURLToPath(new URL('../preload/preload.cjs', import.meta.url))
 const rendererHtmlPath = fileURLToPath(new URL('../renderer/index.html', import.meta.url))

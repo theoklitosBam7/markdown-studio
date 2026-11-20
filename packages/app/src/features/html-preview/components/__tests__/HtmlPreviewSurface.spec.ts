@@ -96,4 +96,35 @@ describe('HtmlPreviewSurface asset grants', () => {
     expect(requestAssetGrant).not.toHaveBeenCalled()
     expect(wrapper.get('iframe').attributes('srcdoc')).toContain('href="site.css"')
   })
+
+  it('shows a visible error when grant request fails', async () => {
+    requestAssetGrant.mockRejectedValueOnce(new Error('Grant denied'))
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    const wrapper = mountSurface()
+    await flushPromises()
+
+    expect(wrapper.get('.html-preview__notice').text()).toContain('Local assets')
+    expect(wrapper.get('.html-preview__notice').attributes('role')).toBe('alert')
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('shows a visible error when grant release fails', async () => {
+    requestAssetGrant.mockResolvedValueOnce(firstGrant).mockResolvedValueOnce(secondGrant)
+    releaseAssetGrant.mockRejectedValueOnce(new Error('Release denied'))
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const wrapper = mountSurface()
+    await flushPromises()
+
+    await wrapper.setProps({ documentPath: '/reports/second.html' })
+    await flushPromises()
+
+    expect(releaseAssetGrant).toHaveBeenCalledWith(firstGrant.grantId)
+    expect(wrapper.get('.html-preview__notice').text()).toContain('Local assets')
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+
+    consoleErrorSpy.mockRestore()
+  })
 })

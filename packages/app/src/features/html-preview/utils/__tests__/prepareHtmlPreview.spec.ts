@@ -99,6 +99,24 @@ describe('prepareHtmlPreview', () => {
     expect(parsed.querySelector('script')).toBeNull()
   })
 
+  it('keeps the grant id when rewriting root-relative asset URLs', () => {
+    const assetBaseUrl = 'markdown-studio-preview://local/abcdef0123456789abcdef0123456789/'
+    const preview = prepareHtmlPreview({
+      allowScripts: false,
+      assetBaseUrl,
+      content: `
+        <link rel="stylesheet" href="/styles/site.css">
+        <img srcset="/images/logo.png 1x">
+        <style>body { background: url('/images/paper.png'); }</style>
+      `,
+    })
+
+    expect(preview.srcdoc).toContain(`${assetBaseUrl}styles/site.css`)
+    expect(preview.srcdoc).toContain(`${assetBaseUrl}images/logo.png`)
+    expect(preview.srcdoc).toContain(`${assetBaseUrl}images/paper.png`)
+    expect(preview.srcdoc).not.toContain('markdown-studio-preview://local/styles')
+  })
+
   it('uses an empty sandbox value when scripts are blocked', () => {
     const preview = prepareHtmlPreview({
       allowScripts: false,
