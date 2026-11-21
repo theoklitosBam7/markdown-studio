@@ -1,7 +1,8 @@
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { AppWindow } from '@/browser-window'
+import { trackMountedWrapper, unmountTrackedWrappers } from '@/__tests__/testEnvironment'
 
 import HtmlPreviewSurface from '../HtmlPreviewSurface.vue'
 
@@ -17,15 +18,17 @@ const secondGrant = {
 const requestAssetGrant = vi.fn()
 const releaseAssetGrant = vi.fn()
 
-enableAutoUnmount(afterEach)
+afterEach(unmountTrackedWrappers)
 
 function mountSurface(): ReturnType<typeof mount> {
-  return mount(HtmlPreviewSurface, {
-    props: {
-      content: '<link rel="stylesheet" href="site.css">',
-      documentPath: '/reports/first.html',
-    },
-  })
+  return trackMountedWrapper(
+    mount(HtmlPreviewSurface, {
+      props: {
+        content: '<link rel="stylesheet" href="site.css">',
+        documentPath: '/reports/first.html',
+      },
+    }),
+  )
 }
 
 describe('HtmlPreviewSurface script opt-in', () => {
@@ -61,12 +64,14 @@ describe('HtmlPreviewSurface script opt-in', () => {
   })
 
   it('shows the enabled state and prepares a script-enabled preview', async () => {
-    const wrapper = mount(HtmlPreviewSurface, {
-      props: {
-        content: '<script>document.body.dataset.scriptRan = "yes"</script>',
-        documentPath: '/reports/first.html',
-      },
-    })
+    const wrapper = trackMountedWrapper(
+      mount(HtmlPreviewSurface, {
+        props: {
+          content: '<script>document.body.dataset.scriptRan = "yes"</script>',
+          documentPath: '/reports/first.html',
+        },
+      }),
+    )
     const toggle = wrapper.get('button')
 
     await toggle.trigger('click')

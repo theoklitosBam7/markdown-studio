@@ -1,10 +1,14 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { computed, defineComponent, h } from 'vue'
 
 import type { ShortcutBinding } from '../../types/shortcuts'
+import type { UseShortcutsDeps } from '../useShortcuts'
+import { trackMountedWrapper, unmountTrackedWrappers } from '@/__tests__/testEnvironment'
 
 import { useShortcuts } from '../useShortcuts'
+
+afterEach(unmountTrackedWrappers)
 
 function binding(
   input: Partial<ShortcutBinding> & Pick<ShortcutBinding, 'handler' | 'id' | 'keys'>,
@@ -23,13 +27,32 @@ function createKeyboardEvent(
   return new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key, ...overrides })
 }
 
+function mountShortcuts(deps: UseShortcutsDeps): ReturnType<typeof useShortcuts> {
+  let shortcuts: ReturnType<typeof useShortcuts> | undefined
+
+  trackMountedWrapper(
+    mount(
+      defineComponent({
+        setup() {
+          shortcuts = useShortcuts(deps)
+          return () => h('div')
+        },
+      }),
+    ),
+  )
+
+  if (!shortcuts) throw new Error('Shortcut owner did not mount')
+
+  return shortcuts
+}
+
 describe('useShortcuts', () => {
   describe('handleKeydown', () => {
     it('dispatches to the matching binding handler', () => {
       const handler = vi.fn()
       const bindings = computed(() => [binding({ handler, id: 'editor:find', keys: ['Mod', 'F'] })])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       const event = createKeyboardEvent('f', { metaKey: true })
       handleKeydown(event)
@@ -42,7 +65,7 @@ describe('useShortcuts', () => {
       const handler = vi.fn()
       const bindings = computed(() => [binding({ handler, id: 'editor:find', keys: ['Mod', 'F'] })])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       const event = createKeyboardEvent('x', { metaKey: true })
       handleKeydown(event)
@@ -62,7 +85,7 @@ describe('useShortcuts', () => {
         }),
       ])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       const event = createKeyboardEvent('s', { metaKey: true })
       handleKeydown(event)
@@ -75,7 +98,7 @@ describe('useShortcuts', () => {
       const handler = vi.fn()
       const bindings = computed(() => [binding({ handler, id: 'editor:find', keys: ['Mod', 'F'] })])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       const event = createKeyboardEvent('f', { metaKey: true })
       Object.defineProperty(event, 'defaultPrevented', { value: true })
@@ -90,7 +113,7 @@ describe('useShortcuts', () => {
         binding({ handler, id: 'shortcuts:palette', keys: ['Mod', 'K'] }),
       ])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       handleKeydown(createKeyboardEvent('k', { isComposing: true, metaKey: true }))
 
@@ -101,7 +124,7 @@ describe('useShortcuts', () => {
       const handler = vi.fn()
       const bindings = computed(() => [binding({ handler, id: 'shortcuts:help', keys: ['?'] })])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       const input = document.createElement('input')
       document.body.appendChild(input)
@@ -131,7 +154,7 @@ describe('useShortcuts', () => {
         }),
       ])
 
-      const { handleKeydown } = useShortcuts({ bindings, isOverlayOpen })
+      const { handleKeydown } = mountShortcuts({ bindings, isOverlayOpen })
 
       const blockedEvent = createKeyboardEvent('f', { metaKey: true })
       handleKeydown(blockedEvent)
@@ -148,7 +171,7 @@ describe('useShortcuts', () => {
 
       const bindings = computed(() => [binding({ handler, id: 'editor:find', keys: ['Mod', 'F'] })])
 
-      const { handleKeydown } = useShortcuts({ bindings, isOverlayOpen })
+      const { handleKeydown } = mountShortcuts({ bindings, isOverlayOpen })
 
       const event = createKeyboardEvent('f', { metaKey: true })
       handleKeydown(event)
@@ -163,7 +186,7 @@ describe('useShortcuts', () => {
         binding({ handler: vi.fn(), id: 'editor:replace', keys: ['Mod', 'F'] }),
       ])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       expect(() => handleKeydown(createKeyboardEvent('f', { metaKey: true }))).toThrow(
         /Duplicate shortcut combo/,
@@ -181,7 +204,7 @@ describe('useShortcuts', () => {
         }),
       ])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       expect(() => handleKeydown(createKeyboardEvent('k', { metaKey: true }))).toThrow(
         /Duplicate shortcut combo/,
@@ -199,7 +222,7 @@ describe('useShortcuts', () => {
         }),
       ])
 
-      const { handleKeydown } = useShortcuts({ bindings })
+      const { handleKeydown } = mountShortcuts({ bindings })
 
       // Primary combo
       handleKeydown(createKeyboardEvent('g', { metaKey: true }))
@@ -231,7 +254,7 @@ describe('useShortcuts', () => {
         }),
       ])
 
-      const { shortcuts } = useShortcuts({ bindings })
+      const { shortcuts } = mountShortcuts({ bindings })
 
       const ids = shortcuts.value.map((s) => s.id)
       expect(ids).toContain('editor:find')
@@ -258,7 +281,7 @@ describe('useShortcuts', () => {
         }),
       ])
 
-      const { shortcuts } = useShortcuts({ bindings })
+      const { shortcuts } = mountShortcuts({ bindings })
       const shortcut = shortcuts.value[0]
 
       expect(shortcut).not.toHaveProperty('handler')
@@ -269,7 +292,7 @@ describe('useShortcuts', () => {
 
     it('returns empty list when bindings are empty', () => {
       const bindings = computed(() => [])
-      const { shortcuts } = useShortcuts({ bindings })
+      const { shortcuts } = mountShortcuts({ bindings })
       expect(shortcuts.value).toEqual([])
     })
   })
@@ -289,7 +312,7 @@ describe('useShortcuts', () => {
         },
       })
 
-      const wrapper = mount(Harness)
+      const wrapper = trackMountedWrapper(mount(Harness))
       expect(addSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
 
       wrapper.unmount()

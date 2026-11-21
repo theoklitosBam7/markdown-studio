@@ -1,33 +1,41 @@
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-enableAutoUnmount(afterEach)
-
 import type { AppWindow } from '@/browser-window'
+import {
+  restoreProperty,
+  trackMountedWrapper,
+  unmountTrackedWrappers,
+} from '@/__tests__/testEnvironment'
 
 import EditorPane from '../EditorPane.vue'
 
+const originalExecCommand = Object.getOwnPropertyDescriptor(document, 'execCommand')
+const originalRangeRect = Object.getOwnPropertyDescriptor(Range.prototype, 'getBoundingClientRect')
+
 function mountEditorPane(overrides: Record<string, unknown> = {}) {
-  const wrapper = mount(EditorPane, {
-    attachTo: document.body,
-    props: {
-      content: 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6',
-      findState: {
-        activeMatchIndex: -1,
-        isOpen: false,
-        matchCase: false,
-        matchCount: 0,
-        matches: [],
-        query: '',
-        replaceText: '',
-        showReplace: false,
+  const wrapper = trackMountedWrapper(
+    mount(EditorPane, {
+      attachTo: document.body,
+      props: {
+        content: 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6',
+        findState: {
+          activeMatchIndex: -1,
+          isOpen: false,
+          matchCase: false,
+          matchCount: 0,
+          matches: [],
+          query: '',
+          replaceText: '',
+          showReplace: false,
+        },
+        'onUpdate:content': (content: string) => {
+          void wrapper.setProps({ content })
+        },
+        ...overrides,
       },
-      'onUpdate:content': (content: string) => {
-        void wrapper.setProps({ content })
-      },
-      ...overrides,
-    },
-  })
+    }),
+  )
   return wrapper
 }
 
@@ -57,9 +65,12 @@ describe('EditorPane', () => {
   })
 
   afterEach(() => {
+    restoreProperty(document, 'execCommand', originalExecCommand)
+    restoreProperty(Range.prototype, 'getBoundingClientRect', originalRangeRect)
     window.getComputedStyle = originalGetComputedStyle
     appWindow.desktop = originalDesktop
     vi.restoreAllMocks()
+    unmountTrackedWrappers()
   })
 
   it('applies display preferences without replacing the editor or changing its selection or content', async () => {

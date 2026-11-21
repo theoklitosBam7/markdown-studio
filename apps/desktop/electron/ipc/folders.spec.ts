@@ -3,7 +3,7 @@
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vite-plus/test'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import {
   checkDocumentModification,
@@ -17,12 +17,17 @@ import {
 const temporaryDirectories: string[] = []
 
 afterEach(async () => {
+  vi.restoreAllMocks()
   await Promise.all(
     temporaryDirectories
       .splice(0)
       .map((directory) => rm(directory, { force: true, recursive: true })),
   )
 })
+
+function silenceExpectedListingFailure() {
+  return vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+}
 
 describe('document modification check', () => {
   it('reports an unchanged document', async () => {
@@ -168,22 +173,26 @@ describe('document folder listing', () => {
   })
 
   it('refuses a relative path that resolves outside its Document Folder', async () => {
+    const warn = silenceExpectedListingFailure()
     const documentFolder = await createDocumentFolder()
     const outsideFolder = await createDocumentFolder()
     await writeFile(join(outsideFolder, 'outside.md'), '# Outside')
 
-    expect(
-      await listDocumentFolder(documentFolder, '../' + outsideFolder.split('/').pop()),
-    ).toEqual({ ok: false })
+    const listing = await listDocumentFolder(documentFolder, '../' + outsideFolder.split('/').pop())
+
+    expect(listing).toEqual({ ok: false })
+    expect(warn).toHaveBeenCalledOnce()
   })
 
   it('refuses a symbolic link that points outside its Document Folder', async () => {
+    const warn = silenceExpectedListingFailure()
     const documentFolder = await createDocumentFolder()
     const outsideFolder = await createDocumentFolder()
     await writeFile(join(outsideFolder, 'outside.md'), '# Outside')
     await symlink(outsideFolder, join(documentFolder, 'escape'))
 
     expect(await listDocumentFolder(documentFolder, 'escape')).toEqual({ ok: false })
+    expect(warn).toHaveBeenCalledOnce()
   })
 
   it('lists a symbolic link that stays inside its Document Folder', async () => {
@@ -213,9 +222,11 @@ describe('document folder listing', () => {
   })
 
   it('reports an unreadable directory instead of throwing', async () => {
+    const warn = silenceExpectedListingFailure()
     const documentFolder = await createDocumentFolder()
 
     expect(await listDocumentFolder(documentFolder, 'missing')).toEqual({ ok: false })
+    expect(warn).toHaveBeenCalledOnce()
   })
 })
 
