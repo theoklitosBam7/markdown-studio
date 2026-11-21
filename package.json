@@ -59,7 +59,7 @@
     "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-vue": "catalog:",
     "@vue/tsconfig": "^0.9.1",
-    "cypress": "^16.1.1",
+    "cypress": "^16.3.0",
     "eslint-plugin-boundaries": "^7.2.0",
     "eslint-plugin-cypress": "^7.0.2",
     "eslint-plugin-perfectionist": "^5.12.1",
