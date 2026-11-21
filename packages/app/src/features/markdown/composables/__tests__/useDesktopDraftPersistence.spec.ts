@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { effectScope, nextTick, shallowRef } from 'vue'
 
 import type { AppWindow } from '@/browser-window'
+import { captureVueWarning } from '@/__tests__/testEnvironment'
 
 import { useDesktopDraftPersistence } from '../useDesktopDraftPersistence'
 
@@ -48,7 +49,7 @@ describe('useDesktopDraftPersistence', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     appWindow.desktop = createDesktopMock()
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(captureVueWarning)
   })
 
   afterEach(() => {

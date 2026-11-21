@@ -35,6 +35,7 @@
     "preview": "vp run --filter @markdown-studio/web preview",
     "preview:desktop": "vp run --filter @markdown-studio/desktop preview",
     "test:unit": "vp test run",
+    "test:unit:order": "vp test run --project app --no-file-parallelism --sequence.shuffle",
     "test:scripts": "vp test run scripts/",
     "prepare": "cypress install && simple-git-hooks",
     "generate-pwa-assets": "pwa-assets-generator",

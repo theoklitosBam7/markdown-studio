@@ -8,6 +8,8 @@ import { nextTick, shallowRef } from 'vue'
 
 import type { AppWindow } from '../../../../browser-window'
 
+import { captureVueWarning } from '@/__tests__/testEnvironment'
+
 import { resetBrowserDocumentSessionForTests } from '../useDocumentActions'
 import { useDocumentSession } from '../useDocumentSession'
 
@@ -72,7 +74,7 @@ describe('useDocumentSession', () => {
     appWindow.desktop = desktopMock
     window.confirm = vi.fn(() => true)
     vi.clearAllMocks()
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(captureVueWarning)
   })
 
   afterEach(() => {

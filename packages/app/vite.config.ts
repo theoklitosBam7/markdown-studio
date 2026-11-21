@@ -13,5 +13,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     exclude: [...configDefaults.exclude],
+    setupFiles: ['src/__tests__/setupVueWarnings.ts'],
   },
 })
