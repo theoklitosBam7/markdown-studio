@@ -78,7 +78,6 @@ describe('HTML preview', () => {
     cy.get('button[aria-label="Export document"]').should('not.exist')
     cy.get('.toolbar__document strong').should('contain', 'report.html')
     cy.get('.status-bar').should('contain', 'read-only')
-    cy.screenshot('html-preview-default', { capture: 'viewport' })
 
     cy.window().then((win) => {
       stubDocumentOpen(win as BrowserWindow, '# Markdown again\n\nEditable notes.', 'notes.md')
@@ -93,7 +92,6 @@ describe('HTML preview', () => {
     cy.get('button[aria-label="Export document"]').should('be.visible')
     cy.get('button[aria-label="Find in document"]').should('be.visible').click()
     cy.get('.find-replace-bar__input').should('be.visible')
-    cy.screenshot('markdown-after-html', { capture: 'viewport' })
   })
 
   it('keeps the HTML Preview document in place when an image-map link is clicked', () => {
@@ -191,7 +189,6 @@ describe('HTML preview', () => {
       })
       cy.wrap(probe).its('frameLoads').should('equal', 1)
       cy.get('iframe[title="HTML preview"]').should('have.attr', 'sandbox', '')
-      cy.screenshot('html-preview-image-map-after-click', { capture: 'viewport' })
     })
   })
 

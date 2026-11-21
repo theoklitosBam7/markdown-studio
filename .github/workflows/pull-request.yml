@@ -246,6 +246,45 @@ jobs:
       - name: Run app tests in shuffled order
         run: vpr test:unit:order
 
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-24.04
+    needs: [changes, quality]
+    if: needs.changes.outputs.run_full_workflow == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache Cypress binary
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            cypress-${{ runner.os }}-
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version-file: .node-version
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
+
+      - name: Run end-to-end tests
+        run: vpr test:e2e
+
+      - name: Upload Cypress screenshots
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+
   npm_package:
     name: Build and verify npm package
     runs-on: ubuntu-24.04
