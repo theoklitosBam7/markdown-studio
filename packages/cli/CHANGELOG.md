@@ -1,5 +1,31 @@
 # markdown-studio
 
+## 0.12.2
+
+### Patch Changes
+
+- dd93421: Keep HTML previews separate from Markdown drafts and editing
+  
+  - Cancel pending Workspace Draft writes when an HTML Document opens
+  - Restore the previous Markdown Workspace View Mode within viewport limits
+  - Prevent image-map links from navigating the HTML Preview frame
+- 719c781: Preview self-contained HTML files in a read-only view
+  
+  - Open HTML files in the web and desktop apps
+  - Render HTML in a sandboxed preview
+  - Hide Markdown-only actions while an HTML file is active
+- b23806d: Render local assets in desktop HTML Preview
+  
+  - Load relative styles, images, fonts, and media from an HTML Document's folder
+  - Confine local asset reads to a per-preview grant with path and file type checks
+  - Release each grant when its HTML Preview closes or another document becomes active
+- 90ec02b: Allow HTML Preview scripts by choice
+  
+  - Add a desktop-only enable and disable control for scripts in the active HTML Preview
+  - Keep scripts blocked by default and reset the choice when another HTML Document opens
+  - Keep enabled scripts isolated from the parent app, network, and desktop bridge
+  - Block subframe navigation from the Electron main process
+
 ## 0.12.1
 
 ### Patch Changes
