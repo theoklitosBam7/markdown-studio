@@ -78,8 +78,12 @@
     "commit-msg": "vp exec commitlint --edit $1"
   },
   "nano-staged": {
-    "*.{mjs,js,ts,vue,css,json,md}": "vp fmt",
-    "*.{mjs,js,ts,vue}": [
+    "!(*/)*.{mjs,js,ts,vue,css,json,md}": "vp fmt",
+    "!(.agents/)/**/*.{mjs,js,ts,vue,css,json,md}": "vp fmt",
+    "!(*/)*.{mjs,js,ts,vue}": [
+      "vp lint --fix"
+    ],
+    "!(.agents/)/**/*.{mjs,js,ts,vue}": [
       "vp lint --fix"
     ]
   },
