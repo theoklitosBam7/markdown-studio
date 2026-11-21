@@ -15,6 +15,7 @@ import { useDocumentFolders } from '../useDocumentFolders'
 import { useDocumentSession } from '../useDocumentSession'
 
 const appWindow = window as AppWindow
+const originalConfirm = window.confirm
 const originalDesktop = appWindow.desktop
 
 beforeEach(() => {
@@ -26,6 +27,7 @@ beforeEach(() => {
 afterEach(() => {
   resetBrowserDocumentSessionForTests()
   appWindow.desktop = originalDesktop
+  window.confirm = originalConfirm
   vi.restoreAllMocks()
 })
 

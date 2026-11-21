@@ -1,6 +1,14 @@
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
+
+import { restoreProperty } from '@/__tests__/testEnvironment'
 
 import { insertTextAtSelection } from '../insertTextAtSelection'
+
+const originalExecCommand = Object.getOwnPropertyDescriptor(document, 'execCommand')
+
+afterEach(() => {
+  restoreProperty(document, 'execCommand', originalExecCommand)
+})
 
 describe('insertTextAtSelection', () => {
   it('uses browser editing when execCommand is available', () => {

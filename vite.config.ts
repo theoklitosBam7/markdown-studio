@@ -1058,6 +1058,9 @@ export default defineConfig({
         test: {
           environment: 'jsdom',
           include: ['src/**/__tests__/**/*.spec.ts'],
+          // Reuse one jsdom environment per worker. Every app spec must restore
+          // globals, storage, timers, and mounted components between files.
+          isolate: false,
           name: 'app',
           root: packageRoot('./packages/app'),
         },

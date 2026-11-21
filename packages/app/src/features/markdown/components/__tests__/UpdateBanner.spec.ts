@@ -1,14 +1,23 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import {
+  restoreProperty,
+  trackMountedWrapper,
+  unmountTrackedWrappers,
+} from '@/__tests__/testEnvironment'
+
 import UpdateBanner from '../UpdateBanner.vue'
 
+const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
 const upgradeCommand = 'brew upgrade --cask theoklitosBam7/tap/markdown-studio'
 
 describe('UpdateBanner', () => {
   afterEach(() => {
+    restoreProperty(navigator, 'clipboard', originalClipboard)
     vi.useRealTimers()
     vi.restoreAllMocks()
+    unmountTrackedWrappers()
   })
 
   it('shows a copyable Homebrew upgrade command instead of direct download', async () => {
@@ -19,15 +28,17 @@ describe('UpdateBanner', () => {
       },
     })
 
-    const wrapper = mount(UpdateBanner, {
-      props: {
-        currentVersion: '0.6.0',
-        homebrewUpgradeCommand: upgradeCommand,
-        isHomebrewInstall: true,
-        latestVersion: '0.7.0',
-        status: 'update-available',
-      },
-    })
+    const wrapper = trackMountedWrapper(
+      mount(UpdateBanner, {
+        props: {
+          currentVersion: '0.6.0',
+          homebrewUpgradeCommand: upgradeCommand,
+          isHomebrewInstall: true,
+          latestVersion: '0.7.0',
+          status: 'update-available',
+        },
+      }),
+    )
 
     expect(wrapper.get('.update-banner__command').text()).toBe(upgradeCommand)
     expect(wrapper.find('.update-banner__download-btn').exists()).toBe(false)
@@ -39,14 +50,16 @@ describe('UpdateBanner', () => {
   })
 
   it('shows direct download for non-Homebrew installs', () => {
-    const wrapper = mount(UpdateBanner, {
-      props: {
-        currentVersion: '0.6.0',
-        isHomebrewInstall: false,
-        latestVersion: '0.7.0',
-        status: 'update-available',
-      },
-    })
+    const wrapper = trackMountedWrapper(
+      mount(UpdateBanner, {
+        props: {
+          currentVersion: '0.6.0',
+          isHomebrewInstall: false,
+          latestVersion: '0.7.0',
+          status: 'update-available',
+        },
+      }),
+    )
 
     expect(wrapper.find('.update-banner__command').exists()).toBe(false)
     expect(wrapper.get('.update-banner__download-btn').text()).toBe('Download')
@@ -61,13 +74,15 @@ describe('UpdateBanner', () => {
       },
     })
 
-    const wrapper = mount(UpdateBanner, {
-      props: {
-        homebrewUpgradeCommand: upgradeCommand,
-        isHomebrewInstall: true,
-        status: 'update-available',
-      },
-    })
+    const wrapper = trackMountedWrapper(
+      mount(UpdateBanner, {
+        props: {
+          homebrewUpgradeCommand: upgradeCommand,
+          isHomebrewInstall: true,
+          status: 'update-available',
+        },
+      }),
+    )
 
     await wrapper.get('.update-banner__copy-btn').trigger('click')
     wrapper.unmount()

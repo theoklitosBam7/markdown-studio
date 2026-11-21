@@ -11,9 +11,9 @@ function mountOwner<T>(usePreference: () => T) {
   let preference: T | undefined
   const wrapper = mount(
     defineComponent({
+      render: () => h('div'),
       setup() {
         preference = usePreference()
-        return () => h('div')
       },
     }),
   )

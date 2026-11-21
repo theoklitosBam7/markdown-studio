@@ -9,9 +9,9 @@ function mountOwner() {
   let preferences: ReturnType<typeof useEditorDisplayPreferences> | undefined
   const wrapper = mount(
     defineComponent({
+      render: () => h('div'),
       setup() {
         preferences = useEditorDisplayPreferences()
-        return () => h('div')
       },
     }),
   )

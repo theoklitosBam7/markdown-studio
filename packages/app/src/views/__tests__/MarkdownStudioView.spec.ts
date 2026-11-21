@@ -1,4 +1,4 @@
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -7,10 +7,9 @@ import type { AppWindow } from '@/browser-window'
 import { resetPwaStateForTests } from '@/composables/usePwa'
 import { resetBrowserDocumentSessionForTests } from '@/features/markdown/composables/useDocumentActions'
 import { generateTableTemplate } from '@/features/markdown/utils/tableTemplate'
+import { trackMountedWrapper, unmountTrackedWrappers } from '@/__tests__/testEnvironment'
 
 import MarkdownStudioView from '../MarkdownStudioView.vue'
-
-enableAutoUnmount(afterEach)
 
 function createDesktopApi(folderApi: Record<string, unknown>) {
   return {
@@ -72,12 +71,14 @@ async function mountMarkdownStudioView() {
   await router.push('/')
   await router.isReady()
 
-  const wrapper = mount(MarkdownStudioView, {
-    attachTo: document.body,
-    global: {
-      plugins: [router],
-    },
-  })
+  const wrapper = trackMountedWrapper(
+    mount(MarkdownStudioView, {
+      attachTo: document.body,
+      global: {
+        plugins: [router],
+      },
+    }),
+  )
 
   await flushPromises()
 
@@ -99,11 +100,14 @@ describe('MarkdownStudioView Document Folders', () => {
   })
 
   afterEach(() => {
+    unmountTrackedWrappers()
     document.body.innerHTML = ''
     resetBrowserDocumentSessionForTests()
     resetPwaStateForTests()
     appWindow.desktop = originalDesktop
     window.CSS = originalCss
+    window.localStorage.clear()
+    window.sessionStorage.clear()
     vi.restoreAllMocks()
   })
 
@@ -156,12 +160,15 @@ describe('MarkdownStudioView', () => {
   })
 
   afterEach(() => {
+    unmountTrackedWrappers()
     document.body.innerHTML = ''
     resetBrowserDocumentSessionForTests()
     resetPwaStateForTests()
     window.CSS = originalCss
     appWindow.desktop = originalDesktop
     window.confirm = originalConfirm
+    window.localStorage.clear()
+    window.sessionStorage.clear()
     vi.restoreAllMocks()
   })
 
