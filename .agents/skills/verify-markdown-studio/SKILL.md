@@ -57,11 +57,12 @@ curl -fsS http://localhost:4175/ | grep -oE '/src/main\.ts|/assets/index-[^"]+\.
 # /src/main.ts  -> dev server
 # /assets/*.js  -> built preview
 
-# 3. The listener is the process this run started
-lsof -nP -iTCP:4175 -sTCP:LISTEN   # PID must match the PID recorded at launch
+# 3. The listener belongs to this run
+lsof -nP -iTCP:4175 -sTCP:LISTEN
+ps -o pid,ppid,args -p <listener PID>
 ```
 
-If the PID differs, someone else owns the port. Do not drive that instance and do not kill it. Pick another port and relaunch.
+If the listener's parent chain does not reach the launch PID, someone else owns the port. Do not drive that instance and do not kill it. Pick another port and relaunch.
 
 ## Drive
 
@@ -75,7 +76,7 @@ Never click `Open` or `Save` in this path. They open native file dialogs or trig
 
 ### Path B: Cypress
 
-Cypress is the repo's scripted harness. Existing specs live in `cypress/e2e/markdown-studio.cy.ts`; read it for stub patterns before writing a new spec.
+Cypress is the repo's scripted harness. Specs live in `cypress/e2e/`, including `markdown-studio.cy.ts` for browser-API stub patterns and `html-preview.cy.ts` for HTML Documents. Read the matching spec before writing a new spec.
 
 With a server already running (Path A's launch or the doctor check), run one temporary spec:
 
@@ -103,17 +104,20 @@ Real selectors from the app, in order of preference (ARIA and data attributes be
 | Rendered document root   | `.rendered-md`                                                                          |
 | Source-mapped block      | `.rendered-md [data-source-start]`                                                      |
 | Mermaid diagram          | `.mermaid-wrap svg` (async; poll for it, it can take seconds)                           |
-| Toolbar actions          | `.toolbar__actions` buttons `Open`, `Save`                                              |
-| View mode toggle         | `.toolbar__desktop-controls` button `Split`                                             |
-| Examples button          | toolbar button containing `Examples`                                                    |
-| Export menu trigger      | `summary[aria-label="Export document"]`                                                 |
-| Export menu              | `.export-menu__popover[role="menu"]`, items `.export-menu__item`                        |
-| Command Palette          | Ctrl+K, then `.command-palette__input`, `.command-palette__results`                     |
+| File actions             | `button[aria-label="Open document"]`, `button[aria-label="Save document"]`              |
+| Document Identity        | `.toolbar__document strong`                                                             |
+| View mode toggle         | `.toolbar__desktop-controls [data-mode="editor"], .toolbar__desktop-controls [data-mode="split"], .toolbar__desktop-controls [data-mode="preview"]` |
+| Document actions menu    | `button[aria-label="Document actions"]`, items `button[aria-label="Load examples"]`, `button[aria-label="Clear document"]` |
+| Export menu trigger      | `button[aria-label="Export document"]`                                                  |
+| Export menu              | `.toolbar__export-menu [role="menu"]`, items `button[aria-label="Export HTML"], button[aria-label="Export PDF"]` |
+| Command Palette          | Ctrl+K, then `.command-palette__input`, `.command-palette__option`                      |
 | Find bar                 | `.find-replace-bar__input`                                                              |
-| Status bar               | `.status-bar`, `.status-item--document`                                                 |
+| Status bar               | `.status-bar`, `.status-bar .status-item`                                               |
 | Theme toggle             | `button[aria-label="Switch to dark mode"]`, state on `html[data-theme]`                 |
 | Mobile toolbar           | `.mobile-toolbar-actions`, mode buttons `[data-mode="editor"]`, `[data-mode="preview"]` |
 | Mobile menu              | `button[aria-label="Menu"]`, items `.mobile-action-sheet__action`                       |
+| HTML Preview             | `.html-preview`, `iframe[title="HTML preview"]`, `.html-preview__notice`                |
+| Desktop script opt-in    | `.html-preview__scripts-toggle` (desktop only)                                          |
 | Dialogs                  | `[role="dialog"]`, close via `button[aria-label="Close dialog"]`                        |
 
 ### State the app keeps in the browser

@@ -1,6 +1,6 @@
 # Editing and Live Preview
 
-The user writes Markdown in the editor pane and the Live Preview renders the document as they type. The Workspace View Mode decides how much space each pane gets: Split shows both, and single-pane modes show one. Clicking a rendered block moves the editor caret to that block's source (Source Navigation), and scrolling one pane keeps the other in step in Split mode. Mermaid code blocks render as diagrams.
+The user writes Markdown in the editor pane and the Live Preview renders the document as they type. The Workspace View Mode decides how much space each pane gets: Split shows both, and single-pane modes show one. Double-clicking a rendered block in Split mode moves the editor caret to that block's source (Source Navigation), and scrolling the editor moves the Live Preview in step. Mermaid code blocks render as diagrams.
 
 ## Sub-features
 
@@ -15,22 +15,22 @@ The user writes Markdown in the editor pane and the Live Preview renders the doc
 ## How to get to it (user POV)
 
 - Open the app. The editor and Live Preview are the first screen on a desktop viewport.
-- Click `Split` in the desktop toolbar to cycle or set the view mode.
+- Select `Editor`, `Split`, or `Preview` in `.toolbar__desktop-controls` to set the view mode.
 - On a mobile viewport, use the `editor` and `preview` buttons in `.mobile-toolbar-actions`.
 - Type in the editor text area. The Live Preview updates as you type.
 - Double-click a heading or paragraph in the preview to jump to its source.
 
 ## Web drive with agent-browser
 
-Preconditions: baseline server from the map README, desktop viewport, and an empty `markdown-studio:web-draft`. Load the `agent-browser` core guide before using the CLI. Use its accessibility snapshot and element references for interaction, and capture screenshots and DOM evidence in the run directory.
+Preconditions: baseline server from the map README, desktop viewport, and an empty `markdown-studio:web-draft`. Use the agent-browser accessibility snapshot and element references for interaction, and capture screenshots and DOM evidence in the run directory.
 
 - Type and render: enter `# Verify heading`, a blank line, and a paragraph in `.editor-pane textarea`. Confirm `.rendered-md h1` contains `Verify heading`, then capture both panes.
 - Mermaid diagram: append a fenced `mermaid` block containing `graph TD; A-->B;`. Poll until `.mermaid-wrap svg` exists, then capture it.
 - View modes: select `Split` in `.toolbar__desktop-controls` and confirm both `.editor-pane` and `.preview-pane` are visible. At a mobile viewport, select `[data-mode="preview"]` and confirm only the preview is visible.
 - Source Navigation: with a `### Lists` heading in the document, double-click its rendered `h3[data-source-start]`. Confirm the editor is focused and its `selectionStart` equals `textarea.value.indexOf('### Lists')`.
 - Scroll sync: use a document taller than the viewport, scroll the editor, and confirm `.preview-scroll` also scrolls.
-- Editor resize: in Split mode, record the editor divider's accessible name, value, and bounds. Drag it in both directions and confirm editor and Live Preview widths change. Use arrow keys, Shift+Arrow, Home, and End on the focused divider. Open **Pane widths**, enter a value in **Editor percentage**, and verify the displayed split. Double-click the editor divider and select **Reset to equal widths** in separate runs. Confirm each reset sets an equal split and leaves the sidebar key unchanged. Press Escape during a drag and confirm the previous value returns.
-- Outline sidebar resize: open the outline sidebar and resize its divider in both directions. Confirm its separator name and pixel value, then try Arrow, Shift+Arrow, Home, and End. Open **Sidebar width**, enter a value in **Sidebar width in pixels**, and confirm the outline width changes. Double-click the sidebar divider and select **Reset sidebar width** in separate runs. Confirm each reset returns to the default and leaves the editor split key unchanged. Hide and reopen the sidebar; confirm its width returns. The web recipe covers the outline only, not Document Folder behavior.
+- Editor resize: in Split mode, record the editor divider's accessible name, value, and bounds. Drag it in both directions and confirm editor and Live Preview widths change. Use arrow keys, Shift+Arrow, Home, and End on the focused divider. Open **Pane widths**, enter a value in **Editor percentage**, and verify the displayed split. Double-click the editor divider to reset to equal widths. Test the **Reset to equal widths** button in the **Pane widths** control separately. Confirm each reset sets an equal split and leaves the sidebar key unchanged. Press Escape during a drag and confirm the previous value returns.
+- Outline sidebar resize: open the outline sidebar and resize its divider in both directions. Confirm its separator name and pixel value, then try Arrow, Shift+Arrow, Home, and End. Open **Sidebar width**, enter a value in **Sidebar width in pixels**, and confirm the outline width changes. Double-click the sidebar divider to reset to the default width. Test the **Reset sidebar width** button in the **Sidebar width** control separately. Confirm each reset returns to the default and leaves the editor split key unchanged. Hide and reopen the sidebar; confirm its width returns. The web recipe covers the outline only, not Document Folder behavior.
 - Persistence and independence: record both storage keys before and after each adjustment, reset, and reload. Confirm `markdown-studio:workspace-split-ratio` stores the editor fraction (default `0.5`) and `markdown-studio:workspace-sidebar-width` stores CSS pixels (default `248`). Confirm adjusting one does not write the other.
 - Mobile: at a mobile viewport, confirm no resize divider or width control is focusable and the existing mobile outline layout remains unchanged. Confirm neither stored preference changes. Do not treat web proof as proof of desktop folder behavior or desktop-profile relaunch persistence.
 

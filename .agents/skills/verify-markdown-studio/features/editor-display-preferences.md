@@ -4,7 +4,7 @@ Editor display settings change the source editor's font size, line height, word 
 
 ## Sub-features
 
-- `editor-display-entrypoints`: Desktop toolbar, mobile Appearance menu, and Command Palette open the same settings form.
+- `editor-display-entrypoints`: Desktop toolbar, mobile Appearance group, and Command Palette open the same settings form. The toolbar and mobile entries are hidden for HTML Documents; the Command Palette command stays available.
 - `editor-display-live-layout`: Valid changes reflow source text while keeping Find, line numbers, active-line highlighting, and Source Navigation aligned.
 - `editor-display-persistence`: Defaults, reset, local persistence, and storage errors behave without changing unrelated preferences or document state.
 
@@ -20,7 +20,7 @@ Start the web app using the main skill and capture actions and results in the ru
 
 ### Entry points and live changes
 
-- Open settings from the labelled desktop **Editor display** toolbar button. Record the form and its current values.
+- Open settings from the labelled desktop **Editor display** toolbar button. Record the form and its current values. The **Reset editor display** button has visible text but no `aria-label`, so match its text.
 - Close it, then open **Editor display settings...** from the Command Palette. Confirm it is the same form and that typing in its fields does not invoke document Commands.
 - Switch to preview-only mode and open settings from the Command Palette. Confirm settings remain available when Live Preview is the only visible pane.
 - At a phone viewport, open **Editor display** in the mobile menu's Appearance group. Confirm it opens the mobile settings sheet. Test keyboard navigation, Escape, and close behavior without leaving focus in the hidden menu.
@@ -54,7 +54,7 @@ Record `markdown-studio:editor-display-preferences` before and after each action
 - Clear the editor-display key and reload. Confirm the five defaults appear and that startup does not write a record until the user changes or resets a preference.
 - Change multiple values, reload the same origin, and confirm all committed values restore. Confirm the editor display key is the only unrelated-to-document preference key changed.
 - Reset editor display. Confirm all five values return to defaults and the theme, Workspace Draft, split ratio, and sidebar width remain unchanged.
-- In Cypress, make localStorage reads fail. Confirm the app starts with defaults and shows a storage warning. Make writes fail after a valid change; confirm the preference remains active for the session and the warning says it was not saved. Restore storage and retry; confirm the warning clears and the value persists after reload.
+- In Cypress, throw a `SecurityError` or `QuotaExceededError` `DOMException` from localStorage reads or writes. Other read errors are not caught. Confirm the app starts with defaults and shows a storage warning. Make writes fail after a valid change; confirm the preference remains active for the session and the warning says it was not saved. Restore storage and retry; confirm the warning clears and the value persists after reload.
 - Confirm a stored value below 16 px remains stored as requested when the effective mobile/touch font is 16 px. Return to a non-constrained viewport and confirm the requested size applies.
 - Confirm another open tab does not live-sync settings. Do not interpret this as a failure; cross-tab sync is out of scope.
 
