@@ -12,6 +12,7 @@ import type {
   PreviewPaneAdapter,
 } from '@/features/markdown/types'
 
+import { captureVueWarning } from '@/__tests__/testEnvironment'
 import { resetPwaStateForTests } from '@/composables/usePwa'
 
 import { resetBrowserDocumentSessionForTests } from '../useDocumentActions'
@@ -296,7 +297,7 @@ describe('useEditorWorkspaceController', () => {
   it('warns and keeps the editor unchanged when an unknown example id is requested', async () => {
     const { workspace, wrapper } = await mountWorkspace()
     const editor = createEditorAdapter()
-    const warningSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warningSpy = vi.spyOn(console, 'warn').mockImplementation(captureVueWarning)
     workspace.attach.editor(editor)
     workspace.editor.updateContent('# Existing content')
     await flushPromises()

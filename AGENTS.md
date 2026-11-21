@@ -58,6 +58,8 @@ Use the appropriate test level for the change:
 - Cypress end-to-end tests in `cypress/e2e` for Editor Workspace workflows that a unit test cannot prove.
 - The `verify-markdown-studio` skill when a change needs proof in a browser.
 
+Before changing shared test setup or test helpers in `packages/app`, read [docs/testing.md](./docs/testing.md).
+
 ## Completion Criteria
 
 - A task is complete when `vpr check` and `vpr type-check` pass. `vpr check` covers formatting and linting; `vpr type-check` runs the separate Vue and TypeScript build check.

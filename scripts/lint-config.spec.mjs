@@ -76,11 +76,16 @@ const lintTemporaryDependency = async ({
   }
 }
 
-const lintTemporaryExternalDependency = async ({ fromParent, fromPath, source }) => {
+const lintTemporaryExternalDependency = async ({
+  fromParent,
+  fromPath,
+  source,
+  sourceCode = `import dependency from '${source}'\nvoid dependency\n`,
+}) => {
   const root = await makeTemporaryDirectory(fromParent)
   const fromFile = join(root, fromPath)
   await mkdir(dirname(fromFile), { recursive: true })
-  await writeFile(fromFile, `import dependency from '${source}'\nvoid dependency\n`)
+  await writeFile(fromFile, sourceCode)
 
   try {
     return await lintFile(fromFile)
@@ -192,6 +197,22 @@ describe('Vite+ lint boundaries configuration', () => {
       expectBoundaryMessage(messages, expectedMessage)
     },
   )
+
+  it('rejects enableAutoUnmount in app test files', async () => {
+    const messages = await lintTemporaryExternalDependency({
+      fromParent: featuresRoot,
+      fromPath: '__tests__/source.spec.ts',
+      sourceCode: "import { enableAutoUnmount } from '@vue/test-utils'\nvoid enableAutoUnmount\n",
+    })
+
+    expect(messages).toHaveLength(1)
+    expect(messages[0]).toMatchObject({
+      message: expect.stringContaining(
+        "'enableAutoUnmount' import from '@vue/test-utils' is restricted",
+      ),
+      ruleId: 'eslint(no-restricted-imports)',
+    })
+  })
 
   // NOTE: extensionless relative imports (caught previously via
   // eslint-import-resolver-typescript) are not resolved by the Oxlint boundaries

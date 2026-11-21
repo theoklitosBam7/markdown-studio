@@ -243,6 +243,9 @@ jobs:
       - name: Run unit tests
         run: vpr test:unit
 
+      - name: Run app tests in shuffled order
+        run: vpr test:unit:order
+
   npm_package:
     name: Build and verify npm package
     runs-on: ubuntu-24.04

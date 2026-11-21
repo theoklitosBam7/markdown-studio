@@ -102,6 +102,22 @@ export default defineConfig({
         },
       },
       {
+        files: ['packages/app/src/**/__tests__/**/*.spec.ts'],
+        rules: {
+          'no-restricted-imports': [
+            'error',
+            {
+              paths: [
+                {
+                  importNames: ['enableAutoUnmount'],
+                  name: '@vue/test-utils',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
         files: ['apps/**/__tests__/*', 'packages/**/__tests__/*'],
         rules: {
           'vitest/expect-expect': 'error',

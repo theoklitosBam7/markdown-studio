@@ -3,6 +3,12 @@ interface Unmountable {
 }
 
 const mountedWrappers: Unmountable[] = []
+const vueWarnings: string[] = []
+
+export function captureVueWarning(...args: Parameters<typeof console.warn>): void {
+  if (typeof args[0] !== 'string' || !args[0].startsWith('[Vue warn]')) return
+  vueWarnings.push(args.map(String).join(' '))
+}
 
 export function restoreProperty(
   target: object,
@@ -15,6 +21,10 @@ export function restoreProperty(
   }
 
   Reflect.deleteProperty(target, property)
+}
+
+export function takeVueWarnings(): string[] {
+  return vueWarnings.splice(0)
 }
 
 export function trackMountedWrapper<T extends Unmountable>(wrapper: T): T {

@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"],
-  "exclude": [],
+  "exclude": ["src/**/__lint-config-test-*/**"],
   "compilerOptions": {
     "types": ["node", "jsdom"],
     "tsBuildInfoFile": "../../node_modules/.tmp/packages-app-vitest.tsbuildinfo"

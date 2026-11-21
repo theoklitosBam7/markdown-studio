@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { AppWindow } from '../../../../browser-window'
 
+import { captureVueWarning } from '@/__tests__/testEnvironment'
+
 import { resetBrowserDocumentSessionForTests, useDocumentActions } from '../useDocumentActions'
 
 const desktopMock = {
@@ -202,7 +204,7 @@ describe('useDocumentActions', () => {
 
   it('falls back to the file input when the browser open picker fails', async () => {
     const pickerError = new DOMException('Denied', 'SecurityError')
-    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(captureVueWarning)
     const selectedFile = new File(['# Fallback file'], 'fallback-from-picker.md', {
       type: 'text/markdown',
     })
