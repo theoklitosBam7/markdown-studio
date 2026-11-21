@@ -173,7 +173,7 @@ intentionally want to remove labels that are absent from `.github/labels.yml`.
 - **Split-pane editor.** Write on the left, preview on the right
 - **View modes.** Toggle between split view, editor-only, or preview-only modes
 - **Live Markdown rendering.** See changes instantly as you type
-- **HTML Document preview.** Open a `.html` or `.htm` file in a read-only sandboxed frame. Desktop previews load local styles, images, fonts, and media from the file's folder.
+- **HTML Document preview.** Open a `.html` or `.htm` file in a read-only sandboxed frame. Scripts stay off until you enable them for the active preview. Desktop previews load local styles, images, fonts, and media from the file's folder.
 - **Mermaid diagram support.** Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax
 - **Theme switching.** Toggle between light and dark modes with smooth animated transitions
 - **Document statistics.** Track word, character, line, and diagram counts in real time
@@ -276,17 +276,17 @@ The kitchen-sink example loads by default on first visit.
 **Desktop App:**
 
 - **Open.** Load an existing `.md`, `.markdown`, `.mdown`, `.txt`, `.html`, or `.htm` file from a native dialog
-- **HTML preview.** Open an HTML file in a read-only frame. Scripts, forms, external network assets, and source navigation are blocked. Local CSS, images, fonts, and media load from the HTML Document's folder through a temporary grant.
+- **HTML preview.** Open an HTML file in a read-only frame. Scripts stay blocked until you use **Enable scripts for this preview**. Use **Disable scripts for this preview** to return to the static view. Forms, external network assets, and Source Navigation stay blocked in both states. Local CSS, images, fonts, and media load from the HTML Document's folder through a temporary grant.
 - **Save.** Save the current Markdown Document
 - **Save As.** Save with a new name or location
 - **Clear.** Start fresh with an empty editor
 
-The desktop asset grant ends when the HTML Preview closes or another document becomes active. Markdown Studio serves JavaScript assets referenced by a page, but the read-only preview does not execute scripts.
+The desktop asset grant ends when the HTML Preview closes or another document becomes active. The script control is available only in the desktop app. The choice is not saved. It ends when you disable it or when another HTML Document opens. Enabled scripts run in an opaque-origin frame with only `allow-scripts`. The main process blocks subframe navigation, and scripts cannot reach the parent DOM, the desktop bridge, or network APIs. The per-preview asset grant still confines file reads. Mermaid loaded from a CDN, like other libraries loaded from a CDN, needs network access and does not run in this preview. Use a bundled local Mermaid script through a relative `<script src>` instead. Remove CDN module imports because the preview does not rewrite them to the asset grant.
 
 **Web App:**
 
 - **Open.** Load `.md`, `.html`, or `.htm` files using the File System Access API (Chrome/Edge) or file picker
-- **HTML preview.** Open an HTML file in a read-only frame. Self-contained files render best.
+- **HTML preview.** Open an HTML file in a read-only frame. Scripts stay blocked in the browser runtime because it cannot enforce the frame navigation boundary. Self-contained files render best.
 - **Save.** Save to previously opened file, or download if using the fallback
 - **Save As.** Save with a new name (uses File System Access API when available, otherwise downloads)
 

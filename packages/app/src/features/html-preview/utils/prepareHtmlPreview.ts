@@ -38,7 +38,9 @@ export function prepareHtmlPreview(input: HtmlPreviewRequest): PreparedHtmlPrevi
 
 function createCspMeta(documentNode: Document, allowScripts: boolean): HTMLMetaElement {
   const meta = documentNode.createElement('meta')
-  const directives = allowScripts ? `${BASE_CSP}; script-src 'unsafe-inline'` : BASE_CSP
+  const directives = allowScripts
+    ? `${BASE_CSP}; script-src 'unsafe-inline' ${PREVIEW_ASSET_SCHEME}`
+    : BASE_CSP
 
   meta.setAttribute('http-equiv', 'Content-Security-Policy')
   meta.setAttribute('content', directives)

@@ -3,6 +3,10 @@ interface BrowserFrameTree {
   frame: { id: string; loaderId: string; url: string }
 }
 
+interface BrowserTargets {
+  targetInfos: { targetId: string; type: string }[]
+}
+
 type BrowserWindow = {
   showOpenFilePicker?: (options?: unknown) => Promise<FileSystemFileHandle[]>
 } & typeof globalThis &
@@ -15,6 +19,13 @@ function findHtmlPreviewFrame(tree: BrowserFrameTree): BrowserFrameTree['frame']
     const frame = findHtmlPreviewFrame(child)
     if (frame) return frame
   }
+}
+
+function pageTargetIds(result: BrowserTargets): string[] {
+  return result.targetInfos
+    .filter((target) => target.type === 'page')
+    .map((target) => target.targetId)
+    .sort()
 }
 
 const htmlDocument = `<!doctype html>
@@ -242,13 +253,42 @@ describe('HTML preview', () => {
       cy.then(() =>
         Cypress.automation('remote:debugger:protocol', { command: 'Target.getTargets' }),
       ).then((after) => {
-        const pageIds = (result: { targetInfos: { targetId: string; type: string }[] }) =>
-          result.targetInfos
-            .filter((target) => target.type === 'page')
-            .map((target) => target.targetId)
-            .sort()
-        expect(pageIds(after), 'no popup browser target').to.deep.equal(pageIds(before))
+        expect(pageTargetIds(after), 'no popup browser target').to.deep.equal(pageTargetIds(before))
       })
+    })
+  })
+
+  it('keeps the browser runtime static because it cannot block frame navigation', () => {
+    const navigationDocument = `<!doctype html>
+      <body>
+        <h1>Before navigation</h1>
+        <script>window.location.href = 'https://frame-navigation.invalid/destination';</script>
+      </body>`
+
+    const navigationRequests: string[] = []
+    cy.intercept('https://frame-navigation.invalid/**', (req) => {
+      navigationRequests.push(req.url)
+      req.reply({ statusCode: 204 })
+    })
+
+    cy.viewport(1280, 900)
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        stubDocumentOpen(win as BrowserWindow, navigationDocument, 'navigation.html')
+      },
+    })
+
+    cy.get('button[aria-label="Open document"]').click()
+    cy.get('button', { timeout: 200 }).should('not.contain', 'scripts for this preview')
+    cy.get('iframe[title="HTML preview"]')
+      .should('have.attr', 'sandbox', '')
+      .invoke('attr', 'srcdoc')
+      .should('not.contain', '<script')
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', { command: 'Page.getFrameTree' }),
+    ).then(({ frameTree }: { frameTree: BrowserFrameTree }) => {
+      expect(findHtmlPreviewFrame(frameTree)?.url).to.equal('about:srcdoc')
+      expect(navigationRequests, 'frame navigation requests').to.have.length(0)
     })
   })
 })
