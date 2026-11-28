@@ -78,6 +78,8 @@ Never click `Open` or `Save` in this path. They open native file dialogs or trig
 
 Cypress is the repo's scripted harness. Specs live in `cypress/e2e/`, including `markdown-studio.cy.ts` for browser-API stub patterns and `html-preview.cy.ts` for HTML Documents. Read the matching spec before writing a new spec.
 
+Cypress `type` sends synthetic events, and native Undo history ignores them. For Undo/Redo proof, send trusted input through `Cypress.automation('remote:debugger:protocol', ...)`, which works only in Chromium; scope those tests with `{ browser: '!firefox' }`. Leave a numeric display setting by focusing another control. `editor-display-preferences.cy.ts` has the `sendBrowserInput` and `leavePendingSourceRedo` helpers.
+
 With a server already running (Path A's launch or the doctor check), run one temporary spec:
 
 ```bash
@@ -119,6 +121,7 @@ Real selectors from the app, in order of preference (ARIA and data attributes be
 | HTML Preview             | `.html-preview`, `iframe[title="HTML preview"]`, `.html-preview__notice`                |
 | Desktop script opt-in    | `.html-preview__scripts-toggle` (desktop only)                                          |
 | Dialogs                  | `[role="dialog"]`, close via `button[aria-label="Close dialog"]`                        |
+| Numeric display setting  | `iframe[title="<label>"]`, then `input[aria-label="<label>"]` in its `contentDocument`; Cypress `cy.numericSetting(label)` |
 
 ### State the app keeps in the browser
 

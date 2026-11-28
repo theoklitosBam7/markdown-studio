@@ -1,8 +1,18 @@
-import { mount } from '@vue/test-utils'
+import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import EditorDisplaySettings from '../EditorDisplaySettings.vue'
 import { DEFAULT_EDITOR_DISPLAY_PREFERENCES } from '../../types/editorDisplayPreferences'
+
+// ARIA resolves aria-describedby IDs in the element's own document.
+function accessibleDescription(element: HTMLElement): string {
+  return (element.getAttribute('aria-describedby') ?? '')
+    .split(' ')
+    .filter(Boolean)
+    .map((id) => element.ownerDocument.getElementById(id)?.textContent ?? '')
+    .join(' ')
+}
 
 function mountSettings(overrides: { isMobile?: boolean } = {}) {
   return mount(EditorDisplaySettings, {
@@ -15,6 +25,20 @@ function mountSettings(overrides: { isMobile?: boolean } = {}) {
       returnFocus: null,
     },
   })
+}
+
+// Each numeric setting renders its input inside its own frame document.
+async function numericInput(
+  wrapper: VueWrapper,
+  label: string,
+): Promise<DOMWrapper<HTMLInputElement>> {
+  await nextTick()
+  const frame = wrapper.get<HTMLIFrameElement>(`iframe[title="${label}"]`).element
+  const input = frame.contentDocument?.querySelector<HTMLInputElement>(
+    `input[aria-label="${label}"]`,
+  )
+  if (!input) throw new Error(`The ${label} setting was not rendered.`)
+  return new DOMWrapper(input)
 }
 
 describe('EditorDisplaySettings', () => {
@@ -32,9 +56,9 @@ describe('EditorDisplaySettings', () => {
     })
   })
 
-  it('exposes numeric settings as labelled decimal spinbuttons with their current range', () => {
+  it('exposes numeric settings as labelled decimal spinbuttons with their current range', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     expect(input.attributes('type')).toBe('text')
     expect(input.attributes('inputmode')).toBe('decimal')
     expect(input.attributes('autocomplete')).toBe('off')
@@ -44,8 +68,7 @@ describe('EditorDisplaySettings', () => {
     expect(input.attributes('aria-valuenow')).toBe('16')
     expect(input.attributes('aria-valuemin')).toBe('12')
     expect(input.attributes('aria-valuemax')).toBe('32')
-    const descriptions = (input.attributes('aria-describedby') ?? '').split(' ').filter(Boolean)
-    const text = descriptions.map((id) => document.getElementById(id)?.textContent).join(' ')
+    const text = accessibleDescription(input.element)
     expect(text).toContain('12 to 32 px')
     expect(text).toContain('step 0.5')
     wrapper.unmount()
@@ -53,7 +76,7 @@ describe('EditorDisplaySettings', () => {
 
   it('applies a valid font size draft immediately', async () => {
     const wrapper = mountSettings()
-    await wrapper.get('[aria-label="Font size"]').setValue('18')
+    await (await numericInput(wrapper, 'Font size')).setValue('18')
 
     expect(wrapper.emitted('update')).toEqual([[{ fontSizePx: 18 }]])
     wrapper.unmount()
@@ -61,7 +84,7 @@ describe('EditorDisplaySettings', () => {
 
   it('steps a numeric preference with the Up and Down keys', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
 
     await input.trigger('keydown', { key: 'ArrowUp' })
     expect(input.element.value).toBe('16.5')
@@ -75,7 +98,7 @@ describe('EditorDisplaySettings', () => {
 
   it('returns an invalid stepped draft to the preference step with an arrow key', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     await input.setValue('13.25')
     expect(wrapper.emitted('update')).toBeUndefined()
 
@@ -88,7 +111,7 @@ describe('EditorDisplaySettings', () => {
 
   it('replaces selected text through a cancelable beforeinput event', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(0, 2)
     const event = new InputEvent('beforeinput', {
       bubbles: true,
@@ -109,7 +132,7 @@ describe('EditorDisplaySettings', () => {
 
   it('cuts selected text through the local edit path', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(1, 2)
     const setData = vi.fn()
     const event = new Event('cut', { bubbles: true, cancelable: true })
@@ -128,7 +151,7 @@ describe('EditorDisplaySettings', () => {
 
   it('pastes text into the selected range without native input', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(0, 2)
     const event = new Event('paste', { bubbles: true, cancelable: true })
     Object.defineProperty(event, 'clipboardData', {
@@ -146,7 +169,7 @@ describe('EditorDisplaySettings', () => {
 
   it('deletes at the caret through a cancelable beforeinput event', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(1, 1)
     const event = new InputEvent('beforeinput', {
       bubbles: true,
@@ -166,7 +189,7 @@ describe('EditorDisplaySettings', () => {
 
   it('deletes the numeric word before the caret without native editing', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(2, 2)
     const event = new InputEvent('beforeinput', {
       bubbles: true,
@@ -185,7 +208,7 @@ describe('EditorDisplaySettings', () => {
 
   it('deletes the numeric word after the caret without native editing', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(0, 0)
     const event = new InputEvent('beforeinput', {
       bubbles: true,
@@ -205,7 +228,7 @@ describe('EditorDisplaySettings', () => {
     'deletes the line prefix locally for %s',
     async (inputType) => {
       const wrapper = mountSettings()
-      const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+      const input = await numericInput(wrapper, 'Font size')
       input.element.setSelectionRange(1, 1)
       const event = new InputEvent('beforeinput', {
         bubbles: true,
@@ -226,7 +249,7 @@ describe('EditorDisplaySettings', () => {
     'deletes the line suffix locally for %s',
     async (inputType) => {
       const wrapper = mountSettings()
-      const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+      const input = await numericInput(wrapper, 'Font size')
       input.element.setSelectionRange(1, 1)
       const event = new InputEvent('beforeinput', {
         bubbles: true,
@@ -245,7 +268,7 @@ describe('EditorDisplaySettings', () => {
 
   it('cancels unsupported editing actions instead of adding browser history', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     const event = new InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
@@ -263,7 +286,7 @@ describe('EditorDisplaySettings', () => {
 
   it('keeps Undo and Redo inside the numeric control', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.setSelectionRange(0, 2)
     input.element.dispatchEvent(
       new InputEvent('beforeinput', {
@@ -289,7 +312,7 @@ describe('EditorDisplaySettings', () => {
 
   it('omits the current-value ARIA attribute for an empty draft', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     input.element.value = ''
     await input.trigger('input')
 
@@ -299,7 +322,7 @@ describe('EditorDisplaySettings', () => {
 
   it('accepts a decimal comma as the decimal point', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Line height"]')
+    const input = await numericInput(wrapper, 'Line height')
     input.element.value = '1,75'
     await input.trigger('input')
 
@@ -312,7 +335,7 @@ describe('EditorDisplaySettings', () => {
     'keeps the incomplete draft %s local and restores it on blur',
     async (draft) => {
       const wrapper = mountSettings()
-      const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+      const input = await numericInput(wrapper, 'Font size')
       await input.setValue(draft)
 
       expect(wrapper.emitted('update')).toBeUndefined()
@@ -328,7 +351,7 @@ describe('EditorDisplaySettings', () => {
 
   it('rejects a non-decimal numeric draft', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     await input.setValue('0x10')
 
     expect(wrapper.emitted('update')).toBeUndefined()
@@ -339,16 +362,19 @@ describe('EditorDisplaySettings', () => {
 
   it('shows an error for an invalid numeric draft and restores it on blur', async () => {
     const wrapper = mountSettings()
-    const input = wrapper.get<HTMLInputElement>('[aria-label="Font size"]')
+    const input = await numericInput(wrapper, 'Font size')
     await input.setValue('16.2')
 
     expect(wrapper.get('[role="alert"]').text()).toContain('steps of 0.5')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(accessibleDescription(input.element)).toContain('steps of 0.5')
     expect(wrapper.emitted('update')).toBeUndefined()
 
     await input.trigger('blur')
 
     expect(input.element.value).toBe('16')
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(accessibleDescription(input.element)).not.toContain('steps of 0.5')
     wrapper.unmount()
   })
 
@@ -429,6 +455,29 @@ describe('EditorDisplaySettings', () => {
     opener.remove()
   })
 
+  it('closes with Escape pressed inside a numeric setting', async () => {
+    const wrapper = mountSettings()
+    const input = await numericInput(wrapper, 'Column width')
+
+    await input.trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.emitted('close')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('focuses a numeric setting when its label text is clicked', async () => {
+    const wrapper = mountSettings()
+    const input = await numericInput(wrapper, 'Line height')
+    const labelText = wrapper
+      .findAll('.editor-display-settings__field > span')
+      .find((span) => span.text() === 'Line height')
+
+    await labelText?.trigger('click')
+
+    expect(input.element.ownerDocument.activeElement).toBe(input.element)
+    wrapper.unmount()
+  })
+
   it('explains the mobile font floor for a stored font size below 16 px', () => {
     const wrapper = mount(EditorDisplaySettings, {
       props: {
@@ -476,7 +525,7 @@ describe('EditorDisplaySettings', () => {
     expect(wrapper.emitted('retry')).toHaveLength(1)
 
     await wrapper.setProps({ isOpen: false })
-    expect(wrapper.find('input[aria-label="Font size"]').exists()).toBe(false)
+    expect(wrapper.find('iframe[title="Font size"]').exists()).toBe(false)
     expect(wrapper.get('.editor-display-settings__external-warning').text()).toContain(
       'Could not save',
     )

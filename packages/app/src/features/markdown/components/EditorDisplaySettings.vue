@@ -29,6 +29,10 @@ const emit = defineEmits<{
 }>()
 
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
+const numericInputs =
+  useTemplateRef<InstanceType<typeof EditorDisplayNumberInput>[]>('numericInputs')
+const columnWidthInput =
+  useTemplateRef<InstanceType<typeof EditorDisplayNumberInput>>('columnWidthInput')
 const writingColumnCharacters = computed(() => {
   if (props.preferences.writingColumn.kind === 'characters') {
     return props.preferences.writingColumn.characters
@@ -55,11 +59,18 @@ const fontFloorApplies = computed(
 function updateFontFloor(): void {
   hasFontFloor.value = fontFloorMedia?.matches ?? false
 }
-const numericFields: { key: NumericField; label: string; unit: string }[] = [
-  { key: 'fontSizePx', label: 'Font size', unit: 'px' },
-  { key: 'lineHeight', label: 'Line height', unit: 'ratio' },
-  { key: 'tabWidth', label: 'Tab width', unit: 'spaces' },
-]
+const numericFields = (
+  [
+    { key: 'fontSizePx', label: 'Font size', unit: 'px' },
+    { key: 'lineHeight', label: 'Line height', unit: 'ratio' },
+    { key: 'tabWidth', label: 'Tab width', unit: 'spaces' },
+  ] satisfies { key: NumericField; label: string; unit: string }[]
+).map((field) => {
+  const limits = EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key]
+  return { ...field, range: `${limits.min} to ${limits.max} ${field.unit}, step ${limits.step}` }
+})
+const columnWidthLimits = EDITOR_DISPLAY_PREFERENCE_LIMITS.writingColumnCharacters
+const columnWidthRange = `${columnWidthLimits.min} to ${columnWidthLimits.max} characters, step ${columnWidthLimits.step}. Approximate character width.`
 let dialogMode: 'modal' | 'nonmodal' | null = null
 
 function closeExplicitly(): void {
@@ -107,6 +118,11 @@ function committedValue(key: EditorDisplayNumericPreference): number {
   return props.preferences[key]
 }
 
+function fieldDescription(key: EditorDisplayNumericPreference, range: string): string {
+  const error = errors.value[key]
+  return error ? `${range} ${error}` : range
+}
+
 function handleCancel(event: Event): void {
   event.preventDefault()
   closeExplicitly()
@@ -120,7 +136,7 @@ function handleDialogClick(event: MouseEvent): void {
   dialogMode = null
 }
 
-function handleDocumentKeydown(event: KeyboardEvent): void {
+function handleEscapeKeydown(event: KeyboardEvent): void {
   if (!props.isOpen || event.key !== 'Escape') return
   event.preventDefault()
   event.stopPropagation()
@@ -204,13 +220,13 @@ onMounted(() => {
   setDialogMode()
   document.addEventListener('click', handleOutsideInteraction, true)
   document.addEventListener('focusin', handleOutsideInteraction)
-  document.addEventListener('keydown', handleDocumentKeydown)
+  document.addEventListener('keydown', handleEscapeKeydown)
   fontFloorMedia?.addEventListener('change', updateFontFloor)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleOutsideInteraction, true)
   document.removeEventListener('focusin', handleOutsideInteraction)
-  document.removeEventListener('keydown', handleDocumentKeydown)
+  document.removeEventListener('keydown', handleEscapeKeydown)
   fontFloorMedia?.removeEventListener('change', updateFontFloor)
 })
 </script>
@@ -246,13 +262,19 @@ onBeforeUnmount(() => {
         These preferences affect source editing only. They save locally on this device.
       </p>
 
-      <label v-for="field in numericFields" :key="field.key" class="editor-display-settings__field">
+      <label
+        v-for="(field, index) in numericFields"
+        :key="field.key"
+        class="editor-display-settings__field"
+        @click="numericInputs?.[index]?.focus()"
+      >
         <span>{{ field.label }}</span>
         <span class="editor-display-settings__input-wrap">
           <EditorDisplayNumberInput
+            ref="numericInputs"
             :label="field.label"
             :invalid="Boolean(errors[field.key])"
-            :described-by="`editor-display-${field.key}-range${errors[field.key] ? ` editor-display-${field.key}-error` : ''}`"
+            :description="fieldDescription(field.key, field.range)"
             :min="EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key].min"
             :max="EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key].max"
             :step="EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key].step"
@@ -260,21 +282,15 @@ onBeforeUnmount(() => {
             @update="commitDraft(field.key, $event)"
             @blur="restoreDraft(field.key)"
             @keydown.enter.prevent="commitOnEnter(field.key)"
+            @keydown.esc="handleEscapeKeydown"
           />
           <span class="editor-display-settings__unit" aria-hidden="true">{{ field.unit }}</span>
         </span>
-        <span :id="`editor-display-${field.key}-range`" class="editor-display-settings__range"
-          >{{ EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key].min }} to
-          {{ EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key].max }} {{ field.unit }}, step
-          {{ EDITOR_DISPLAY_PREFERENCE_LIMITS[field.key].step }}</span
-        >
-        <span
-          v-if="errors[field.key]"
-          :id="`editor-display-${field.key}-error`"
-          class="editor-display-settings__error"
-          role="alert"
-          >{{ errors[field.key] }}</span
-        >
+        <!-- The field's own description repeats this text for assistive technology. -->
+        <span class="editor-display-settings__range" aria-hidden="true">{{ field.range }}</span>
+        <span v-if="errors[field.key]" class="editor-display-settings__error" role="alert">{{
+          errors[field.key]
+        }}</span>
       </label>
 
       <label class="editor-display-settings__field">
@@ -291,13 +307,15 @@ onBeforeUnmount(() => {
       <label
         v-if="preferences.writingColumn.kind === 'characters'"
         class="editor-display-settings__field"
+        @click="columnWidthInput?.focus()"
       >
         <span>Column width</span>
         <span class="editor-display-settings__input-wrap">
           <EditorDisplayNumberInput
+            ref="columnWidthInput"
             label="Column width"
             :invalid="Boolean(errors.writingColumnCharacters)"
-            :described-by="`editor-display-column-range${errors.writingColumnCharacters ? ' editor-display-writingColumnCharacters-error' : ''}`"
+            :description="fieldDescription('writingColumnCharacters', columnWidthRange)"
             :min="EDITOR_DISPLAY_PREFERENCE_LIMITS.writingColumnCharacters.min"
             :max="EDITOR_DISPLAY_PREFERENCE_LIMITS.writingColumnCharacters.max"
             :step="EDITOR_DISPLAY_PREFERENCE_LIMITS.writingColumnCharacters.step"
@@ -305,15 +323,15 @@ onBeforeUnmount(() => {
             @update="commitDraft('writingColumnCharacters', $event)"
             @blur="restoreDraft('writingColumnCharacters')"
             @keydown.enter.prevent="commitOnEnter('writingColumnCharacters')"
+            @keydown.esc="handleEscapeKeydown"
           />
           <span class="editor-display-settings__unit" aria-hidden="true">characters</span>
         </span>
-        <span id="editor-display-column-range" class="editor-display-settings__range"
-          >40 to 120 characters, step 1. Approximate character width.</span
-        >
+        <span class="editor-display-settings__range" aria-hidden="true">{{
+          columnWidthRange
+        }}</span>
         <span
           v-if="errors.writingColumnCharacters"
-          id="editor-display-writingColumnCharacters-error"
           class="editor-display-settings__error"
           role="alert"
           >{{ errors.writingColumnCharacters }}</span
@@ -445,16 +463,6 @@ onBeforeUnmount(() => {
   background: var(--surface);
 }
 
-.editor-display-settings__input-wrap input {
-  min-width: 0;
-  width: 100%;
-  padding: 6px 0 6px 8px;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-}
-
 .editor-display-settings__unit {
   padding: 0 7px;
   white-space: nowrap;
@@ -538,7 +546,8 @@ onBeforeUnmount(() => {
 }
 
 .editor-display-settings--mobile input,
-.editor-display-settings--mobile select {
+.editor-display-settings--mobile select,
+.editor-display-settings--mobile :deep(.editor-display-number-input) {
   font-size: 16px;
 }
 </style>

@@ -127,8 +127,8 @@ describe('Editor source text layout', () => {
       expect(sourceBlock).not.to.equal(null)
     })
     cy.get('button[aria-label="Editor display"]').click()
-    cy.get('input[aria-label="Font size"]').clear()
-    cy.get('input[aria-label="Font size"]').type('22')
+    cy.numericSetting('Font size').clear()
+    cy.numericSetting('Font size').type('22')
     cy.get('button[aria-label="Close settings"]').click()
     cy.get('.editor-pane textarea').should('have.css', 'font-size', '22px')
     cy.get<HTMLElement>('.preview-scroll').should(($preview) => {
