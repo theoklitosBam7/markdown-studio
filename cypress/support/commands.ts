@@ -36,4 +36,22 @@
 //   }
 // }
 
+declare global {
+  // Cypress types its custom commands through namespace augmentation.
+  // eslint-disable-next-line typescript/no-namespace
+  namespace Cypress {
+    interface Chainable {
+      numericSetting(label: string): Chainable<JQuery<HTMLInputElement>>
+    }
+  }
+}
+
+// Each numeric Editor display setting keeps its input in its own frame document.
+Cypress.Commands.add('numericSetting', (label: string) =>
+  cy
+    .get(`iframe[title="${label}"]`)
+    .its('0.contentDocument.body')
+    .find<HTMLInputElement>(`input[aria-label="${label}"]`),
+)
+
 export {}

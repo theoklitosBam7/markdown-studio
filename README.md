@@ -230,7 +230,7 @@ The defaults are 16 px text, a 1.7 line-height ratio, word wrap on, two spaces f
 
 These preferences affect source editing only, not Live Preview or exported documents. On small or touch screens, the displayed font stays at least 16 px to prevent focus zoom. A smaller saved choice remains unchanged and applies again on a screen without that limit.
 
-Composition input in a numeric display setting can clear pending source Redo without erasing current document text. Ordinary numeric keyboard entry preserves pending source Redo.
+Typing in a numeric display setting, including composition input, does not change source Undo or Redo. To undo ordinary typing in a numeric setting, press Cmd+Z or Ctrl+Z in that setting. In the desktop app, **Edit > Undo** does not undo typing in a numeric setting.
 
 Editor display preferences save in the current browser origin or desktop app profile. They do not sync between web and desktop, browser profiles, or open tabs. Resetting editor display changes only these preferences. Browser storage does not move between profiles, hosts, protocols, or ports. For the npm launcher, use the same host and an explicit port each time to restore saved preferences. Without `--port`, the launcher continues to select a random available port.
 

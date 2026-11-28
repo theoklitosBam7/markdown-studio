@@ -11,8 +11,8 @@ describe('Editor display preferences', () => {
   it('applies a source font choice immediately and restores it after reload', () => {
     cy.get('button[aria-label="Editor display"]').click()
     cy.get('dialog[open]').should('contain.text', 'Editor display')
-    cy.get('input[aria-label="Font size"]').clear()
-    cy.get('input[aria-label="Font size"]').type('20')
+    cy.numericSetting('Font size').clear()
+    cy.numericSetting('Font size').type('20')
     cy.get('.editor-pane textarea').should('have.css', 'font-size', '20px')
     cy.get('.toolbar__document-status').should('contain.text', 'Saved')
     cy.get('button[aria-label="Close settings"]').click()
@@ -44,8 +44,8 @@ describe('Editor display preferences', () => {
       ['Tab width', '8'],
       ['Column width', '40'],
     ]) {
-      cy.get(`input[aria-label="${label}"]`).clear()
-      cy.get(`input[aria-label="${label}"]`).type(value!)
+      cy.numericSetting(label!).clear()
+      cy.numericSetting(label!).type(value!)
     }
     cy.get('input[aria-label="Word wrap"]').uncheck()
     cy.get<HTMLTextAreaElement>('.editor-pane textarea').should(($editor) => {
@@ -68,17 +68,18 @@ describe('Editor display preferences', () => {
     cy.get('.toolbar__document-status').should('contain.text', 'Saved')
     cy.reload()
     cy.get('button[aria-label="Editor display"]').click()
-    cy.get('input[aria-label="Column width"]').should('have.value', '40')
-    cy.get('input[aria-label="Font size"]').clear()
-    cy.get('input[aria-label="Font size"]').type('16.2')
-    cy.get('input[aria-label="Font size"]').should('have.attr', 'aria-invalid', 'true')
+    cy.numericSetting('Column width').should('have.value', '40')
+    cy.numericSetting('Font size').clear()
+    cy.numericSetting('Font size').type('16.2')
+    cy.numericSetting('Font size').should('have.attr', 'aria-invalid', 'true')
     cy.get('.editor-pane textarea').should('have.css', 'font-size', '16px')
-    cy.get('input[aria-label="Font size"]').blur()
-    cy.get('input[aria-label="Font size"]').should('have.value', '16')
+    // Cypress sees the field's frame as the focused element, so leave the field by focusing the next control.
+    cy.get('select[aria-label="Writing column"]').focus()
+    cy.numericSetting('Font size').should('have.value', '16')
     cy.contains('button', 'Reset editor display').click()
-    cy.get('input[aria-label="Line height"]').should('have.value', '1.7')
-    cy.get('input[aria-label="Tab width"]').should('have.value', '2')
-    cy.get('input[aria-label="Column width"]').should('have.value', '80')
+    cy.numericSetting('Line height').should('have.value', '1.7')
+    cy.numericSetting('Tab width').should('have.value', '2')
+    cy.numericSetting('Column width').should('have.value', '80')
     cy.get('input[aria-label="Word wrap"]').should('be.checked')
     cy.window().should((win) => {
       expect(win.localStorage.getItem('markdown-studio-theme')).to.equal('dark')
@@ -88,8 +89,8 @@ describe('Editor display preferences', () => {
 
   it('keeps a desktop font request while applying the mobile font floor', () => {
     cy.get('button[aria-label="Editor display"]').click()
-    cy.get('input[aria-label="Font size"]').clear()
-    cy.get('input[aria-label="Font size"]').type('14')
+    cy.numericSetting('Font size').clear()
+    cy.numericSetting('Font size').type('14')
     cy.get('.editor-pane textarea').should('have.css', 'font-size', '14px')
     cy.viewport(390, 844)
     cy.get('.editor-pane textarea').should('have.css', 'font-size', '16px')
@@ -118,8 +119,8 @@ describe('Editor display preferences', () => {
         .as('savePreferences')
     })
     cy.get('button[aria-label="Editor display"]').click()
-    cy.get('input[aria-label="Font size"]').clear()
-    cy.get('input[aria-label="Font size"]').type('22')
+    cy.numericSetting('Font size').clear()
+    cy.numericSetting('Font size').type('22')
     cy.get('.editor-pane textarea').should('have.css', 'font-size', '22px')
     cy.get('.editor-display-settings__warning[role="alert"]').should(
       'contain.text',
@@ -136,7 +137,7 @@ describe('Editor display preferences', () => {
 
   it('closes desktop settings with Escape and returns focus to its toolbar control', () => {
     cy.get('button[aria-label="Editor display"]').click()
-    cy.get('input[aria-label="Font size"]').type('{esc}')
+    cy.numericSetting('Font size').trigger('keydown', { key: 'Escape' })
     cy.get('dialog.editor-display-settings').should('not.be.visible')
     cy.get('button[aria-label="Editor display"]').should('be.focused')
   })
@@ -151,10 +152,10 @@ describe('Editor display preferences', () => {
       expect(dialog?.getBoundingClientRect().bottom).to.be.closeTo(390, 1)
     })
     cy.get('.mobile-action-sheet[role="dialog"]').should('not.exist')
-    cy.get('input[aria-label="Font size"]').clear()
-    cy.get('input[aria-label="Font size"]').type('18')
+    cy.numericSetting('Font size').clear()
+    cy.numericSetting('Font size').type('18')
     cy.viewport(1280, 900)
-    cy.get('input[aria-label="Font size"]').should('have.value', '18')
+    cy.numericSetting('Font size').should('have.value', '18')
     cy.get('dialog.editor-display-settings[open]').should(($dialog) => {
       expect($dialog[0]?.matches(':modal')).to.equal(false)
     })
@@ -168,9 +169,76 @@ describe('Editor display preferences', () => {
     cy.get('.command-palette__input').type('{enter}')
     cy.get('.command-palette').should('not.exist')
     cy.get('dialog.editor-display-settings[open]').should('be.visible')
-    cy.get('input[aria-label="Font size"]').type('{ctrl}k')
+    cy.numericSetting('Font size').type('{ctrl}k')
     cy.get('.command-palette').should('not.exist')
     cy.get('button[aria-label="Close settings"]').click()
     cy.get('.editor-pane textarea').should('be.focused')
   })
+
+  it(
+    'keeps pending source Redo after ordinary key entry in a numeric setting',
+    { browser: '!firefox' },
+    () => {
+      leavePendingSourceRedo()
+      cy.get('button[aria-label="Editor display"]').click()
+      selectNumericSetting('Font size')
+      for (const key of ['2', '4']) {
+        sendBrowserInput('Input.dispatchKeyEvent', { key, text: key, type: 'keyDown' })
+        sendBrowserInput('Input.dispatchKeyEvent', { key, type: 'keyUp' })
+      }
+      cy.get('.editor-pane textarea').should('have.css', 'font-size', '24px')
+      cy.get('button[aria-label="Close settings"]').click()
+      cy.get('button[aria-label="Redo"]').click()
+      cy.get('.editor-pane textarea').should('have.value', 'composition historyx')
+    },
+  )
+
+  it(
+    'keeps pending source Redo after trusted composition in a numeric setting',
+    { browser: '!firefox' },
+    () => {
+      leavePendingSourceRedo()
+      cy.get('button[aria-label="Editor display"]').click()
+      selectNumericSetting('Font size')
+      sendBrowserInput('Input.imeSetComposition', {
+        selectionEnd: 2,
+        selectionStart: 2,
+        text: '24',
+      })
+      sendBrowserInput('Input.insertText', { text: '24' })
+      cy.get('.editor-pane textarea').should('have.css', 'font-size', '24px')
+      cy.get('button[aria-label="Close settings"]').click()
+      cy.get('button[aria-label="Redo"]').click()
+      cy.get('.editor-pane textarea').should('have.value', 'composition historyx')
+    },
+  )
 })
+
+function leavePendingSourceRedo() {
+  cy.get('button[aria-label="Document actions"]').click()
+  cy.get('button[aria-label="Clear document"]').click()
+  cy.get('button[aria-label="Confirm clear"]').click()
+  cy.get('.editor-pane textarea').should('have.value', '').focus()
+  sendBrowserInput('Input.insertText', { text: 'composition history' })
+  cy.get('.editor-pane textarea').should('have.value', 'composition history').blur()
+  // A focus change ends the native typing group, so Undo removes only the next edit.
+  cy.get('.editor-pane textarea').focus()
+  cy.get<HTMLTextAreaElement>('.editor-pane textarea').then(($editor) =>
+    $editor[0]!.setSelectionRange(19, 19),
+  )
+  sendBrowserInput('Input.insertText', { text: 'x' })
+  cy.get('.editor-pane textarea').should('have.value', 'composition historyx')
+  cy.get('button[aria-label="Undo"]').click()
+  cy.get('.editor-pane textarea').should('have.value', 'composition history')
+}
+
+function selectNumericSetting(label: string) {
+  cy.numericSetting(label).focus()
+  cy.numericSetting(label).then(($input) => $input[0]!.select())
+}
+
+// Cypress typing is synthetic and never reaches native edit history, so history tests use trusted browser input.
+// The debugger protocol works only in Chromium, so callers exclude Firefox.
+function sendBrowserInput(command: string, params: Record<string, unknown>) {
+  cy.then(() => Cypress.automation('remote:debugger:protocol', { command, params }))
+}

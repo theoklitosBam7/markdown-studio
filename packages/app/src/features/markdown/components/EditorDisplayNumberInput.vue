@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, shallowRef, useId, useTemplateRef } from 'vue'
 
 type EditSnapshot = { selectionEnd: number; selectionStart: number; value: string }
 
+// Parent listeners such as blur and Enter belong on the input inside the frame.
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps<{
-  describedBy: string
+  description: string
   invalid: boolean
   label: string
   max: number
@@ -15,7 +18,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [value: string]
 }>()
+const frame = useTemplateRef<HTMLIFrameElement>('frame')
+const frameBody = shallowRef<HTMLElement | null>(null)
+// The page does not match :focus on a frame whose content has focus, so the frame tracks it.
+const hasFocus = shallowRef(false)
 const input = useTemplateRef<HTMLInputElement>('input')
+// aria-describedby IDs resolve only in the input's own document, so the description lives in the frame.
+const descriptionId = useId()
 const numericValue = computed(() => {
   if (props.invalid) return undefined
   const draft = props.value.trim()
@@ -31,6 +40,25 @@ function applySnapshot(element: HTMLInputElement, next: EditSnapshot): void {
   element.value = next.value
   element.setSelectionRange(next.selectionStart, next.selectionEnd)
   emit('update', next.value)
+}
+
+function attachFrame(): void {
+  const frameDocument = frame.value?.contentDocument
+  if (!frameDocument?.body) return
+
+  if (!frameDocument.getElementById(frameStyleId)) {
+    const style = frameDocument.createElement('style')
+    style.id = frameStyleId
+    style.textContent = frameStyles
+    frameDocument.head.append(style)
+  }
+  syncFrameStyle()
+  frameBody.value = frameDocument.body
+}
+
+// A page label cannot focus an input in another document, so the settings form calls this.
+function focus(): void {
+  input.value?.focus()
 }
 
 function handleBeforeInput(event: InputEvent): void {
@@ -95,11 +123,12 @@ function handleCut(event: ClipboardEvent): void {
   replaceSelection(element, '')
 }
 
-function handleInput(event: Event): void {
-  if (!(event.target instanceof HTMLInputElement)) return
+function handleInput(): void {
+  // The input belongs to the frame's window, so an instanceof check against this window fails.
+  if (!input.value) return
   undoStack.length = 0
   redoStack.length = 0
-  emit('update', event.target.value)
+  emit('update', input.value.value)
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -170,31 +199,110 @@ function snapshot(element: HTMLInputElement): EditSnapshot {
     value: element.value,
   }
 }
+
+// The frame document inherits no page styles, so it copies the text styles that the field shows.
+// The settings panel closes when the theme changes, and a breakpoint change resizes the window.
+function syncFrameStyle(): void {
+  const frameDocument = frame.value?.contentDocument
+  if (!frame.value || !frameDocument?.body) return
+  const pageStyle = getComputedStyle(frame.value)
+  frameDocument.documentElement.style.colorScheme = pageStyle.colorScheme
+  Object.assign(frameDocument.body.style, {
+    color: pageStyle.color,
+    fontFamily: pageStyle.fontFamily,
+    fontSize: pageStyle.fontSize,
+    fontWeight: pageStyle.fontWeight,
+  })
+}
+
+const frameStyleId = 'editor-display-number-input-style'
+// The empty frame document renders in quirks mode, where Firefox does not resolve percentage heights.
+// The frame's viewport height and a flex body make the input fill the frame in every browser.
+const frameStyles = `
+  html { overflow: hidden; }
+  body { display: flex; height: 100vh; margin: 0; background: transparent; }
+  input {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    padding: 6px 0 6px 8px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+`
+
+defineExpose({ focus })
+
+onMounted(() => {
+  attachFrame()
+  window.addEventListener('resize', syncFrameStyle)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', syncFrameStyle))
 </script>
 
 <template>
-  <input
-    ref="input"
-    :aria-label="label"
-    :aria-invalid="invalid"
-    :aria-describedby="describedBy"
-    :aria-valuenow="numericValue"
-    :aria-valuemin="min"
-    :aria-valuemax="max"
-    :min="min"
-    :max="max"
-    :step="step"
-    :value="value"
-    type="text"
-    inputmode="decimal"
-    autocomplete="off"
-    autocapitalize="off"
-    spellcheck="false"
-    role="spinbutton"
-    @input="handleInput"
-    @beforeinput="handleBeforeInput"
-    @paste="handlePaste"
-    @cut="handleCut"
-    @keydown="handleKeydown"
-  />
+  <!-- Each field has its own document so its native edits never share the source editor's Undo history. -->
+  <iframe
+    ref="frame"
+    class="editor-display-number-input"
+    :class="{ 'editor-display-number-input--focused': hasFocus }"
+    :title="label"
+    @load="attachFrame"
+  ></iframe>
+  <Teleport v-if="frameBody" :to="frameBody">
+    <input
+      ref="input"
+      v-bind="$attrs"
+      :aria-label="label"
+      :aria-invalid="invalid"
+      :aria-describedby="descriptionId"
+      :aria-valuenow="numericValue"
+      :aria-valuemin="min"
+      :aria-valuemax="max"
+      :min="min"
+      :max="max"
+      :step="step"
+      :value="value"
+      type="text"
+      inputmode="decimal"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      role="spinbutton"
+      @input="handleInput"
+      @beforeinput="handleBeforeInput"
+      @paste="handlePaste"
+      @cut="handleCut"
+      @keydown="handleKeydown"
+      @focus="hasFocus = true"
+      @blur="hasFocus = false"
+    />
+    <span :id="descriptionId" class="visually-hidden">{{ description }}</span>
+  </Teleport>
 </template>
+
+<style scoped>
+.editor-display-number-input {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  border: 0;
+}
+
+.editor-display-number-input--focused {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+</style>
