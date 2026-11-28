@@ -11,6 +11,12 @@ vi.mock('mermaid', () => ({
 const writeText = vi.fn<(text: string) => Promise<void>>()
 
 beforeAll(async () => {
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe(): void {}
+    },
+  )
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText },

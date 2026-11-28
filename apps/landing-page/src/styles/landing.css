@@ -231,6 +231,11 @@
   color: var(--landing-text);
 }
 
+.landing-mobile-nav a[aria-current='true'] {
+  border-color: var(--landing-green);
+  color: var(--landing-green);
+}
+
 /* Content width
    ---------------------------------------- */
 /* Keep anchored section labels clear of the sticky top bar. */
@@ -678,6 +683,14 @@
 
   .landing-side-nav a:hover {
     color: var(--landing-text);
+  }
+
+  .landing-side-nav a[aria-current='true'] {
+    color: var(--landing-green);
+  }
+
+  .landing-side-nav a[aria-current='true']::before {
+    content: '> ';
   }
 
   .landing-side-meta {
