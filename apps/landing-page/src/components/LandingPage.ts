@@ -44,14 +44,14 @@ export function LandingPage(): string {
           ? brewCopyButton('landing-copy')
           : mode.id === 'npx'
             ? npmCopyButton('landing-copy')
-            : pwaLink('landing-open', 'open pwa')
+            : pwaLink('landing-open', 'open web app')
 
       return `
         <article class="landing-mode ${mode.recommended ? 'is-active' : ''}" data-mode="${mode.id}">
           <header>
             <span>session/${String(index + 1).padStart(2, '0')}</span>
             <strong>${mode.title}</strong>
-            ${mode.recommended ? '<em>default</em>' : ''}
+            ${mode.recommended ? '<em>recommended</em>' : ''}
           </header>
           <p>${mode.description}</p>
           <div class="landing-mode-action">${action}</div>
@@ -91,7 +91,7 @@ export function LandingPage(): string {
               </div>
               <div class="landing-top-title">${brand.slug} — home</div>
               <div class="landing-top-actions">
-                ${pwaLink('landing-top-cta', 'run app')}
+                ${pwaLink('landing-top-cta', 'open web app')}
               </div>
             </div>
             <nav class="landing-mobile-nav" aria-label="Sections">
@@ -100,29 +100,31 @@ export function LandingPage(): string {
           </header>
 
           <section class="landing-boot" id="boot">
-            <pre class="landing-log" aria-label="Boot log"><code><span class="landing-dim">$</span> markdown-studio --help
+            <div class="landing-hero">
+              <div class="landing-hero-block">
+                <p class="landing-kicker">local-first · runs from a single command</p>
+                <h1>markdown editor with live preview and mermaid diagrams</h1>
+                <p class="landing-lede">
+                  Markdown Studio is a local-first editor with Live Preview, Mermaid diagrams,
+                  and export to HTML and PDF. Open it in the browser, start it from the
+                  terminal, or install the desktop app on macOS.
+                </p>
+                <div class="landing-hero-cta">
+                  ${pwaLink('landing-open landing-open-block', 'open web app')}
+                </div>
+              </div>
+
+              <pre class="landing-log" aria-label="Boot log"><code><span class="landing-dim">$</span> markdown-studio --help
 <span class="landing-ok">ok</span>  live preview enabled
 <span class="landing-ok">ok</span>  mermaid renderer loaded
 <span class="landing-ok">ok</span>  export targets: html, pdf
 <span class="landing-dim">#</span>  write markdown. see it live.</code></pre>
-
-            <div class="landing-hero-block">
-              <p class="landing-kicker">developer entrypoint</p>
-              <h1>ship notes from a single command</h1>
-              <p class="landing-lede">
-                Markdown Studio is a local-first editor with Live Preview, Mermaid diagrams,
-                and clean export paths. Start in the terminal, keep going in the browser,
-                or pin the desktop build on macOS.
-              </p>
-              <div class="landing-hero-mobile-cta">
-                ${pwaLink('landing-open landing-open-block', 'run app')}
-              </div>
             </div>
 
             <div class="landing-command-board">
               <div class="landing-command">
                 <div class="landing-command-label">
-                  <span>primary</span>
+                  <span>terminal</span>
                   <code>npx</code>
                 </div>
                 ${npmCopyButton('landing-copy landing-copy-lg')}

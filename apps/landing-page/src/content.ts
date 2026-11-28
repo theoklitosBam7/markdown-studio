@@ -93,18 +93,18 @@ export interface UsageMode {
 export const usageModes: UsageMode[] = [
   {
     description:
+      'Works offline, auto-updates, feels like a standalone app. Available on any OS with Chrome, Edge, or Safari.',
+    id: 'pwa',
+    recommended: true,
+    title: 'Install as Web App',
+  },
+  {
+    description:
       'Install the desktop app on macOS for a dedicated editing environment with full file system integration.',
     fallbackHref: urls.releases,
     fallbackLabel: 'or download the DMG directly',
     id: 'desktop',
-    recommended: true,
     title: 'macOS Desktop',
-  },
-  {
-    description:
-      'Works offline, auto-updates, feels like a standalone app. Available on any OS with Chrome, Edge, or Safari.',
-    id: 'pwa',
-    title: 'Install as Web App',
   },
   {
     description:

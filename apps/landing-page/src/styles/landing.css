@@ -6,7 +6,7 @@
   --landing-line: #243038;
   --landing-text: #d7e0e6;
   --landing-muted: #8b9aa5;
-  --landing-dim: #5d6b75;
+  --landing-dim: #7a8894;
   --landing-green: #3ddc97;
   --landing-cyan: #5cc8ff;
   --landing-amber: #f0c674;
@@ -207,6 +207,11 @@
 
 /* Content width
    ---------------------------------------- */
+/* Keep anchored section labels clear of the sticky top bar. */
+.landing-main section[id] {
+  scroll-margin-top: 6.5rem;
+}
+
 .landing-boot,
 .landing-preview,
 .landing-flags,
@@ -274,7 +279,7 @@
   line-height: 1.7;
 }
 
-.landing-hero-mobile-cta {
+.landing-hero-cta {
   margin-bottom: 1.25rem;
 }
 
@@ -582,10 +587,6 @@
     display: block;
   }
 
-  .landing-hero-mobile-cta {
-    display: none;
-  }
-
   .landing-log,
   .landing-lede,
   .landing-command p,
@@ -722,6 +723,23 @@
 
   .landing-mobile-nav {
     display: none;
+  }
+
+  .landing-main section[id] {
+    scroll-margin-top: 1rem;
+  }
+
+  .landing-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 1.35rem;
+  }
+
+  .landing-hero-cta,
+  .landing-hero .landing-log {
+    margin-bottom: 0;
   }
 
   .landing-topbar {
