@@ -306,6 +306,9 @@ importers:
 
   apps/landing-page:
     dependencies:
+      '@fontsource/dm-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
       mermaid:
         specifier: 'catalog:'
         version: 12.1.0
@@ -1358,6 +1361,9 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@fontsource/dm-mono@5.3.0':
+    resolution: {integrity: sha512-OINjI8C1S/wpchhQxl7njZdMn4+hnDCpQ4YtvvOpKNARo+0J8O1x1IcrChxNjHOhfVv1by8C/FQoy3hXK+C1Ug==}
 
   '@hapi/address@5.1.1':
     resolution: {integrity: sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA==}
@@ -7801,6 +7807,8 @@ snapshots:
   '@exodus/bytes@1.16.0(@noble/hashes@2.2.0)':
     optionalDependencies:
       '@noble/hashes': 2.2.0
+
+  '@fontsource/dm-mono@5.3.0': {}
 
   '@hapi/address@5.1.1':
     dependencies:

@@ -1,3 +1,5 @@
+import '@fontsource/dm-mono/400.css'
+import '@fontsource/dm-mono/500.css'
 import { LandingPage } from './components/LandingPage'
 import { brewCommand, npmCommand } from './content'
 import { hydrateMermaidMockups } from './hydrateMermaid'

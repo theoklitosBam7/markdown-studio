@@ -26,10 +26,7 @@ export function LandingPage(): string {
         <li class="landing-feature">
           <div class="landing-feature-meta">
             <span class="landing-flag">${feature.kicker}</span>
-            <span class="landing-name">
-              <span class="landing-feature-icon" aria-hidden="true">${feature.icon}</span>
-              ${feature.title}
-            </span>
+            <span class="landing-name">${feature.title}</span>
           </div>
           <p class="landing-desc">${feature.description}</p>
         </li>
@@ -78,7 +75,10 @@ export function LandingPage(): string {
           </nav>
           <div class="landing-side-meta">
             <div><span>status</span><code>ready</code></div>
-            <div><span>license</span><code>mit</code></div>
+            <div>
+              <span>license</span>
+              <a href="${urls.license}" target="_blank" rel="noopener noreferrer"><code>mit</code></a>
+            </div>
             <div><span>cost</span><code>0.00</code></div>
           </div>
         </aside>

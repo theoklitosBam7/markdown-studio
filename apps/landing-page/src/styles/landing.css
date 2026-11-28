@@ -213,7 +213,10 @@
 }
 
 .landing-mobile-nav a {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
+  min-height: 2.75rem;
   padding: 0.4rem 0.7rem;
   border: 1px solid var(--landing-line);
   background: #0a0d10;
@@ -232,7 +235,7 @@
    ---------------------------------------- */
 /* Keep anchored section labels clear of the sticky top bar. */
 .landing-main section[id] {
-  scroll-margin-top: 6.5rem;
+  scroll-margin-top: 7rem;
 }
 
 .landing-boot,
@@ -385,10 +388,6 @@
   font-size: 0.9rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
-}
-
-.landing-feature-icon {
-  flex: 0 0 auto;
 }
 
 .landing-desc {
@@ -572,6 +571,11 @@
 
   .landing-top-actions {
     display: block;
+  }
+
+  /* The top bar is taller here because it also shows the CTA. */
+  .landing-main section[id] {
+    scroll-margin-top: 8.5rem;
   }
 
   .landing-log {

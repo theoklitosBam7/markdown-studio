@@ -9,6 +9,7 @@
     "preview": "vp preview"
   },
   "dependencies": {
+    "@fontsource/dm-mono": "^5.3.0",
     "mermaid": "catalog:"
   },
   "devDependencies": {

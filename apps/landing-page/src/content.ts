@@ -5,6 +5,7 @@ export const urls = {
   docs: 'https://github.com/theoklitosBam7/markdown-studio/blob/main/README.md',
   github: 'https://github.com/theoklitosBam7/markdown-studio',
   issues: 'https://github.com/theoklitosBam7/markdown-studio/issues',
+  license: 'https://github.com/theoklitosBam7/markdown-studio/blob/main/LICENSE',
   pwa: 'https://pwa.markdownstudio.eu/',
   releases: 'https://github.com/theoklitosBam7/markdown-studio/releases/latest',
 } as const
@@ -17,7 +18,6 @@ export const brand = {
 
 export interface Feature {
   description: string
-  icon: string
   kicker: string
   title: string
 }
@@ -26,55 +26,47 @@ export const features: Feature[] = [
   {
     description:
       'See your Markdown render instantly as you type. No need to switch views or wait for updates.',
-    icon: '⚡',
     kicker: '01',
     title: 'Live Preview',
   },
   {
     description:
       'Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax.',
-    icon: '📊',
     kicker: '02',
     title: 'Mermaid Diagrams',
   },
   {
     description:
       'Open, edit, and save .md files seamlessly. Works with the File System Access API in supported browsers.',
-    icon: '📁',
     kicker: '03',
     title: 'File Management',
   },
   {
     description:
       'Export polished standalone HTML files or print-ready PDFs from both the web app and the desktop app.',
-    icon: '📄',
     kicker: '04',
     title: 'HTML & PDF Export',
   },
   {
     description:
       'Toggle between light and dark modes with smooth animated transitions that match your preference.',
-    icon: '🎨',
     kicker: '05',
     title: 'Theme Switching',
   },
   {
     description:
       'Unsaved work persists between sessions as a draft, and the installed app keeps working offline.',
-    icon: '💾',
     kicker: '06',
     title: 'Auto-save Drafts',
   },
   {
     description: 'Run commands from the keyboard with the Command Palette and familiar Shortcuts.',
-    icon: '⌨️',
     kicker: '07',
     title: 'Command Palette',
   },
   {
     description:
       'Markdown HTML is sanitized with DOMPurify before it reaches Live Preview or Export.',
-    icon: '🛡️',
     kicker: '08',
     title: 'Safe HTML Rendering',
   },
