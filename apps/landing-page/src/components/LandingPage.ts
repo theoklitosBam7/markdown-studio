@@ -13,9 +13,9 @@ import { EditorMockup } from './EditorMockup'
 
 export function LandingPage(): string {
   const navLinks = `
-    <a href="#boot">boot</a>
+    <a href="#start">start</a>
     <a href="#preview">preview</a>
-    <a href="#flags">flags</a>
+    <a href="#features">features</a>
     <a href="#install">install</a>
     <a href="${urls.github}" target="_blank" rel="noopener noreferrer">github ↗</a>
   `
@@ -26,10 +26,7 @@ export function LandingPage(): string {
         <li class="landing-feature">
           <div class="landing-feature-meta">
             <span class="landing-flag">${feature.kicker}</span>
-            <span class="landing-name">
-              <span class="landing-feature-icon" aria-hidden="true">${feature.icon}</span>
-              ${feature.title}
-            </span>
+            <span class="landing-name">${feature.title}</span>
           </div>
           <p class="landing-desc">${feature.description}</p>
         </li>
@@ -44,14 +41,14 @@ export function LandingPage(): string {
           ? brewCopyButton('landing-copy')
           : mode.id === 'npx'
             ? npmCopyButton('landing-copy')
-            : pwaLink('landing-open', 'open pwa')
+            : pwaLink('landing-open', 'Open web app')
 
       return `
         <article class="landing-mode ${mode.recommended ? 'is-active' : ''}" data-mode="${mode.id}">
           <header>
-            <span>session/${String(index + 1).padStart(2, '0')}</span>
+            <span>${String(index + 1).padStart(2, '0')}</span>
             <strong>${mode.title}</strong>
-            ${mode.recommended ? '<em>default</em>' : ''}
+            ${mode.recommended ? '<em>recommended</em>' : ''}
           </header>
           <p>${mode.description}</p>
           <div class="landing-mode-action">${action}</div>
@@ -78,7 +75,10 @@ export function LandingPage(): string {
           </nav>
           <div class="landing-side-meta">
             <div><span>status</span><code>ready</code></div>
-            <div><span>license</span><code>mit</code></div>
+            <div>
+              <span>license</span>
+              <a href="${urls.license}" target="_blank" rel="noopener noreferrer"><code>mit</code></a>
+            </div>
             <div><span>cost</span><code>0.00</code></div>
           </div>
         </aside>
@@ -91,7 +91,7 @@ export function LandingPage(): string {
               </div>
               <div class="landing-top-title">${brand.slug} — home</div>
               <div class="landing-top-actions">
-                ${pwaLink('landing-top-cta', 'run app')}
+                ${pwaLink('landing-top-cta', 'Open web app')}
               </div>
             </div>
             <nav class="landing-mobile-nav" aria-label="Sections">
@@ -99,53 +99,37 @@ export function LandingPage(): string {
             </nav>
           </header>
 
-          <section class="landing-boot" id="boot">
-            <pre class="landing-log" aria-label="Boot log"><code><span class="landing-dim">$</span> markdown-studio --help
+          <section class="landing-boot" id="start">
+            <div class="landing-hero">
+              <div class="landing-hero-block">
+                <p class="landing-kicker">local-first · runs from a single command</p>
+                <h1>Markdown editor with Live Preview and Mermaid diagrams</h1>
+                <p class="landing-lede">
+                  Markdown Studio is a local-first editor with Live Preview, Mermaid diagrams,
+                  and export to HTML and PDF. Open it in the browser, start it from the
+                  terminal, or install the desktop app on macOS.
+                </p>
+                <div class="landing-hero-cta">
+                  ${pwaLink('landing-open landing-open-block', 'Open web app')}
+                  <a class="landing-inline" href="#install">// or install it on macOS or run it with npx ↓</a>
+                </div>
+              </div>
+
+              <pre class="landing-log" aria-label="Boot log"><code><span class="landing-dim">$</span> markdown-studio --help
 <span class="landing-ok">ok</span>  live preview enabled
 <span class="landing-ok">ok</span>  mermaid renderer loaded
 <span class="landing-ok">ok</span>  export targets: html, pdf
 <span class="landing-dim">#</span>  write markdown. see it live.</code></pre>
-
-            <div class="landing-hero-block">
-              <p class="landing-kicker">developer entrypoint</p>
-              <h1>ship notes from a single command</h1>
-              <p class="landing-lede">
-                Markdown Studio is a local-first editor with Live Preview, Mermaid diagrams,
-                and clean export paths. Start in the terminal, keep going in the browser,
-                or pin the desktop build on macOS.
-              </p>
-              <div class="landing-hero-mobile-cta">
-                ${pwaLink('landing-open landing-open-block', 'run app')}
-              </div>
-            </div>
-
-            <div class="landing-command-board">
-              <div class="landing-command">
-                <div class="landing-command-label">
-                  <span>primary</span>
-                  <code>npx</code>
-                </div>
-                ${npmCopyButton('landing-copy landing-copy-lg')}
-                <p>Runs locally, opens your browser automatically.</p>
-              </div>
-              <div class="landing-command">
-                <div class="landing-command-label">
-                  <span>desktop</span>
-                  <code>brew</code>
-                </div>
-                ${brewCopyButton('landing-copy landing-copy-lg')}
-                <p>macOS cask install with full file system integration.</p>
-              </div>
             </div>
           </section>
 
           <section class="landing-preview" id="preview">
-            <div class="landing-section-label"><span>01</span> preview.dump</div>
+            <h2 class="landing-section-label"><span>01</span> preview</h2>
             ${EditorMockup({ className: 'landing-mockup' })}
           </section>
 
-          <section class="landing-flags" id="flags">
-            <div class="landing-section-label"><span>02</span> feature.table</div>
+          <section class="landing-flags" id="features">
+            <h2 class="landing-section-label"><span>02</span> features</h2>
             <div class="landing-feature-board">
               <div class="landing-feature-head" aria-hidden="true">
                 <span>id</span>
@@ -159,7 +143,7 @@ export function LandingPage(): string {
           </section>
 
           <section class="landing-install" id="install">
-            <div class="landing-section-label"><span>03</span> install.paths</div>
+            <h2 class="landing-section-label"><span>03</span> install</h2>
             <div class="landing-mode-grid">${modeBlocks}</div>
           </section>
 
@@ -168,16 +152,18 @@ export function LandingPage(): string {
               <pre><code>$ open ${urls.pwa.replace('https://', '')}
 <span class="landing-ok">ready</span>  editor workspace online</code></pre>
               <div class="landing-end-actions">
-                ${pwaLink('landing-open landing-open-block', 'launch web app')}
-                ${githubLink('landing-gh landing-open-block', 'star repo')}
+                ${pwaLink('landing-open landing-open-block', 'Open web app')}
+                ${githubLink('landing-gh landing-open-block')}
               </div>
             </div>
           </section>
 
+          <p class="sr-only" role="status"></p>
+
           <footer class="landing-footer">
             <div>
               <strong>${brand.slug}</strong>
-              <p>© ${brand.year} theoklitos bampouris · mit</p>
+              <p>© ${brand.year} Theoklitos Bampouris · MIT License</p>
             </div>
             <div class="landing-footer-links">${footerLinks()}</div>
           </footer>

@@ -1,7 +1,7 @@
 import { escapeHtml } from '../utils/escapeHtml'
 
 /** Compact sample used in both editor source and live Mermaid render. */
-export const mockupMermaidSource = `flowchart LR
+export const mockupMermaidSource = `flowchart TD
   A[Write] --> B[Live Preview]
   B --> C[Export]`
 

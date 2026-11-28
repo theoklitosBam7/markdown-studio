@@ -5,6 +5,7 @@ export const urls = {
   docs: 'https://github.com/theoklitosBam7/markdown-studio/blob/main/README.md',
   github: 'https://github.com/theoklitosBam7/markdown-studio',
   issues: 'https://github.com/theoklitosBam7/markdown-studio/issues',
+  license: 'https://github.com/theoklitosBam7/markdown-studio/blob/main/LICENSE',
   pwa: 'https://pwa.markdownstudio.eu/',
   releases: 'https://github.com/theoklitosBam7/markdown-studio/releases/latest',
 } as const
@@ -17,7 +18,6 @@ export const brand = {
 
 export interface Feature {
   description: string
-  icon: string
   kicker: string
   title: string
 }
@@ -26,58 +26,49 @@ export const features: Feature[] = [
   {
     description:
       'See your Markdown render instantly as you type. No need to switch views or wait for updates.',
-    icon: '⚡',
     kicker: '01',
     title: 'Live Preview',
   },
   {
     description:
       'Create flowcharts, sequence diagrams, ER diagrams, and Gantt charts using simple text syntax.',
-    icon: '📊',
     kicker: '02',
     title: 'Mermaid Diagrams',
   },
   {
     description:
       'Open, edit, and save .md files seamlessly. Works with the File System Access API in supported browsers.',
-    icon: '📁',
     kicker: '03',
     title: 'File Management',
   },
   {
     description:
       'Export polished standalone HTML files or print-ready PDFs from both the web app and the desktop app.',
-    icon: '📄',
     kicker: '04',
     title: 'HTML & PDF Export',
   },
   {
     description:
       'Toggle between light and dark modes with smooth animated transitions that match your preference.',
-    icon: '🎨',
     kicker: '05',
     title: 'Theme Switching',
   },
   {
     description:
-      'Install as a standalone app from your browser. Works offline, auto-saves drafts, and stays updated automatically.',
-    icon: '📲',
+      'Unsaved work persists between sessions as a draft, and the installed app keeps working offline.',
     kicker: '06',
-    title: 'PWA Support',
+    title: 'Auto-save Drafts',
   },
   {
-    description:
-      'Install the desktop app on macOS for a dedicated editing environment with full file system integration.',
-    icon: '🖥️',
+    description: 'Run commands from the keyboard with the Command Palette and familiar Shortcuts.',
     kicker: '07',
-    title: 'Desktop App',
+    title: 'Command Palette',
   },
   {
     description:
-      'Launch instantly with npx. Runs a local server at http://127.0.0.1 and opens your browser automatically.',
-    icon: '🚀',
+      'Markdown HTML is sanitized with DOMPurify before it reaches Live Preview or Export.',
     kicker: '08',
-    title: 'Zero Install',
+    title: 'Safe HTML Rendering',
   },
 ]
 
@@ -93,18 +84,18 @@ export interface UsageMode {
 export const usageModes: UsageMode[] = [
   {
     description:
+      'Works offline, auto-updates, feels like a standalone app. Available on any OS with Chrome, Edge, or Safari.',
+    id: 'pwa',
+    recommended: true,
+    title: 'Install as Web App',
+  },
+  {
+    description:
       'Install the desktop app on macOS for a dedicated editing environment with full file system integration.',
     fallbackHref: urls.releases,
     fallbackLabel: 'or download the DMG directly',
     id: 'desktop',
-    recommended: true,
     title: 'macOS Desktop',
-  },
-  {
-    description:
-      'Works offline, auto-updates, feels like a standalone app. Available on any OS with Chrome, Edge, or Safari.',
-    id: 'pwa',
-    title: 'Install as Web App',
   },
   {
     description:
@@ -118,6 +109,12 @@ export const copyIcon = `
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  </svg>
+`
+
+export const checkIcon = `
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <polyline points="20 6 9 17 4 12"/>
   </svg>
 `
 
@@ -139,7 +136,8 @@ export function brewCopyButton(extraClass = ''): string {
   return `
     <button class="btn btn-code ${extraClass}" type="button" data-action="copy-brew" aria-label="Copy Homebrew install command">
       <span class="npm-command">${brewCommand}</span>
-      ${copyIcon}
+      <span class="copy-icon">${copyIcon}</span>
+      <span class="copied-icon">${checkIcon}</span>
     </button>
   `
 }
@@ -166,7 +164,8 @@ export function npmCopyButton(extraClass = ''): string {
   return `
     <button class="btn btn-code ${extraClass}" type="button" data-action="copy-npm" aria-label="Copy npx launch command">
       <span class="npm-command">${npmCommand}</span>
-      ${copyIcon}
+      <span class="copy-icon">${copyIcon}</span>
+      <span class="copied-icon">${checkIcon}</span>
     </button>
   `
 }
