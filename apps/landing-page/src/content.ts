@@ -60,24 +60,23 @@ export const features: Feature[] = [
   },
   {
     description:
-      'Install as a standalone app from your browser. Works offline, auto-saves drafts, and stays updated automatically.',
-    icon: '📲',
+      'Unsaved work persists between sessions as a draft, and the installed app keeps working offline.',
+    icon: '💾',
     kicker: '06',
-    title: 'PWA Support',
+    title: 'Auto-save Drafts',
   },
   {
-    description:
-      'Install the desktop app on macOS for a dedicated editing environment with full file system integration.',
-    icon: '🖥️',
+    description: 'Run commands from the keyboard with the Command Palette and familiar Shortcuts.',
+    icon: '⌨️',
     kicker: '07',
-    title: 'Desktop App',
+    title: 'Command Palette',
   },
   {
     description:
-      'Launch instantly with npx. Runs a local server at http://127.0.0.1 and opens your browser automatically.',
-    icon: '🚀',
+      'Markdown HTML is sanitized with DOMPurify before it reaches Live Preview or Export.',
+    icon: '🛡️',
     kicker: '08',
-    title: 'Zero Install',
+    title: 'Safe HTML Rendering',
   },
 ]
 
@@ -121,6 +120,12 @@ export const copyIcon = `
   </svg>
 `
 
+export const checkIcon = `
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+`
+
 export const externalIcon = `
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -139,7 +144,8 @@ export function brewCopyButton(extraClass = ''): string {
   return `
     <button class="btn btn-code ${extraClass}" type="button" data-action="copy-brew" aria-label="Copy Homebrew install command">
       <span class="npm-command">${brewCommand}</span>
-      ${copyIcon}
+      <span class="copy-icon">${copyIcon}</span>
+      <span class="copied-icon">${checkIcon}</span>
     </button>
   `
 }
@@ -166,7 +172,8 @@ export function npmCopyButton(extraClass = ''): string {
   return `
     <button class="btn btn-code ${extraClass}" type="button" data-action="copy-npm" aria-label="Copy npx launch command">
       <span class="npm-command">${npmCommand}</span>
-      ${copyIcon}
+      <span class="copy-icon">${copyIcon}</span>
+      <span class="copied-icon">${checkIcon}</span>
     </button>
   `
 }

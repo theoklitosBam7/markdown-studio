@@ -8,10 +8,10 @@ import './styles/mockup.css'
 async function copyToClipboard(text: string, button: HTMLElement): Promise<void> {
   try {
     await navigator.clipboard.writeText(text)
-    updateCopyButtonLabel(button, 'Copied!')
+    showCopyResult(button, 'copied', `Copied to clipboard: ${text}`)
   } catch (error) {
     console.error('Failed to copy command to clipboard:', error)
-    updateCopyButtonLabel(button, 'Copy failed')
+    showCopyResult(button, 'failed', 'Copy failed. Select the command and copy it manually.')
   }
 }
 
@@ -31,15 +31,17 @@ function handleCopyCommandClick(event: MouseEvent): void {
   }
 }
 
-function updateCopyButtonLabel(button: HTMLElement, label: string): void {
-  const commandSpan = button.querySelector<HTMLElement>('.npm-command')
-  if (!commandSpan) return
+// The button keeps its command text so its width stays stable; the icon shows
+// the result and the status region announces it to screen readers.
+function showCopyResult(button: HTMLElement, state: 'copied' | 'failed', message: string): void {
+  button.dataset.copyState = state
+  const status = document.querySelector('[role="status"]')
+  if (status) status.textContent = message
 
-  const originalText = commandSpan.textContent ?? ''
-  commandSpan.textContent = label
-
+  // Clear the message too, so copying the same command again is announced.
   window.setTimeout(() => {
-    commandSpan.textContent = originalText
+    delete button.dataset.copyState
+    if (status) status.textContent = ''
   }, 2000)
 }
 

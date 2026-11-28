@@ -12,7 +12,7 @@
   --landing-amber: #f0c674;
   --landing-pad: 1rem;
   --font-display: 'DM Mono', ui-monospace, monospace;
-  --font-body: 'DM Mono', ui-monospace, monospace;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, monospace;
 
   min-height: 100vh;
@@ -49,7 +49,6 @@
 .landing .btn {
   border-radius: 0;
   font-family: var(--font-mono);
-  text-transform: lowercase;
 }
 
 .landing .btn-primary {
@@ -95,6 +94,30 @@
 .landing .btn-code svg {
   flex: 0 0 auto;
   margin-top: 0.15rem;
+}
+
+.landing .btn-code .copy-icon,
+.landing .btn-code .copied-icon {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.landing .btn-code .copied-icon,
+.landing .btn-code[data-copy-state='copied'] .copy-icon {
+  display: none;
+}
+
+.landing .btn-code[data-copy-state='copied'] {
+  border-color: var(--landing-green);
+}
+
+.landing .btn-code[data-copy-state='copied'] .copied-icon {
+  display: flex;
+  color: var(--landing-green);
+}
+
+.landing .btn-code[data-copy-state='failed'] {
+  border-color: var(--landing-amber);
 }
 
 .landing .footer-link {
@@ -268,19 +291,27 @@
   margin-bottom: 0.8rem;
   font-size: clamp(1.55rem, 8vw, 2.4rem);
   line-height: 1.12;
-  text-transform: lowercase;
   overflow-wrap: anywhere;
 }
 
 .landing-lede {
   max-width: 46rem;
   margin-bottom: 1.1rem;
-  font-size: 0.9rem;
-  line-height: 1.7;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
 }
 
 .landing-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1.25rem;
   margin-bottom: 1.25rem;
+}
+
+.landing-hero-cta .landing-inline {
+  margin-top: 0;
 }
 
 .landing-open-block {
@@ -288,50 +319,7 @@
   justify-content: center;
 }
 
-.landing-command-board {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.landing-command {
-  min-width: 0;
-  padding: 0.9rem;
-  border: 1px solid var(--landing-line);
-  background: var(--landing-panel);
-}
-
-.landing-command-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.7rem;
-  color: var(--landing-dim);
-  font-size: 0.72rem;
-  text-transform: lowercase;
-}
-
-.landing-command-label code {
-  background: transparent;
-  color: var(--landing-amber);
-  padding: 0;
-}
-
-.landing-copy {
-  width: 100%;
-  justify-content: space-between;
-  gap: 0.65rem;
-}
-
-.landing-copy-lg {
-  margin-bottom: 0.65rem;
-}
-
-.landing-command p {
-  font-size: 0.78rem;
-  line-height: 1.55;
-}
-
-.landing-section-label {
+.landing .landing-section-label {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -342,7 +330,7 @@
   text-transform: lowercase;
 }
 
-.landing-section-label span {
+.landing .landing-section-label span {
   color: var(--landing-green);
 }
 
@@ -406,7 +394,8 @@
 .landing-desc {
   margin: 0;
   color: var(--landing-muted);
-  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -438,7 +427,6 @@
   margin-bottom: 0.65rem;
   color: var(--landing-dim);
   font-size: 0.72rem;
-  text-transform: lowercase;
 }
 
 .landing-mode header strong {
@@ -453,7 +441,8 @@
 
 .landing-mode p {
   margin-bottom: 0.85rem;
-  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
   line-height: 1.6;
 }
 
@@ -524,7 +513,6 @@
   border: 1px solid var(--landing-line);
   color: var(--landing-text);
   background: transparent;
-  text-transform: lowercase;
 }
 
 .landing-footer {
@@ -540,7 +528,6 @@
   margin-top: 0.35rem;
   color: var(--landing-dim);
   font-size: 0.78rem;
-  text-transform: lowercase;
 }
 
 .landing-footer-links {
@@ -587,11 +574,7 @@
     display: block;
   }
 
-  .landing-log,
-  .landing-lede,
-  .landing-command p,
-  .landing-desc,
-  .landing-mode p {
+  .landing-log {
     font-size: 0.85rem;
   }
 
@@ -610,10 +593,6 @@
 }
 
 @media (min-width: 768px) {
-  .landing-command-board {
-    grid-template-columns: 1fr 1fr;
-  }
-
   .landing-feature-head {
     display: grid;
     grid-template-columns: 4.5rem minmax(11rem, 0.9fr) minmax(0, 1.4fr);
@@ -635,10 +614,6 @@
 
   .landing-feature-meta {
     display: contents;
-  }
-
-  .landing-desc {
-    font-size: 0.8rem;
   }
 
   .landing-mode-grid {

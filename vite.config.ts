@@ -1099,6 +1099,14 @@ export default defineConfig({
       },
       {
         test: {
+          environment: 'jsdom',
+          include: ['src/__tests__/**/*.spec.ts'],
+          name: 'landing',
+          root: packageRoot('./apps/landing-page'),
+        },
+      },
+      {
+        test: {
           environment: 'node',
           include: ['electron/**/*.spec.ts'],
           name: 'desktop',

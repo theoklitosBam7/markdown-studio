@@ -19,5 +19,6 @@
     "tsBuildInfoFile": "../../node_modules/.tmp/apps-landing-page.tsbuildinfo",
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"]
 }
